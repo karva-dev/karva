@@ -16,6 +16,12 @@ pub(crate) fn source_file(path: &Utf8Path) -> SourceFile {
     .finish()
 }
 
+/// Runs a Python coroutine to completion using `asyncio.run()`.
+pub(crate) fn run_coroutine(py: Python<'_>, coroutine: Py<PyAny>) -> PyResult<Py<PyAny>> {
+    let asyncio = py.import("asyncio")?;
+    Ok(asyncio.call_method1("run", (coroutine,))?.unbind())
+}
+
 /// Adds a directory path to Python's sys.path at the specified index.
 pub(crate) fn add_to_sys_path(py: Python<'_>, path: &Utf8Path, index: isize) -> PyResult<()> {
     let sys_module = py.import("sys")?;
