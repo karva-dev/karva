@@ -6,4 +6,4 @@ mod test_iterator;
 
 use finalizer_cache::FinalizerCache;
 use fixture_cache::FixtureCache;
-pub(crate) use package_runner::{FixtureCallError, PackageRunner};
+pub(crate) use package_runner::{FixtureCallError, FixtureChainEntry, PackageRunner};

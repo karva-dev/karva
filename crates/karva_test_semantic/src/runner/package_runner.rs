@@ -487,8 +487,13 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
                     }
                 }
                 Err(mut err) => {
-                    err.dependency_chain
-                        .push(fixture.function_name().to_string());
+                    if let Some(fixture_def) = fixture.as_user_defined() {
+                        err.dependency_chain.push(FixtureChainEntry {
+                            name: fixture_def.name.function_name().to_string(),
+                            source_file: source_file(fixture_def.name.module_path().path()),
+                            stmt_function_def: fixture_def.stmt_function_def.clone(),
+                        });
+                    }
                     return Err(err);
                 }
             }
@@ -669,5 +674,13 @@ pub struct FixtureCallError {
     pub(crate) arguments: FixtureArguments,
     /// The dependency path from the outermost requested fixture down to (but not including)
     /// the fixture that actually failed. Built bottom-up during error propagation.
-    pub(crate) dependency_chain: Vec<String>,
+    pub(crate) dependency_chain: Vec<FixtureChainEntry>,
+}
+
+/// An entry in the fixture dependency chain, representing an intermediate fixture
+/// between the test and the fixture that actually failed.
+pub struct FixtureChainEntry {
+    pub(crate) name: String,
+    pub(crate) source_file: SourceFile,
+    pub(crate) stmt_function_def: Rc<StmtFunctionDef>,
 }
