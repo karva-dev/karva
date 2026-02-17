@@ -26,7 +26,7 @@ use crate::extensions::tags::skip::{extract_skip_reason, is_skip_exception};
 use crate::runner::fixture_resolver::RuntimeFixtureResolver;
 use crate::runner::test_iterator::{TestVariant, TestVariantIterator};
 use crate::runner::{FinalizerCache, FixtureCache};
-use crate::utils::{full_test_name, source_file};
+use crate::utils::{full_test_name, run_coroutine, source_file};
 
 /// Executes discovered tests within a package hierarchy.
 ///
@@ -410,11 +410,18 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
             let _ = py_dict.set_item(key, value.as_ref());
         }
 
+        let is_async = stmt_function_def.is_async
+            && !crate::utils::patch_async_test_function(py, &function).unwrap_or(false);
         let run_test = || {
-            if function_arguments.is_empty() {
+            let result = if function_arguments.is_empty() {
                 function.call0(py)
             } else {
                 function.call(py, (), Some(&py_dict))
+            };
+            if is_async {
+                result.and_then(|coroutine| run_coroutine(py, coroutine))
+            } else {
+                result
             }
         };
 
@@ -588,25 +595,40 @@ fn get_value_and_finalizer(
     fixture: &NormalizedFixture,
     fixture_call_result: Py<PyAny>,
 ) -> PyResult<(Py<PyAny>, Option<Finalizer>)> {
-    // If this is a generator fixture, we need to call next() to get the actual value
-    // and create a finalizer for cleanup
     if let Some(user_defined_fixture) = fixture.as_user_defined()
+        && user_defined_fixture.is_generator
+        && user_defined_fixture.stmt_function_def.is_async
+    {
+        // Async generator fixture: call __anext__() and await the coroutine
+        let bound = fixture_call_result.bind(py);
+        let anext_coroutine = bound.call_method0("__anext__")?;
+        let value = run_coroutine(py, anext_coroutine.unbind())?;
+
+        let finalizer = Finalizer {
+            fixture_return: fixture_call_result,
+            is_async: true,
+            scope: fixture.scope(),
+            fixture_name: Some(user_defined_fixture.name.clone()),
+            stmt_function_def: Some(user_defined_fixture.stmt_function_def.clone()),
+        };
+
+        Ok((value, Some(finalizer)))
+    } else if let Some(user_defined_fixture) = fixture.as_user_defined()
         && user_defined_fixture.is_generator
         && let Ok(mut bound_iterator) = fixture_call_result
             .clone_ref(py)
             .into_bound(py)
             .cast_into::<PyIterator>()
     {
+        // Sync generator fixture: call next() to get the yielded value
         match bound_iterator.next() {
             Some(Ok(value)) => {
-                let py_iter = bound_iterator.clone().unbind();
-                let finalizer = {
-                    Finalizer {
-                        fixture_return: py_iter,
-                        scope: fixture.scope(),
-                        fixture_name: Some(user_defined_fixture.name.clone()),
-                        stmt_function_def: Some(user_defined_fixture.stmt_function_def.clone()),
-                    }
+                let finalizer = Finalizer {
+                    fixture_return: bound_iterator.clone().unbind().into_any(),
+                    is_async: false,
+                    scope: fixture.scope(),
+                    fixture_name: Some(user_defined_fixture.name.clone()),
+                    stmt_function_def: Some(user_defined_fixture.stmt_function_def.clone()),
                 };
 
                 Ok((value.unbind(), Some(finalizer)))
@@ -622,9 +644,9 @@ fn get_value_and_finalizer(
             create_fixture_with_finalizer(py, &fixture_call_result, finalizer_fn)
         && let Some(Ok(value)) = bound_iterator.next()
     {
-        let py_iter_unbound = bound_iterator.unbind();
         let finalizer = Finalizer {
-            fixture_return: py_iter_unbound,
+            fixture_return: bound_iterator.unbind().into_any(),
+            is_async: false,
             scope: builtin_fixture.scope,
             fixture_name: None,
             stmt_function_def: None,

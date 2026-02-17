@@ -8,6 +8,7 @@ use ruff_python_ast::StmtFunctionDef;
 
 use crate::extensions::fixtures::FixtureScope;
 use crate::extensions::tags::Tags;
+use crate::utils::run_coroutine;
 
 /// Represents a built-in fixture provided by the test framework.
 ///
@@ -159,12 +160,20 @@ impl NormalizedFixture {
                     let _ = kwargs_dict.set_item(key.clone(), value);
                 }
 
-                if kwargs_dict.is_empty() {
+                let result = if kwargs_dict.is_empty() {
                     user_defined_fixture.py_function.call0(py)
                 } else {
                     user_defined_fixture
                         .py_function
                         .call(py, (), Some(&kwargs_dict))
+                };
+
+                if user_defined_fixture.stmt_function_def.is_async
+                    && !user_defined_fixture.is_generator
+                {
+                    result.and_then(|coroutine| run_coroutine(py, coroutine))
+                } else {
+                    result
                 }
             }
         }

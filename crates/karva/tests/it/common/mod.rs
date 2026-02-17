@@ -341,7 +341,12 @@ fn create_and_populate_venv(
         anyhow::bail!("`uv venv` failed with exit code {status}");
     }
 
-    // 2. Install karva wheel + pytest (or any fixed baseline deps)
+    // 2. Install karva wheel + test dependencies from requirements.txt
+    let requirements_path = Utf8Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests")
+        .join("it")
+        .join("requirements.txt");
+
     let status = Command::new("uv")
         .args([
             "pip",
@@ -349,7 +354,8 @@ fn create_and_populate_venv(
             "--python",
             venv_path.as_str(),
             karva_wheel_path,
-            "pytest==9.0.2", // or whatever fixed version you need
+            "-r",
+            requirements_path.as_str(),
         ])
         .stderr(Stdio::inherit())
         .status()

@@ -14,6 +14,7 @@ permissions: {}
 env:
   PYTHON_VERSION: "3.14"
   BENCHMARK_PYTHON_VERSION: "3.13"
+  NEXTEST_PROFILE: ci
 
 jobs:
   determine_changes:
@@ -123,7 +124,7 @@ jobs:
           PYO3_PYTHON: ${{ steps.setup-python.outputs.python-path }}
           KARVA_MAX_PARALLELISM: 2
         run: |
-          cargo nextest run --no-fail-fast
+          cargo nextest run
 
   build-docs:
     name: "Build docs"

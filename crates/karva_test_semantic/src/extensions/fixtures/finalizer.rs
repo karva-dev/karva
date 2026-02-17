@@ -8,7 +8,7 @@ use ruff_python_ast::StmtFunctionDef;
 use crate::Context;
 use crate::diagnostic::report_invalid_fixture_finalizer;
 use crate::extensions::fixtures::FixtureScope;
-use crate::utils::source_file;
+use crate::utils::{run_coroutine, source_file};
 
 /// Represents the teardown portion of a generator fixture.
 ///
@@ -24,8 +24,11 @@ use crate::utils::source_file;
 /// ```
 #[derive(Debug)]
 pub struct Finalizer {
-    /// The generator iterator, positioned after yield, ready for teardown.
-    pub(crate) fixture_return: Py<PyIterator>,
+    /// The generator or async generator, positioned after yield, ready for teardown.
+    pub(crate) fixture_return: Py<PyAny>,
+
+    /// Whether this finalizer wraps an async generator (requires `asyncio.run()`).
+    pub(crate) is_async: bool,
 
     /// The scope determines when this finalizer runs.
     pub(crate) scope: FixtureScope,
@@ -39,25 +42,59 @@ pub struct Finalizer {
 
 impl Finalizer {
     pub(crate) fn run(self, context: &Context, py: Python<'_>) {
-        let mut generator = self.fixture_return.bind(py).clone();
-        let Some(generator_next_result) = generator.next() else {
-            // We do not care if the `next` function fails, this should not happen.
-            return;
-        };
-        let invalid_finalizer_reason = match generator_next_result {
-            Ok(_) => "Fixture had more than one yield statement",
-            Err(err) => &format!("Failed to reset fixture: {}", err.value(py)),
+        let invalid_finalizer_reason = if self.is_async {
+            self.run_async_teardown(py)
+        } else {
+            self.run_sync_teardown(py)
         };
 
-        if let Some(stmt_function_def) = self.stmt_function_def
+        if let Some(reason) = invalid_finalizer_reason
+            && let Some(stmt_function_def) = self.stmt_function_def
             && let Some(fixture_name) = self.fixture_name
         {
             report_invalid_fixture_finalizer(
                 context,
                 source_file(fixture_name.module_path().path()),
                 &stmt_function_def,
-                invalid_finalizer_reason,
+                &reason,
             );
         }
+    }
+
+    /// Runs teardown for a sync generator fixture.
+    fn run_sync_teardown(&self, py: Python<'_>) -> Option<String> {
+        let Ok(mut generator) = self
+            .fixture_return
+            .clone_ref(py)
+            .into_bound(py)
+            .cast_into::<PyIterator>()
+        else {
+            return None;
+        };
+        let generator_next_result = generator.next()?;
+        let reason = match generator_next_result {
+            Ok(_) => "Fixture had more than one yield statement".to_string(),
+            Err(err) => format!("Failed to reset fixture: {}", err.value(py)),
+        };
+        Some(reason)
+    }
+
+    /// Runs teardown for an async generator fixture.
+    fn run_async_teardown(&self, py: Python<'_>) -> Option<String> {
+        let bound = self.fixture_return.bind(py);
+        let anext_result = match bound.call_method0("__anext__") {
+            Ok(coroutine) => run_coroutine(py, coroutine.unbind()),
+            Err(_) => return None,
+        };
+        let reason = match anext_result {
+            Ok(_) => "Fixture had more than one yield statement".to_string(),
+            Err(err) => {
+                if err.is_instance_of::<pyo3::exceptions::PyStopAsyncIteration>(py) {
+                    return None;
+                }
+                format!("Failed to reset fixture: {}", err.value(py))
+            }
+        };
+        Some(reason)
     }
 }

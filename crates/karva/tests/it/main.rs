@@ -1,5 +1,6 @@
 pub(crate) mod common;
 
+mod r#async;
 mod basic;
 mod configuration;
 mod discovery;
