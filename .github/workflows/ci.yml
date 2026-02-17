@@ -123,7 +123,7 @@ jobs:
           PYO3_PYTHON: ${{ steps.setup-python.outputs.python-path }}
           KARVA_MAX_PARALLELISM: 2
         run: |
-          cargo nextest run --no-fail-fast
+          cargo nextest run
 
   build-docs:
     name: "Build docs"
