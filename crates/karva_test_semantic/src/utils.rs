@@ -3,7 +3,7 @@ use std::fmt::Write;
 
 use camino::Utf8Path;
 use pyo3::prelude::*;
-use pyo3::types::{PyAnyMethods, PyCFunction};
+use pyo3::types::PyAnyMethods;
 use pyo3::{PyResult, Python};
 use ruff_source_file::{SourceFile, SourceFileBuilder};
 
@@ -61,16 +61,27 @@ pub(crate) fn patch_async_test_function(py: Python<'_>, function: &Py<PyAny>) ->
         return Ok(false);
     }
 
-    // Replace inner_test with a sync wrapper that runs the coroutine via asyncio.run().
-    // Copy __signature__ so inspect.signature() works on the PyCFunction built-in type.
-    let inspect = py.import("inspect")?;
-    let sig = inspect.call_method1("signature", (&inner_test,))?;
-    let sync_wrapper = PyCFunction::new_closure(py, None, None, move |args, kwargs| {
-        let py = args.py();
-        let coroutine = inner_test.call(py, args, kwargs)?;
-        run_coroutine(py, coroutine)
-    })?;
-    sync_wrapper.setattr("__signature__", sig)?;
+    // Replace inner_test with a sync wrapper that uses asyncio.run().
+    // Uses inline Python because PyCFunction closures lack the signature metadata and
+    // calling conventions that Hypothesis requires to introspect and invoke inner_test.
+    let code = r"
+def _make_sync(async_fn):
+    import asyncio, functools
+    @functools.wraps(async_fn)
+    def wrapper(*args, **kwargs):
+        return asyncio.run(async_fn(*args, **kwargs))
+    return wrapper
+";
+    let locals = pyo3::types::PyDict::new(py);
+    py.run(
+        &std::ffi::CString::new(code).expect("valid CString"),
+        None,
+        Some(&locals),
+    )?;
+    let make_sync = locals
+        .get_item("_make_sync")?
+        .expect("_make_sync defined in code");
+    let sync_wrapper = make_sync.call1((inner_test,))?;
     hypothesis_attr.setattr(py, "inner_test", sync_wrapper)?;
 
     Ok(true)
