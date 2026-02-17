@@ -477,17 +477,18 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
 
         let mut function_arguments: FixtureArguments = HashMap::new();
 
-        for fixture in fixture.dependencies() {
-            match self.run_fixture(py, fixture) {
+        for dep in fixture.dependencies() {
+            match self.run_fixture(py, dep) {
                 Ok((value, finalizer)) => {
-                    function_arguments
-                        .insert(fixture.function_name().to_string(), value.clone_ref(py));
+                    function_arguments.insert(dep.function_name().to_string(), value.clone_ref(py));
 
                     if let Some(finalizer) = finalizer {
                         self.finalizer_cache.add_finalizer(finalizer);
                     }
                 }
-                Err(err) => {
+                Err(mut err) => {
+                    err.dependency_chain
+                        .push(fixture.function_name().to_string());
                     return Err(err);
                 }
             }
@@ -506,6 +507,7 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
                     stmt_function_def: fixture_def.stmt_function_def.clone(),
                     source_file: source_file(fixture_def.name.module_path().path()),
                     arguments: function_arguments,
+                    dependency_chain: Vec::new(),
                 });
             }
         };
@@ -524,6 +526,7 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
                         stmt_function_def: fixture_def.stmt_function_def.clone(),
                         source_file: source_file(fixture_def.name.module_path().path()),
                         arguments: HashMap::new(),
+                        dependency_chain: Vec::new(),
                     });
                 }
             };
@@ -664,4 +667,7 @@ pub struct FixtureCallError {
     pub(crate) stmt_function_def: Rc<StmtFunctionDef>,
     pub(crate) source_file: SourceFile,
     pub(crate) arguments: FixtureArguments,
+    /// The dependency path from the outermost requested fixture down to (but not including)
+    /// the fixture that actually failed. Built bottom-up during error propagation.
+    pub(crate) dependency_chain: Vec<String>,
 }
