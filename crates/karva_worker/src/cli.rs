@@ -171,7 +171,7 @@ fn run(f: impl FnOnce(Vec<OsString>) -> Vec<OsString>) -> anyhow::Result<ExitSta
 
     let diagnostic_format = settings.terminal().output_format.into();
 
-    let config = DisplayDiagnosticConfig::default()
+    let config = DisplayDiagnosticConfig::new("karva")
         .format(diagnostic_format)
         .color(colored::control::SHOULD_COLORIZE.should_colorize());
 

@@ -296,7 +296,7 @@ pub mod tags {
 ///
 /// This allows users to create tags like `@karva.tags.some_tag` or `@karva.tags.some_tag(arg1, arg2)`.
 #[derive(Debug, Clone)]
-#[pyclass(name = "CustomTagBuilder")]
+#[pyclass(name = "CustomTagBuilder", from_py_object)]
 pub struct CustomTagBuilder {
     pub(crate) tag_name: String,
 }

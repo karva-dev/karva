@@ -18,7 +18,7 @@ pub fn create_mock_env_fixture(py: Python<'_>) -> Option<(Py<PyAny>, Py<PyAny>)>
 }
 
 /// Sentinel value representing "not set"
-#[pyclass]
+#[pyclass(from_py_object)]
 #[derive(Clone)]
 struct NotSetType;
 
