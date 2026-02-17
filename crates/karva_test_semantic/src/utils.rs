@@ -62,14 +62,15 @@ pub(crate) fn patch_async_test_function(py: Python<'_>, function: &Py<PyAny>) ->
     }
 
     // Replace inner_test with a sync wrapper that runs the coroutine via asyncio.run().
-    // Set __wrapped__ so inspect.signature() can resolve the original function's signature.
-    let wrapped = inner_test.clone_ref(py);
+    // Copy __signature__ so inspect.signature() works on the PyCFunction built-in type.
+    let inspect = py.import("inspect")?;
+    let sig = inspect.call_method1("signature", (&inner_test,))?;
     let sync_wrapper = PyCFunction::new_closure(py, None, None, move |args, kwargs| {
         let py = args.py();
         let coroutine = inner_test.call(py, args, kwargs)?;
         run_coroutine(py, coroutine)
     })?;
-    sync_wrapper.setattr("__wrapped__", wrapped)?;
+    sync_wrapper.setattr("__signature__", sig)?;
     hypothesis_attr.setattr(py, "inner_test", sync_wrapper)?;
 
     Ok(true)
