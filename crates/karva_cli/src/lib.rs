@@ -252,6 +252,10 @@ pub struct TestCommand {
     /// Print discovered tests without executing them.
     #[clap(long)]
     pub dry_run: bool,
+
+    /// Re-run tests when Python source files change.
+    #[clap(long)]
+    pub watch: bool,
 }
 
 impl TestCommand {
