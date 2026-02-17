@@ -19,6 +19,7 @@ use karva_project::path::absolute;
 use karva_python_semantic::current_python_version;
 
 mod version;
+mod watch;
 
 pub fn karva_main(f: impl FnOnce(Vec<OsString>) -> Vec<OsString>) -> ExitStatus {
     run(f).unwrap_or_else(|error| {
@@ -273,6 +274,11 @@ pub(crate) fn test(args: TestCommand) -> Result<ExitStatus> {
     let no_cache = args.no_cache.unwrap_or(false);
     let num_workers = args.num_workers;
     let dry_run = args.dry_run;
+    let watch = args.watch;
+
+    if watch && dry_run {
+        anyhow::bail!("`--watch` and `--dry-run` cannot be used together");
+    }
 
     let project_options_overrides = ProjectOptionsOverrides::new(config_file, args.into_options());
     project_metadata.apply_overrides(&project_options_overrides);
@@ -300,6 +306,11 @@ pub(crate) fn test(args: TestCommand) -> Result<ExitStatus> {
         create_ctrlc_handler: true,
     };
 
+    if watch {
+        watch::run_watch_loop(&project, &config, &sub_command, printer)?;
+        return Ok(ExitStatus::Success);
+    }
+
     let start_time = Instant::now();
 
     let result = karva_runner::run_parallel_tests(&project, &config, &sub_command)?;
@@ -319,7 +330,7 @@ pub(crate) fn test(args: TestCommand) -> Result<ExitStatus> {
 }
 
 /// Print test output
-fn print_test_output(
+pub(crate) fn print_test_output(
     printer: Printer,
     start_time: Instant,
     result: &AggregatedResults,

@@ -50,6 +50,7 @@ insta = { version = "1.46.2" }
 insta-cmd = { version = "0.6.0" }
 itertools = { version = "0.14.0" }
 markdown = { version = "1.0.0" }
+notify-debouncer-mini = { version = "0.5" }
 pretty_assertions = { version = "1.4.1" }
 proc-macro2 = { version = "1.0.106" }
 pyo3 = { version = "0.27.2", features = ["abi3-py310"] }

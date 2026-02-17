@@ -6,3 +6,4 @@ mod configuration;
 mod discovery;
 mod extensions;
 mod name_filter;
+mod watch;
