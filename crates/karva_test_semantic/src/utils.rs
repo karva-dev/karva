@@ -3,7 +3,7 @@ use std::fmt::Write;
 
 use camino::Utf8Path;
 use pyo3::prelude::*;
-use pyo3::types::PyAnyMethods;
+use pyo3::types::{PyAnyMethods, PyCFunction};
 use pyo3::{PyResult, Python};
 use ruff_source_file::{SourceFile, SourceFileBuilder};
 
@@ -20,6 +20,56 @@ pub(crate) fn source_file(path: &Utf8Path) -> SourceFile {
 pub(crate) fn run_coroutine(py: Python<'_>, coroutine: Py<PyAny>) -> PyResult<Py<PyAny>> {
     let asyncio = py.import("asyncio")?;
     Ok(asyncio.call_method1("run", (coroutine,))?.unbind())
+}
+
+/// Patches an async test function wrapped by a sync decorator (e.g. Hypothesis `@given`).
+///
+/// When `@given` decorates an `async def test_*()`, Hypothesis wraps it in a sync callable
+/// and stores the original async function at `function.hypothesis.inner_test`. Without
+/// patching, Hypothesis calls the async function directly, gets a coroutine, and raises
+/// `InvalidArgument` because it cannot await it.
+///
+/// This function detects that situation and replaces `inner_test` with a sync wrapper
+/// that uses `asyncio.run()`, following the Hypothesis-documented pattern for test runners.
+///
+/// Returns `true` if the function was patched (caller should NOT apply `asyncio.run()`),
+/// or `false` if no patching was needed.
+pub(crate) fn patch_async_test_function(py: Python<'_>, function: &Py<PyAny>) -> PyResult<bool> {
+    let asyncio = py.import("asyncio")?;
+    let is_coroutine_fn = asyncio
+        .call_method1("iscoroutinefunction", (function,))?
+        .extract::<bool>()?;
+
+    // The callable itself is async — no decorator wrapping, use normal asyncio.run() path.
+    if is_coroutine_fn {
+        return Ok(false);
+    }
+
+    // The callable is sync (wrapped by a decorator). Check for Hypothesis inner_test.
+    let Ok(hypothesis_attr) = function.getattr(py, "hypothesis") else {
+        return Ok(false);
+    };
+    let Ok(inner_test) = hypothesis_attr.getattr(py, "inner_test") else {
+        return Ok(false);
+    };
+
+    let inner_is_async = asyncio
+        .call_method1("iscoroutinefunction", (&inner_test,))?
+        .extract::<bool>()?;
+
+    if !inner_is_async {
+        return Ok(false);
+    }
+
+    // Replace inner_test with a sync wrapper that runs the coroutine via asyncio.run().
+    let sync_wrapper = PyCFunction::new_closure(py, None, None, move |args, kwargs| {
+        let py = args.py();
+        let coroutine = inner_test.call(py, args, kwargs)?;
+        run_coroutine(py, coroutine)
+    })?;
+    hypothesis_attr.setattr(py, "inner_test", sync_wrapper)?;
+
+    Ok(true)
 }
 
 /// Adds a directory path to Python's sys.path at the specified index.

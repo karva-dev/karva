@@ -410,7 +410,8 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
             let _ = py_dict.set_item(key, value.as_ref());
         }
 
-        let is_async = stmt_function_def.is_async;
+        let is_async = stmt_function_def.is_async
+            && !crate::utils::patch_async_test_function(py, &function).unwrap_or(false);
         let run_test = || {
             let result = if function_arguments.is_empty() {
                 function.call0(py)

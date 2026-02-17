@@ -3,6 +3,33 @@ use insta_cmd::assert_cmd_snapshot;
 use crate::common::TestContext;
 
 #[test]
+fn test_hypothesis_given_with_async_test() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+from hypothesis import given
+from hypothesis import strategies as st
+
+@given(x=st.integers(min_value=0, max_value=10))
+async def test_async_with_given(x):
+    assert isinstance(x, int)
+    assert 0 <= x <= 10
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command(), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    test test::test_async_with_given ... ok
+
+    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
 fn test_async_function() {
     let context = TestContext::with_file(
         "test.py",
