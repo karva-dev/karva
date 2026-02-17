@@ -410,7 +410,23 @@ fn test_fixture_dependency_chain_failure() {
     17 |     pass
        |
     info: Missing fixtures: `db`
-    info: Fixture `config` failed here (required by `db` -> `connection`)
+    info: Fixture `db` requires `connection`
+      --> test.py:13:5
+       |
+    12 | @fixture
+    13 | def db(connection):
+       |     ^^
+    14 |     return connection
+       |
+    info: Fixture `connection` requires `config`
+      --> test.py:9:5
+       |
+     8 | @fixture
+     9 | def connection(config):
+       |     ^^^^^^^^^^
+    10 |     return config
+       |
+    info: Fixture `config` failed here
      --> test.py:6:5
       |
     4 | @fixture

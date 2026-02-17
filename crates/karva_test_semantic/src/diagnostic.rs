@@ -20,7 +20,7 @@ mod metadata;
 
 pub use metadata::{DiagnosticGuardBuilder, DiagnosticType};
 
-use crate::runner::FixtureCallError;
+use crate::runner::{FixtureCallError, FixtureChainEntry};
 use crate::utils::truncate_string;
 use crate::{Context, declare_diagnostic_type};
 
@@ -108,23 +108,29 @@ declare_diagnostic_type! {
     }
 }
 
-/// Formats a fixture message with an optional dependency chain.
-///
-/// When `dependency_chain` is non-empty, appends `(required by A -> B -> ...)` to show
-/// how the test depends on the failing fixture.
-fn format_fixture_message(fixture_name: &str, dependency_chain: &[String], verb: &str) -> String {
-    if dependency_chain.is_empty() {
-        return format!("Fixture `{fixture_name}` {verb}");
+/// Emits sub-diagnostics for each intermediate fixture in the dependency chain,
+/// showing a span annotation for each fixture between the test and the one that failed.
+fn report_dependency_chain(
+    diagnostic: &mut Diagnostic,
+    dependency_chain: &[FixtureChainEntry],
+    fixture_name: &str,
+) {
+    let reversed: Vec<_> = dependency_chain.iter().rev().collect();
+
+    for (i, entry) in reversed.iter().enumerate() {
+        let next_name = reversed.get(i + 1).map_or(fixture_name, |next| &next.name);
+
+        let mut sub = SubDiagnostic::new(
+            SubDiagnosticSeverity::Info,
+            format!("Fixture `{}` requires `{next_name}`", entry.name),
+        );
+
+        let span =
+            Span::from(entry.source_file.clone()).with_range(entry.stmt_function_def.name.range);
+
+        sub.annotate(Annotation::primary(span));
+        diagnostic.sub(sub);
     }
-
-    let chain = dependency_chain
-        .iter()
-        .rev()
-        .map(|name| format!("`{name}`"))
-        .collect::<Vec<_>>()
-        .join(" -> ");
-
-    format!("Fixture `{fixture_name}` {verb} (required by {chain})")
 }
 
 pub fn report_invalid_path(context: &Context, error: &TestPathError) {
@@ -198,8 +204,9 @@ pub fn report_fixture_failure(context: &Context, py: Python, error: FixtureCallE
 
     let builder = context.report_diagnostic(&FIXTURE_FAILURE);
 
-    let message = format_fixture_message(&fixture_name, &dependency_chain, "failed");
-    let mut diagnostic = builder.into_diagnostic(message);
+    let mut diagnostic = builder.into_diagnostic(format!("Fixture `{fixture_name}` failed"));
+
+    report_dependency_chain(&mut diagnostic, &dependency_chain, &fixture_name);
 
     handle_failed_function_call(
         &mut diagnostic,
@@ -254,14 +261,18 @@ pub fn report_missing_fixtures(
         ..
     } in fixture_call_errors
     {
+        report_dependency_chain(&mut diagnostic, &dependency_chain, &fixture_name);
+
         if let Some(Traceback {
             lines: _,
             error_source_file,
             location,
         }) = Traceback::from_error(py, &error)
         {
-            let message = format_fixture_message(&fixture_name, &dependency_chain, "failed here");
-            let mut sub = SubDiagnostic::new(SubDiagnosticSeverity::Info, message);
+            let mut sub = SubDiagnostic::new(
+                SubDiagnosticSeverity::Info,
+                format!("Fixture `{fixture_name}` failed here"),
+            );
 
             let secondary_span = Span::from(error_source_file).with_range(location);
 
