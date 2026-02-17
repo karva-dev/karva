@@ -108,6 +108,25 @@ declare_diagnostic_type! {
     }
 }
 
+/// Formats a fixture message with an optional dependency chain.
+///
+/// When `dependency_chain` is non-empty, appends `(required by A -> B -> ...)` to show
+/// how the test depends on the failing fixture.
+fn format_fixture_message(fixture_name: &str, dependency_chain: &[String], verb: &str) -> String {
+    if dependency_chain.is_empty() {
+        return format!("Fixture `{fixture_name}` {verb}");
+    }
+
+    let chain = dependency_chain
+        .iter()
+        .rev()
+        .map(|name| format!("`{name}`"))
+        .collect::<Vec<_>>()
+        .join(" -> ");
+
+    format!("Fixture `{fixture_name}` {verb} (required by {chain})")
+}
+
 pub fn report_invalid_path(context: &Context, error: &TestPathError) {
     let builder = context.report_discovery_diagnostic(&INVALID_PATH);
 
@@ -174,11 +193,13 @@ pub fn report_fixture_failure(context: &Context, py: Python, error: FixtureCallE
         stmt_function_def,
         source_file,
         arguments,
+        dependency_chain,
     } = error;
 
     let builder = context.report_diagnostic(&FIXTURE_FAILURE);
 
-    let mut diagnostic = builder.into_diagnostic(format!("Fixture `{fixture_name}` failed"));
+    let message = format_fixture_message(&fixture_name, &dependency_chain, "failed");
+    let mut diagnostic = builder.into_diagnostic(message);
 
     handle_failed_function_call(
         &mut diagnostic,
@@ -229,6 +250,7 @@ pub fn report_missing_fixtures(
     for FixtureCallError {
         error,
         fixture_name,
+        dependency_chain,
         ..
     } in fixture_call_errors
     {
@@ -238,10 +260,8 @@ pub fn report_missing_fixtures(
             location,
         }) = Traceback::from_error(py, &error)
         {
-            let mut sub = SubDiagnostic::new(
-                SubDiagnosticSeverity::Info,
-                format!("Fixture `{fixture_name}` failed here"),
-            );
+            let message = format_fixture_message(&fixture_name, &dependency_chain, "failed here");
+            let mut sub = SubDiagnostic::new(SubDiagnosticSeverity::Info, message);
 
             let secondary_span = Span::from(error_source_file).with_range(location);
 

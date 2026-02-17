@@ -367,3 +367,63 @@ fn test_fixture_generator_fail_in_teardown() {
     ----- stderr -----
     "#);
 }
+
+#[test]
+fn test_fixture_dependency_chain_failure() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+                from karva import fixture
+
+                @fixture
+                def config():
+                    raise Exception('config failed')
+
+                @fixture
+                def connection(config):
+                    return config
+
+                @fixture
+                def db(connection):
+                    return connection
+
+                def test_with_db(db):
+                    pass
+                ",
+    );
+
+    assert_cmd_snapshot!(context.command(), @r"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+    test test::test_with_db ... FAILED
+
+    diagnostics:
+
+    error[missing-fixtures]: Test `test_with_db` has missing fixtures
+      --> test.py:16:5
+       |
+    14 |     return connection
+    15 |
+    16 | def test_with_db(db):
+       |     ^^^^^^^^^^^^
+    17 |     pass
+       |
+    info: Missing fixtures: `db`
+    info: Fixture `config` failed here (required by `db` -> `connection`)
+     --> test.py:6:5
+      |
+    4 | @fixture
+    5 | def config():
+    6 |     raise Exception('config failed')
+      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    7 |
+    8 | @fixture
+      |
+    info: config failed
+
+    test result: FAILED. 0 passed; 1 failed; 0 skipped; finished in [TIME]
+
+    ----- stderr -----
+    ");
+}
