@@ -1,6 +1,6 @@
 pub(crate) mod common;
 
-mod async_tests;
+mod r#async;
 mod basic;
 mod configuration;
 mod discovery;
