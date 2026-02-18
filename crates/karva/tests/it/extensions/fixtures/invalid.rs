@@ -36,7 +36,7 @@ fn test_invalid_pytest_fixture_scope() {
       |     ^^^^^^^^^^^^
     6 |     return 1
       |
-    info: 'FixtureFunctionDefinition' object cannot be cast as 'FixtureFunctionDefinition'
+    info: 'FixtureFunctionDefinition' object is not an instance of 'FixtureFunctionDefinition'
 
     error[missing-fixtures]: Test `test_all_scopes` has missing fixtures
       --> test.py:8:5
