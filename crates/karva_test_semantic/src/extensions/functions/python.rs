@@ -7,7 +7,7 @@ use crate::extensions::tags::parametrize::Parametrization;
 use crate::extensions::tags::{Tag, Tags};
 
 #[derive(Debug, Clone)]
-#[pyclass]
+#[pyclass(from_py_object)]
 pub struct Param {
     /// The values of the arguments
     pub(crate) values: Vec<Arc<Py<PyAny>>>,
