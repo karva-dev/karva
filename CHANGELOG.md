@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.0.1-alpha.4
+
+### CLI
+
+- Add `--watch` flag to `karva test` ([#486](https://github.com/karva-dev/karva/pull/486))
+- Add `--dry-run` flag to `karva test` ([#479](https://github.com/karva-dev/karva/pull/479))
+
+### Extensions
+
+- Show span annotations for each fixture in dependency chain ([#488](https://github.com/karva-dev/karva/pull/488))
+- Show fixture dependency chain in error messages ([#487](https://github.com/karva-dev/karva/pull/487))
+- Fully support async tests and fixtures ([#485](https://github.com/karva-dev/karva/pull/485))
+
+### Snapshot Testing
+
+- Add assert_cmd_snapshot function and Command class ([#461](https://github.com/karva-dev/karva/pull/461))
+- Add `assert_json_snapshot` function ([#458](https://github.com/karva-dev/karva/pull/458))
+- Add `name=` parameter to `assert_snapshot` for named snapshots ([#457](https://github.com/karva-dev/karva/pull/457))
+- Add `karva snapshot delete` command and fix snapshot path filtering ([#455](https://github.com/karva-dev/karva/pull/455))
+- Add snapshot_settings context manager with filter support ([#454](https://github.com/karva-dev/karva/pull/454))
+- Add `karva snapshot prune` command ([#453](https://github.com/karva-dev/karva/pull/453))
+- Add inline snapshots (insta-style) ([#450](https://github.com/karva-dev/karva/pull/450))
+- Add snapshot testing ([#444](https://github.com/karva-dev/karva/pull/444))
+
+### Contributors
+
+- [@MatthewMckee4](https://github.com/MatthewMckee4)
+
 ## 0.0.1-alpha.3
 
 ### Extensions
