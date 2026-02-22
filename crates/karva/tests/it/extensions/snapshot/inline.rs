@@ -688,3 +688,116 @@ def test_second():
     assert!(!old_pending.exists(), "Expected old .snap.new removed");
     assert!(!new_pending.exists(), "Expected new .snap.new removed");
 }
+
+/// When a multiline inline accept shifts line numbers, the stale line from a
+/// subsequent `.snap.new` may land before an intervening test's `assert_snapshot`
+/// call. `find_inline_argument` must not corrupt the intervening inline.
+#[test]
+fn test_inline_multiline_accept_does_not_corrupt_intervening_inline() {
+    let context = TestContext::with_file(
+        "test.py",
+        r#"
+import karva
+
+def test_first():
+    karva.assert_snapshot("a\nb\nc", inline="")
+
+def test_middle():
+    karva.assert_snapshot("fixed", inline="fixed")
+
+def test_third():
+    karva.assert_snapshot("hello", inline="")
+        "#,
+    );
+
+    // Run tests — first and third fail, middle passes
+    let _ = context.command_no_parallel().output();
+
+    // Accept all pending snapshots at once.
+    // Alphabetical order processes test_first before test_third.
+    // Accepting test_first (multiline) adds 4 lines, shifting test_middle
+    // from line 8 to line 12 — but test_third's .snap.new still says line 11.
+    // Searching forward from stale line 11 must NOT find test_middle's inline.
+    let output = context.snapshot("accept").output().expect("accept failed");
+    assert!(output.status.success(), "Expected accept to succeed");
+
+    let source = context.read_file("test.py");
+
+    // Middle's inline must remain unchanged
+    assert!(
+        source.contains(r#"karva.assert_snapshot("fixed", inline="fixed")"#),
+        "Middle inline was corrupted! Got:\n{source}"
+    );
+
+    // Third's inline must be rewritten to "hello"
+    assert!(
+        source.contains(r#"karva.assert_snapshot("hello", inline="hello")"#),
+        "Third inline not rewritten correctly! Got:\n{source}"
+    );
+}
+
+/// Same as above, but using review (accept first, skip third, review again).
+#[test]
+fn test_inline_multiline_review_does_not_corrupt_intervening_inline() {
+    let context = TestContext::with_file(
+        "test.py",
+        r#"
+import karva
+
+def test_first():
+    karva.assert_snapshot("a\nb\nc", inline="")
+
+def test_middle():
+    karva.assert_snapshot("fixed", inline="fixed")
+
+def test_third():
+    karva.assert_snapshot("hello", inline="")
+        "#,
+    );
+
+    let _ = context.command_no_parallel().output();
+
+    // Review: accept first (multiline), skip third
+    let mut child = context
+        .snapshot("review")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()
+        .expect("failed to spawn review");
+    child
+        .stdin
+        .take()
+        .expect("no stdin")
+        .write_all(b"a\ns\n")
+        .expect("write failed");
+    let _ = child.wait_with_output();
+
+    // Review again: accept third (stale line, intervening inline present)
+    let mut child = context
+        .snapshot("review")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()
+        .expect("failed to spawn review");
+    child
+        .stdin
+        .take()
+        .expect("no stdin")
+        .write_all(b"a\n")
+        .expect("write failed");
+    let _ = child.wait_with_output();
+
+    let source = context.read_file("test.py");
+
+    // Middle's inline must remain unchanged
+    assert!(
+        source.contains(r#"karva.assert_snapshot("fixed", inline="fixed")"#),
+        "Middle inline was corrupted by review! Got:\n{source}"
+    );
+
+    // Third's inline must be rewritten to "hello"
+    assert!(
+        source.contains(r#"karva.assert_snapshot("hello", inline="hello")"#),
+        "Third inline not rewritten by review! Got:\n{source}"
+    );
+}

@@ -107,7 +107,13 @@ pub fn accept_pending(pending_path: &Utf8Path) -> io::Result<()> {
             snapshot.metadata.inline_line,
         ) {
             let content = snapshot.content.trim_end();
-            crate::inline::rewrite_inline_snapshot(source_file, line, content)?;
+            let function_name = snapshot
+                .metadata
+                .source
+                .as_deref()
+                .and_then(|s| s.rsplit("::").next())
+                .and_then(|s| s.split('(').next());
+            crate::inline::rewrite_inline_snapshot(source_file, line, content, function_name)?;
             return std::fs::remove_file(pending_path);
         }
     }

@@ -92,7 +92,16 @@ pub fn generate_inline_literal(value: &str, indent: usize) -> String {
 /// Searches for `assert_snapshot(` from the given line, then tracks parenthesis
 /// depth to find the call boundaries, and only looks for `inline=` within those
 /// bounds. This prevents matching `inline=` in unrelated calls further in the file.
-pub fn find_inline_argument(source: &str, line_number: u32) -> Option<InlineLocation> {
+///
+/// When `function_name` is provided, verifies that the found call is inside the
+/// correct function. This handles stale line numbers from multiline inline accepts
+/// that shift subsequent code — without this check, the search could find and
+/// corrupt an intervening function's `inline=` argument.
+pub fn find_inline_argument(
+    source: &str,
+    line_number: u32,
+    function_name: Option<&str>,
+) -> Option<InlineLocation> {
     let lines: Vec<&str> = source.lines().collect();
     let start_line_idx = (line_number as usize).checked_sub(1)?;
 
@@ -108,28 +117,60 @@ pub fn find_inline_argument(source: &str, line_number: u32) -> Option<InlineLoca
 
     let indent = lines[start_line_idx].len() - lines[start_line_idx].trim_start().len();
 
-    let search_start = line_byte_offset;
-    let (call_pos, call_pattern) = find_snapshot_call(&source[search_start..])?;
-    let abs_open_paren = search_start + call_pos + call_pattern.len() - 1;
+    let mut search_offset = line_byte_offset;
+    loop {
+        let (call_pos, call_pattern) = find_snapshot_call(&source[search_offset..])?;
+        let abs_call_start = search_offset + call_pos;
+        let abs_open_paren = abs_call_start + call_pattern.len() - 1;
 
-    // Track paren depth to find the matching close paren
-    let call_end = find_matching_close_paren(source, abs_open_paren)?;
+        // Track paren depth to find the matching close paren
+        let call_end = find_matching_close_paren(source, abs_open_paren)?;
 
-    // Search for `inline=` only within the call bounds, skipping string literals
-    let abs_inline_pos = find_keyword_in_call(source, abs_open_paren, call_end, "inline=")?;
+        // If a function name was provided, verify this call is in the correct function.
+        // Skip calls in wrong functions to avoid corrupting intervening inlines.
+        if let Some(expected_fn) = function_name {
+            if let Some(actual_fn) = containing_function_name(source, abs_call_start) {
+                if actual_fn != expected_fn {
+                    search_offset = call_end + 1;
+                    if search_offset >= source.len() {
+                        return None;
+                    }
+                    continue;
+                }
+            }
+        }
 
-    let after_eq = abs_inline_pos + "inline=".len();
-    if after_eq >= source.len() {
-        return None;
+        // Search for `inline=` only within the call bounds, skipping string literals
+        let abs_inline_pos = find_keyword_in_call(source, abs_open_paren, call_end, "inline=")?;
+
+        let after_eq = abs_inline_pos + "inline=".len();
+        if after_eq >= source.len() {
+            return None;
+        }
+
+        let (literal_start, literal_end) = parse_string_literal(source, after_eq)?;
+
+        return Some(InlineLocation {
+            start: literal_start,
+            end: literal_end,
+            indent,
+        });
     }
+}
 
-    let (literal_start, literal_end) = parse_string_literal(source, after_eq)?;
-
-    Some(InlineLocation {
-        start: literal_start,
-        end: literal_end,
-        indent,
-    })
+/// Find the name of the nearest enclosing function definition before the given byte position.
+fn containing_function_name(source: &str, byte_pos: usize) -> Option<&str> {
+    let before = &source[..byte_pos];
+    for line in before.lines().rev() {
+        let trimmed = line.trim_start();
+        if let Some(after_def) = trimmed
+            .strip_prefix("def ")
+            .or_else(|| trimmed.strip_prefix("async def "))
+        {
+            return after_def.split('(').next();
+        }
+    }
+    None
 }
 
 const SNAPSHOT_CALL_PATTERNS: &[&str] = &[
@@ -313,14 +354,18 @@ pub fn apply_edit(source: &str, start: usize, end: usize, replacement: &str) -> 
 }
 
 /// High-level function: read file, find inline argument, generate new literal, write file.
+///
+/// When `function_name` is provided, ensures the correct `assert_snapshot` call is
+/// found even if line numbers are stale from a previous multiline inline accept.
 pub fn rewrite_inline_snapshot(
     source_path: &str,
     line_number: u32,
     new_value: &str,
+    function_name: Option<&str>,
 ) -> io::Result<()> {
     let source = std::fs::read_to_string(source_path)?;
 
-    let location = find_inline_argument(&source, line_number).ok_or_else(|| {
+    let location = find_inline_argument(&source, line_number, function_name).ok_or_else(|| {
         io::Error::new(
             io::ErrorKind::NotFound,
             format!("Could not find inline= argument at {source_path}:{line_number}"),
@@ -412,7 +457,7 @@ mod tests {
     #[test]
     fn test_find_inline_simple() {
         let source = "    karva.assert_snapshot('hello', inline=\"\")\n";
-        let loc = find_inline_argument(source, 1).expect("should find");
+        let loc = find_inline_argument(source, 1, None).expect("should find");
         assert_eq!(&source[loc.start..loc.end], "\"\"");
         assert_eq!(loc.indent, 4);
     }
@@ -420,28 +465,28 @@ mod tests {
     #[test]
     fn test_find_inline_with_content() {
         let source = "    karva.assert_snapshot('hello', inline=\"hello world\")\n";
-        let loc = find_inline_argument(source, 1).expect("should find");
+        let loc = find_inline_argument(source, 1, None).expect("should find");
         assert_eq!(&source[loc.start..loc.end], "\"hello world\"");
     }
 
     #[test]
     fn test_find_inline_triple_quoted() {
         let source = "    karva.assert_snapshot('hello', inline=\"\"\"hello world\"\"\")\n";
-        let loc = find_inline_argument(source, 1).expect("should find");
+        let loc = find_inline_argument(source, 1, None).expect("should find");
         assert_eq!(&source[loc.start..loc.end], "\"\"\"hello world\"\"\"");
     }
 
     #[test]
     fn test_find_inline_single_quoted() {
         let source = "    karva.assert_snapshot('hello', inline='')\n";
-        let loc = find_inline_argument(source, 1).expect("should find");
+        let loc = find_inline_argument(source, 1, None).expect("should find");
         assert_eq!(&source[loc.start..loc.end], "''");
     }
 
     #[test]
     fn test_find_inline_multiline_call() {
         let source = "    karva.assert_snapshot(\n        'hello',\n        inline=\"\"\n    )\n";
-        let loc = find_inline_argument(source, 1).expect("should find");
+        let loc = find_inline_argument(source, 1, None).expect("should find");
         assert_eq!(&source[loc.start..loc.end], "\"\"");
         assert_eq!(loc.indent, 4);
     }
@@ -449,13 +494,13 @@ mod tests {
     #[test]
     fn test_find_inline_not_found() {
         let source = "    karva.assert_snapshot('hello')\n";
-        assert!(find_inline_argument(source, 1).is_none());
+        assert!(find_inline_argument(source, 1, None).is_none());
     }
 
     #[test]
     fn test_find_inline_line_2() {
         let source = "import karva\n    karva.assert_snapshot('hello', inline=\"\")\n";
-        let loc = find_inline_argument(source, 2).expect("should find");
+        let loc = find_inline_argument(source, 2, None).expect("should find");
         assert_eq!(&source[loc.start..loc.end], "\"\"");
     }
 
@@ -466,23 +511,23 @@ mod tests {
     karva.assert_snapshot('world', inline=\"\")
 ";
         // Line 1 has no inline=, should NOT match line 2's inline=
-        assert!(find_inline_argument(source, 1).is_none());
+        assert!(find_inline_argument(source, 1, None).is_none());
         // Line 2 should find it
-        let loc = find_inline_argument(source, 2).expect("should find on line 2");
+        let loc = find_inline_argument(source, 2, None).expect("should find on line 2");
         assert_eq!(&source[loc.start..loc.end], "\"\"");
     }
 
     #[test]
     fn test_find_inline_json_snapshot() {
         let source = "    karva.assert_json_snapshot({'a': 1}, inline=\"\")\n";
-        let loc = find_inline_argument(source, 1).expect("should find");
+        let loc = find_inline_argument(source, 1, None).expect("should find");
         assert_eq!(&source[loc.start..loc.end], "\"\"");
     }
 
     #[test]
     fn test_find_inline_skips_string_containing_inline() {
         let source = "    karva.assert_snapshot('inline=bad', inline=\"good\")\n";
-        let loc = find_inline_argument(source, 1).expect("should find");
+        let loc = find_inline_argument(source, 1, None).expect("should find");
         assert_eq!(&source[loc.start..loc.end], "\"good\"");
     }
 
@@ -502,5 +547,48 @@ mod tests {
     #[test]
     fn test_apply_edit_beginning() {
         assert_eq!(apply_edit("hello", 0, 5, "world"), "world");
+    }
+
+    #[test]
+    fn test_find_inline_skips_wrong_function() {
+        let source = "\
+def test_wrong():
+    karva.assert_snapshot('wrong', inline=\"wrong_value\")
+
+def test_right():
+    karva.assert_snapshot('right', inline=\"\")
+";
+        // Searching from line 1 with function_name=test_right should skip test_wrong's call
+        let loc =
+            find_inline_argument(source, 1, Some("test_right")).expect("should find test_right");
+        assert_eq!(&source[loc.start..loc.end], "\"\"");
+    }
+
+    #[test]
+    fn test_find_inline_no_function_name_returns_first() {
+        let source = "\
+def test_wrong():
+    karva.assert_snapshot('wrong', inline=\"wrong_value\")
+
+def test_right():
+    karva.assert_snapshot('right', inline=\"\")
+";
+        // Without function_name, returns the first call's inline
+        let loc = find_inline_argument(source, 1, None).expect("should find first");
+        assert_eq!(&source[loc.start..loc.end], "\"wrong_value\"");
+    }
+
+    #[test]
+    fn test_containing_function_name_simple() {
+        let source = "def test_hello():\n    karva.assert_snapshot('hello', inline=\"\")";
+        let name = containing_function_name(source, source.len());
+        assert_eq!(name, Some("test_hello"));
+    }
+
+    #[test]
+    fn test_containing_function_name_async() {
+        let source = "async def test_hello():\n    karva.assert_snapshot('hello', inline=\"\")";
+        let name = containing_function_name(source, source.len());
+        assert_eq!(name, Some("test_hello"));
     }
 }
