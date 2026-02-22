@@ -1,3 +1,6 @@
+use std::io::Write;
+use std::process::Stdio;
+
 use insta_cmd::assert_cmd_snapshot;
 
 use crate::common::TestContext;
@@ -395,4 +398,293 @@ def test_hello():
 
     ----- stderr -----
     ");
+}
+
+#[test]
+fn test_inline_review_accept_first_then_review_accept_second() {
+    let context = TestContext::with_file(
+        "test.py",
+        r#"
+import karva
+
+def test_first():
+    karva.assert_snapshot("hello", inline="")
+
+def test_second():
+    karva.assert_snapshot("world", inline="")
+        "#,
+    );
+
+    let _ = context.command_no_parallel().output();
+
+    // Review: accept first, skip second
+    let mut child = context
+        .snapshot("review")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()
+        .expect("failed to spawn review");
+    child
+        .stdin
+        .take()
+        .expect("no stdin")
+        .write_all(b"a\ns\n")
+        .expect("write failed");
+    let _ = child.wait_with_output();
+
+    let source = context.read_file("test.py");
+    assert!(
+        source.contains(r#"inline="hello""#),
+        "Expected first inline rewritten to 'hello', got:\n{source}"
+    );
+    assert!(
+        source.contains(r#"karva.assert_snapshot("world", inline="")"#),
+        "Expected second inline still empty, got:\n{source}"
+    );
+
+    let pending = context
+        .root()
+        .join("snapshots/test__test_second_inline_8.snap.new");
+    assert!(pending.exists(), "Expected second .snap.new to still exist");
+
+    // Review again: accept second
+    let mut child = context
+        .snapshot("review")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()
+        .expect("failed to spawn review");
+    child
+        .stdin
+        .take()
+        .expect("no stdin")
+        .write_all(b"a\n")
+        .expect("write failed");
+    let _ = child.wait_with_output();
+
+    let source = context.read_file("test.py");
+    assert!(
+        source.contains(r#"inline="hello""#),
+        "Expected first inline still 'hello', got:\n{source}"
+    );
+    assert!(
+        source.contains(r#"inline="world""#),
+        "Expected second inline rewritten to 'world', got:\n{source}"
+    );
+    assert!(
+        !context
+            .root()
+            .join("snapshots/test__test_first_inline_5.snap.new")
+            .exists(),
+        "Expected no pending first snapshot"
+    );
+    assert!(
+        !context
+            .root()
+            .join("snapshots/test__test_second_inline_8.snap.new")
+            .exists(),
+        "Expected no pending second snapshot"
+    );
+}
+
+#[test]
+fn test_inline_review_accept_first_then_rerun_accept_second() {
+    let context = TestContext::with_file(
+        "test.py",
+        r#"
+import karva
+
+def test_first():
+    karva.assert_snapshot("hello", inline="")
+
+def test_second():
+    karva.assert_snapshot("world", inline="")
+        "#,
+    );
+
+    let _ = context.command_no_parallel().output();
+
+    // Review: accept first, skip second
+    let mut child = context
+        .snapshot("review")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()
+        .expect("failed to spawn review");
+    child
+        .stdin
+        .take()
+        .expect("no stdin")
+        .write_all(b"a\ns\n")
+        .expect("write failed");
+    let _ = child.wait_with_output();
+
+    let source = context.read_file("test.py");
+    assert!(
+        source.contains(r#"inline="hello""#),
+        "Expected first inline rewritten, got:\n{source}"
+    );
+
+    // Re-run tests — first passes, second fails again
+    let _ = context.command_no_parallel().output();
+
+    // Accept remaining
+    let output = context.snapshot("accept").output().expect("accept failed");
+    assert!(output.status.success(), "Expected accept to succeed");
+
+    let source = context.read_file("test.py");
+    assert!(
+        source.contains(r#"inline="hello""#),
+        "Expected first inline still correct, got:\n{source}"
+    );
+    assert!(
+        source.contains(r#"inline="world""#),
+        "Expected second inline rewritten to 'world', got:\n{source}"
+    );
+    assert!(
+        !context
+            .root()
+            .join("snapshots/test__test_second_inline_8.snap.new")
+            .exists(),
+        "Expected no pending second snapshot"
+    );
+}
+
+#[test]
+fn test_inline_accept_multiline_shifts_lines() {
+    let context = TestContext::with_file(
+        "test.py",
+        r#"
+import karva
+
+def test_first():
+    karva.assert_snapshot("line1\nline2\nline3", inline="")
+
+def test_second():
+    karva.assert_snapshot("world", inline="")
+        "#,
+    );
+
+    let _ = context.command_no_parallel().output();
+
+    // Review: accept first (multiline), skip second
+    let mut child = context
+        .snapshot("review")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()
+        .expect("failed to spawn review");
+    child
+        .stdin
+        .take()
+        .expect("no stdin")
+        .write_all(b"a\ns\n")
+        .expect("write failed");
+    let _ = child.wait_with_output();
+
+    // First should be rewritten to triple-quoted multiline
+    let source = context.read_file("test.py");
+    assert!(
+        source.contains("inline=\"\"\""),
+        "Expected first inline rewritten to triple-quoted, got:\n{source}"
+    );
+    assert!(
+        source.contains(r#"karva.assert_snapshot("world", inline="")"#),
+        "Expected second inline still empty, got:\n{source}"
+    );
+
+    // Second .snap.new should still exist (with original line number)
+    let pending = context
+        .root()
+        .join("snapshots/test__test_second_inline_8.snap.new");
+    assert!(pending.exists(), "Expected second .snap.new to still exist");
+
+    // Review again: accept second (stale line number, but find_inline_argument searches forward)
+    let mut child = context
+        .snapshot("review")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()
+        .expect("failed to spawn review");
+    child
+        .stdin
+        .take()
+        .expect("no stdin")
+        .write_all(b"a\n")
+        .expect("write failed");
+    let _ = child.wait_with_output();
+
+    let source = context.read_file("test.py");
+    assert!(
+        source.contains(r#"inline="world""#),
+        "Expected second inline rewritten to 'world', got:\n{source}"
+    );
+    assert!(!pending.exists(), "Expected no pending second snapshot");
+}
+
+#[test]
+fn test_inline_multiline_accept_rerun_duplicate_pending() {
+    let context = TestContext::with_file(
+        "test.py",
+        r#"
+import karva
+
+def test_first():
+    karva.assert_snapshot("line1\nline2\nline3", inline="")
+
+def test_second():
+    karva.assert_snapshot("world", inline="")
+        "#,
+    );
+
+    let _ = context.command_no_parallel().output();
+
+    // Review: accept first (multiline), skip second
+    let mut child = context
+        .snapshot("review")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()
+        .expect("failed to spawn review");
+    child
+        .stdin
+        .take()
+        .expect("no stdin")
+        .write_all(b"a\ns\n")
+        .expect("write failed");
+    let _ = child.wait_with_output();
+
+    // Old .snap.new for second test at line 8 still exists
+    let old_pending = context
+        .root()
+        .join("snapshots/test__test_second_inline_8.snap.new");
+    assert!(old_pending.exists(), "Expected old .snap.new at line 8");
+
+    // Re-run tests — first passes, second fails again (now at shifted line 12)
+    let _ = context.command_no_parallel().output();
+
+    // New .snap.new at shifted line 12 should exist alongside old one at line 8
+    let new_pending = context
+        .root()
+        .join("snapshots/test__test_second_inline_12.snap.new");
+    assert!(
+        new_pending.exists(),
+        "Expected new .snap.new at shifted line 12"
+    );
+    assert!(
+        old_pending.exists(),
+        "Expected old .snap.new at line 8 to still exist"
+    );
+
+    // Accept all — should handle duplicate pending snapshots gracefully
+    let output = context.snapshot("accept").output().expect("accept failed");
+    assert!(output.status.success(), "Expected accept to succeed");
+
+    let source = context.read_file("test.py");
+    assert!(
+        source.contains(r#"inline="world""#),
+        "Expected second inline rewritten to 'world', got:\n{source}"
+    );
+    assert!(!old_pending.exists(), "Expected old .snap.new removed");
+    assert!(!new_pending.exists(), "Expected new .snap.new removed");
 }
