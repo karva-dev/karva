@@ -417,7 +417,6 @@ def test_second():
 
     let _ = context.command_no_parallel().output();
 
-    // Review: accept first, skip second
     let mut child = context
         .snapshot("review")
         .stdin(Stdio::piped())
@@ -447,7 +446,6 @@ def test_second():
         .join("snapshots/test__test_second_inline_8.snap.new");
     assert!(pending.exists(), "Expected second .snap.new to still exist");
 
-    // Review again: accept second
     let mut child = context
         .snapshot("review")
         .stdin(Stdio::piped())
@@ -504,7 +502,6 @@ def test_second():
 
     let _ = context.command_no_parallel().output();
 
-    // Review: accept first, skip second
     let mut child = context
         .snapshot("review")
         .stdin(Stdio::piped())
@@ -525,10 +522,8 @@ def test_second():
         "Expected first inline rewritten, got:\n{source}"
     );
 
-    // Re-run tests — first passes, second fails again
     let _ = context.command_no_parallel().output();
 
-    // Accept remaining
     let output = context.snapshot("accept").output().expect("accept failed");
     assert!(output.status.success(), "Expected accept to succeed");
 
@@ -567,7 +562,6 @@ def test_second():
 
     let _ = context.command_no_parallel().output();
 
-    // Review: accept first (multiline), skip second
     let mut child = context
         .snapshot("review")
         .stdin(Stdio::piped())
@@ -582,7 +576,6 @@ def test_second():
         .expect("write failed");
     let _ = child.wait_with_output();
 
-    // First should be rewritten to triple-quoted multiline
     let source = context.read_file("test.py");
     assert!(
         source.contains("inline=\"\"\""),
@@ -593,13 +586,11 @@ def test_second():
         "Expected second inline still empty, got:\n{source}"
     );
 
-    // Second .snap.new should still exist (with original line number)
     let pending = context
         .root()
         .join("snapshots/test__test_second_inline_8.snap.new");
     assert!(pending.exists(), "Expected second .snap.new to still exist");
 
-    // Review again: accept second (stale line number, but find_inline_argument searches forward)
     let mut child = context
         .snapshot("review")
         .stdin(Stdio::piped())
@@ -639,7 +630,6 @@ def test_second():
 
     let _ = context.command_no_parallel().output();
 
-    // Review: accept first (multiline), skip second
     let mut child = context
         .snapshot("review")
         .stdin(Stdio::piped())
@@ -654,16 +644,14 @@ def test_second():
         .expect("write failed");
     let _ = child.wait_with_output();
 
-    // Old .snap.new for second test at line 8 still exists
     let old_pending = context
         .root()
         .join("snapshots/test__test_second_inline_8.snap.new");
     assert!(old_pending.exists(), "Expected old .snap.new at line 8");
 
-    // Re-run tests — first passes, second fails again (now at shifted line 12)
+    // Re-run: second test now fails at shifted line 12, creating a second .snap.new
     let _ = context.command_no_parallel().output();
 
-    // New .snap.new at shifted line 12 should exist alongside old one at line 8
     let new_pending = context
         .root()
         .join("snapshots/test__test_second_inline_12.snap.new");
@@ -676,7 +664,6 @@ def test_second():
         "Expected old .snap.new at line 8 to still exist"
     );
 
-    // Accept all — should handle duplicate pending snapshots gracefully
     let output = context.snapshot("accept").output().expect("accept failed");
     assert!(output.status.success(), "Expected accept to succeed");
 
@@ -689,9 +676,9 @@ def test_second():
     assert!(!new_pending.exists(), "Expected new .snap.new removed");
 }
 
-/// When a multiline inline accept shifts line numbers, the stale line from a
-/// subsequent `.snap.new` may land before an intervening test's `assert_snapshot`
-/// call. `find_inline_argument` must not corrupt the intervening inline.
+/// Accepting a multiline inline shifts line numbers. `test_third`'s `.snap.new`
+/// has a stale line that lands before `test_middle` — `find_inline_argument` must
+/// skip `test_middle`'s call and find `test_third`'s.
 #[test]
 fn test_inline_multiline_accept_does_not_corrupt_intervening_inline() {
     let context = TestContext::with_file(
@@ -710,33 +697,24 @@ def test_third():
         "#,
     );
 
-    // Run tests — first and third fail, middle passes
     let _ = context.command_no_parallel().output();
 
-    // Accept all pending snapshots at once.
-    // Alphabetical order processes test_first before test_third.
-    // Accepting test_first (multiline) adds 4 lines, shifting test_middle
-    // from line 8 to line 12 — but test_third's .snap.new still says line 11.
-    // Searching forward from stale line 11 must NOT find test_middle's inline.
     let output = context.snapshot("accept").output().expect("accept failed");
     assert!(output.status.success(), "Expected accept to succeed");
 
     let source = context.read_file("test.py");
-
-    // Middle's inline must remain unchanged
     assert!(
         source.contains(r#"karva.assert_snapshot("fixed", inline="fixed")"#),
         "Middle inline was corrupted! Got:\n{source}"
     );
-
-    // Third's inline must be rewritten to "hello"
     assert!(
         source.contains(r#"karva.assert_snapshot("hello", inline="hello")"#),
         "Third inline not rewritten correctly! Got:\n{source}"
     );
 }
 
-/// Same as above, but using review (accept first, skip third, review again).
+/// Same corruption scenario as above, but via review (accept first, skip third,
+/// then review again to accept third with stale line number).
 #[test]
 fn test_inline_multiline_review_does_not_corrupt_intervening_inline() {
     let context = TestContext::with_file(
@@ -757,7 +735,6 @@ def test_third():
 
     let _ = context.command_no_parallel().output();
 
-    // Review: accept first (multiline), skip third
     let mut child = context
         .snapshot("review")
         .stdin(Stdio::piped())
@@ -772,7 +749,6 @@ def test_third():
         .expect("write failed");
     let _ = child.wait_with_output();
 
-    // Review again: accept third (stale line, intervening inline present)
     let mut child = context
         .snapshot("review")
         .stdin(Stdio::piped())
@@ -788,14 +764,10 @@ def test_third():
     let _ = child.wait_with_output();
 
     let source = context.read_file("test.py");
-
-    // Middle's inline must remain unchanged
     assert!(
         source.contains(r#"karva.assert_snapshot("fixed", inline="fixed")"#),
         "Middle inline was corrupted by review! Got:\n{source}"
     );
-
-    // Third's inline must be rewritten to "hello"
     assert!(
         source.contains(r#"karva.assert_snapshot("hello", inline="hello")"#),
         "Third inline not rewritten by review! Got:\n{source}"
