@@ -69,19 +69,19 @@ impl DiscoveredFixture {
         }
     }
 
-    pub(crate) const fn name(&self) -> &QualifiedFunctionName {
+    pub(crate) fn name(&self) -> &QualifiedFunctionName {
         &self.name
     }
 
-    pub(crate) const fn scope(&self) -> FixtureScope {
+    pub(crate) fn scope(&self) -> FixtureScope {
         self.scope
     }
 
-    pub(crate) const fn is_generator(&self) -> bool {
+    pub(crate) fn is_generator(&self) -> bool {
         self.is_generator
     }
 
-    pub(crate) const fn auto_use(&self) -> bool {
+    pub(crate) fn auto_use(&self) -> bool {
         self.auto_use
     }
 
@@ -89,7 +89,7 @@ impl DiscoveredFixture {
         &self.function
     }
 
-    pub(crate) const fn stmt_function_def(&self) -> &Rc<StmtFunctionDef> {
+    pub(crate) fn stmt_function_def(&self) -> &Rc<StmtFunctionDef> {
         &self.stmt_function_def
     }
 

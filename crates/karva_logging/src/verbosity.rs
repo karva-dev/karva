@@ -25,7 +25,7 @@ pub enum VerbosityLevel {
 }
 
 impl VerbosityLevel {
-    pub const fn level_filter(self) -> LevelFilter {
+    pub fn level_filter(self) -> LevelFilter {
         match self {
             Self::Silent => LevelFilter::OFF,
             Self::Quiet => LevelFilter::ERROR,
@@ -36,23 +36,23 @@ impl VerbosityLevel {
         }
     }
 
-    pub const fn is_quiet(self) -> bool {
+    pub fn is_quiet(self) -> bool {
         matches!(self, Self::Quiet | Self::Silent)
     }
 
-    pub const fn is_default(self) -> bool {
+    pub fn is_default(self) -> bool {
         matches!(self, Self::Default)
     }
 
-    pub const fn is_trace(self) -> bool {
+    pub fn is_trace(self) -> bool {
         matches!(self, Self::Trace)
     }
 
-    pub const fn is_extra_verbose(self) -> bool {
+    pub fn is_extra_verbose(self) -> bool {
         matches!(self, Self::ExtraVerbose)
     }
 
-    pub const fn cli_arg(self) -> Option<&'static str> {
+    pub fn cli_arg(self) -> Option<&'static str> {
         match self {
             Self::Silent => Some("-qq"),
             Self::Quiet => Some("-q"),

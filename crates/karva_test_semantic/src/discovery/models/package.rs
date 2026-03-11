@@ -33,7 +33,7 @@ impl DiscoveredPackage {
         }
     }
 
-    pub(crate) const fn path(&self) -> &Utf8PathBuf {
+    pub(crate) fn path(&self) -> &Utf8PathBuf {
         &self.path
     }
 
@@ -41,7 +41,7 @@ impl DiscoveredPackage {
         &self.modules
     }
 
-    pub(crate) const fn packages(&self) -> &HashMap<Utf8PathBuf, Self> {
+    pub(crate) fn packages(&self) -> &HashMap<Utf8PathBuf, Self> {
         &self.packages
     }
 

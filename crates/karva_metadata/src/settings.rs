@@ -9,19 +9,19 @@ pub struct ProjectSettings {
 }
 
 impl ProjectSettings {
-    pub const fn terminal(&self) -> &TerminalSettings {
+    pub fn terminal(&self) -> &TerminalSettings {
         &self.terminal
     }
 
-    pub const fn src(&self) -> &SrcSettings {
+    pub fn src(&self) -> &SrcSettings {
         &self.src
     }
 
-    pub const fn test(&self) -> &TestSettings {
+    pub fn test(&self) -> &TestSettings {
         &self.test
     }
 
-    pub const fn fail_fast(&self) -> bool {
+    pub fn fail_fast(&self) -> bool {
         self.test.fail_fast
     }
 

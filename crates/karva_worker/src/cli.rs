@@ -43,7 +43,7 @@ struct Args {
 }
 
 impl Args {
-    pub const fn verbosity(&self) -> &Verbosity {
+    pub fn verbosity(&self) -> &Verbosity {
         &self.sub_command.verbosity
     }
 }
@@ -67,7 +67,7 @@ impl Termination for ExitStatus {
 }
 
 impl ExitStatus {
-    pub const fn to_i32(self) -> i32 {
+    pub fn to_i32(self) -> i32 {
         self as i32
     }
 }

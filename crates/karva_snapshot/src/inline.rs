@@ -75,7 +75,6 @@ pub fn generate_inline_literal(value: &str, indent: usize) -> String {
             let escaped = line.replace('\\', "\\\\").replace("\"\"\"", "\\\"\\\"\\\"");
             result.push_str(&content_indent);
             result.push_str(&escaped);
-            result.push('\n');
         }
     }
 

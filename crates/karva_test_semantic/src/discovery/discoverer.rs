@@ -19,7 +19,7 @@ pub struct StandardDiscoverer<'ctx, 'a> {
 }
 
 impl<'ctx, 'a> StandardDiscoverer<'ctx, 'a> {
-    pub const fn new(context: &'ctx Context<'a>) -> Self {
+    pub fn new(context: &'ctx Context<'a>) -> Self {
         Self { context }
     }
 
@@ -102,7 +102,7 @@ impl<'ctx, 'a> StandardDiscoverer<'ctx, 'a> {
             fixture_function_defs,
         } = collected_module;
 
-        let mut module = DiscoveredModule::new_with_source(path.clone(), source_text);
+        let mut module = DiscoveredModule::new_with_source(path, source_text);
 
         discover(
             self.context,

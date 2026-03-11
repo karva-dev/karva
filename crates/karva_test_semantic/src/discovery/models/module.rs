@@ -25,7 +25,7 @@ pub struct DiscoveredModule {
 }
 
 impl DiscoveredModule {
-    pub(crate) const fn new_with_source(path: ModulePath, source_text: String) -> Self {
+    pub(crate) fn new_with_source(path: ModulePath, source_text: String) -> Self {
         Self {
             path,
             test_functions: Vec::new(),
@@ -34,11 +34,11 @@ impl DiscoveredModule {
         }
     }
 
-    pub(crate) const fn module_path(&self) -> &ModulePath {
+    pub(crate) fn module_path(&self) -> &ModulePath {
         &self.path
     }
 
-    pub(crate) const fn path(&self) -> &Utf8PathBuf {
+    pub(crate) fn path(&self) -> &Utf8PathBuf {
         self.path.path()
     }
 
@@ -54,7 +54,7 @@ impl DiscoveredModule {
         self.test_functions.push(test_function);
     }
 
-    pub(crate) const fn fixtures(&self) -> &Vec<DiscoveredFixture> {
+    pub(crate) fn fixtures(&self) -> &Vec<DiscoveredFixture> {
         &self.fixtures
     }
 

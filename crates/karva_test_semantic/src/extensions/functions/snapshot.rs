@@ -231,7 +231,7 @@ fn apply_active_filters(input: &str) -> PyResult<String> {
 }
 
 /// Called by the test runner before each test to set snapshot context.
-pub(crate) fn set_snapshot_context(test_file: String, test_name: String) {
+pub fn set_snapshot_context(test_file: String, test_name: String) {
     SNAPSHOT_CONTEXT.with(|ctx| {
         *ctx.borrow_mut() = Some(SnapshotContext {
             test_file,

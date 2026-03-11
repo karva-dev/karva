@@ -21,7 +21,7 @@ pub struct Parametrization {
 }
 
 impl Parametrization {
-    pub(crate) const fn tags(&self) -> &Tags {
+    pub(crate) fn tags(&self) -> &Tags {
         &self.tags
     }
 }
@@ -49,7 +49,7 @@ pub struct ParametrizationArgs {
 }
 
 impl ParametrizationArgs {
-    pub(crate) const fn values(&self) -> &HashMap<String, Arc<Py<PyAny>>> {
+    pub(crate) fn values(&self) -> &HashMap<String, Arc<Py<PyAny>>> {
         &self.values
     }
 
@@ -159,7 +159,7 @@ fn extract_parametrize_args<'py>(
 }
 
 impl ParametrizeTag {
-    pub(crate) const fn new(names: Vec<String>, parametrizations: Vec<Parametrization>) -> Self {
+    pub(crate) fn new(names: Vec<String>, parametrizations: Vec<Parametrization>) -> Self {
         Self {
             names,
             parametrizations,

@@ -36,11 +36,11 @@ impl TestRunResult {
         self.discovery_diagnostics.len() + self.diagnostics.len()
     }
 
-    pub const fn diagnostics(&self) -> &Vec<Diagnostic> {
+    pub fn diagnostics(&self) -> &Vec<Diagnostic> {
         &self.diagnostics
     }
 
-    pub const fn discovery_diagnostics(&self) -> &Vec<Diagnostic> {
+    pub fn discovery_diagnostics(&self) -> &Vec<Diagnostic> {
         &self.discovery_diagnostics
     }
 
@@ -56,7 +56,7 @@ impl TestRunResult {
         self.stats().is_success() && self.discovery_diagnostics.is_empty()
     }
 
-    pub const fn stats(&self) -> &TestResultStats {
+    pub fn stats(&self) -> &TestResultStats {
         &self.stats
     }
 
@@ -96,7 +96,7 @@ impl TestRunResult {
         self
     }
 
-    pub const fn durations(&self) -> &HashMap<QualifiedFunctionName, std::time::Duration> {
+    pub fn durations(&self) -> &HashMap<QualifiedFunctionName, std::time::Duration> {
         &self.durations
     }
 
@@ -130,7 +130,7 @@ pub enum TestResultKind {
 }
 
 impl TestResultKind {
-    const fn as_str(self) -> &'static str {
+    fn as_str(self) -> &'static str {
         match self {
             Self::Passed => "passed",
             Self::Failed => "failed",
@@ -191,7 +191,7 @@ impl TestResultStats {
         self.inner.entry(kind).and_modify(|v| *v += 1).or_insert(1);
     }
 
-    pub const fn display(&self, start_time: Instant) -> DisplayTestResultStats<'_> {
+    pub fn display(&self, start_time: Instant) -> DisplayTestResultStats<'_> {
         DisplayTestResultStats::new(self, start_time)
     }
 }
@@ -251,7 +251,7 @@ pub struct DisplayTestResultStats<'a> {
 }
 
 impl<'a> DisplayTestResultStats<'a> {
-    const fn new(stats: &'a TestResultStats, start_time: Instant) -> Self {
+    fn new(stats: &'a TestResultStats, start_time: Instant) -> Self {
         Self { stats, start_time }
     }
 }

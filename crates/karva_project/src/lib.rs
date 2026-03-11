@@ -52,11 +52,11 @@ impl Project {
         Self { settings, metadata }
     }
 
-    pub const fn settings(&self) -> &ProjectSettings {
+    pub fn settings(&self) -> &ProjectSettings {
         &self.settings
     }
 
-    pub const fn cwd(&self) -> &Utf8PathBuf {
+    pub fn cwd(&self) -> &Utf8PathBuf {
         self.metadata.root()
     }
 
@@ -81,7 +81,7 @@ impl Project {
         test_paths
     }
 
-    pub const fn metadata(&self) -> &ProjectMetadata {
+    pub fn metadata(&self) -> &ProjectMetadata {
         &self.metadata
     }
 }

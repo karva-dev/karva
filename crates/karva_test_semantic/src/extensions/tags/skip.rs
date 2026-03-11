@@ -16,7 +16,7 @@ pub struct SkipTag {
 }
 
 impl SkipTag {
-    pub(crate) const fn new(conditions: Vec<bool>, reason: Option<String>) -> Self {
+    pub(crate) fn new(conditions: Vec<bool>, reason: Option<String>) -> Self {
         Self { conditions, reason }
     }
 

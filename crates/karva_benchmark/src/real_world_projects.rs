@@ -97,11 +97,11 @@ struct Checkout<'a> {
 }
 
 impl<'a> Checkout<'a> {
-    const fn project(&self) -> &RealWorldProject<'a> {
+    fn project(&self) -> &RealWorldProject<'a> {
         &self.project
     }
 
-    const fn project_root(&self) -> &Utf8PathBuf {
+    fn project_root(&self) -> &Utf8PathBuf {
         &self.path
     }
 }
@@ -114,15 +114,15 @@ pub struct InstalledProject<'a> {
 }
 
 impl<'a> InstalledProject<'a> {
-    pub const fn config(&self) -> &RealWorldProject<'a> {
+    pub fn config(&self) -> &RealWorldProject<'a> {
         &self.config
     }
 
-    pub const fn test_paths(&self) -> &[&str] {
+    pub fn test_paths(&self) -> &[&str] {
         self.config.paths
     }
 
-    pub const fn path(&self) -> &Utf8PathBuf {
+    pub fn path(&self) -> &Utf8PathBuf {
         &self.path
     }
 }

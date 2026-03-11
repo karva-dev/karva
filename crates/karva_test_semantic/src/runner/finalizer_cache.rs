@@ -46,11 +46,10 @@ impl FinalizerCache {
         py: Python<'_>,
         scope: FixtureScope,
     ) {
-        let finalizers: Vec<_> = self.scope_storage(scope).borrow_mut().drain(..).collect();
-
         // Run finalizers in reverse order (LIFO)
-        finalizers
-            .into_iter()
+        self.scope_storage(scope)
+            .borrow_mut()
+            .drain(..)
             .rev()
             .for_each(|finalizer| finalizer.run(context, py));
     }
