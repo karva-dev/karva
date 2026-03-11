@@ -69,14 +69,12 @@ pub fn generate_inline_literal(value: &str, indent: usize) -> String {
     result.push('\n');
 
     for line in value.lines() {
-        if line.is_empty() {
-            result.push('\n');
-        } else {
+        if !line.is_empty() {
             let escaped = line.replace('\\', "\\\\").replace("\"\"\"", "\\\"\\\"\\\"");
             result.push_str(&content_indent);
             result.push_str(&escaped);
-            result.push('\n');
         }
+        result.push('\n');
     }
 
     result.push_str(&content_indent);

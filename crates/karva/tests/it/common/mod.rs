@@ -279,7 +279,9 @@ fn get_or_create_shared_venv(
             venv_path.join("bin").join("python")
         };
 
-        if !venv_python.exists() {
+        if venv_python.exists() {
+            eprintln!("Reusing shared venv at {venv_path}");
+        } else {
             // Clean up any partial/stale shared venvs
             if venv_path.exists() {
                 let _ = std::fs::remove_dir_all(&venv_path);
@@ -295,8 +297,6 @@ fn get_or_create_shared_venv(
                 "Created shared venv at {venv_path} in {:?}",
                 start.elapsed()
             );
-        } else {
-            eprintln!("Reusing shared venv at {venv_path}");
         }
 
         // Lock is automatically released when lock_file goes out of scope

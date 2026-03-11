@@ -41,7 +41,7 @@ impl Default for TestCaseReporter {
 }
 
 impl TestCaseReporter {
-    pub const fn new(printer: Printer) -> Self {
+    pub fn new(printer: Printer) -> Self {
         Self { printer }
     }
 }

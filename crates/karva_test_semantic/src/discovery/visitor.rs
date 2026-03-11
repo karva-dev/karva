@@ -37,11 +37,7 @@ struct FunctionDefinitionVisitor<'ctx, 'py, 'a, 'b> {
 }
 
 impl<'ctx, 'py, 'a, 'b> FunctionDefinitionVisitor<'ctx, 'py, 'a, 'b> {
-    const fn new(
-        py: Python<'py>,
-        context: &'ctx Context<'a>,
-        module: &'b mut DiscoveredModule,
-    ) -> Self {
+    fn new(py: Python<'py>, context: &'ctx Context<'a>, module: &'b mut DiscoveredModule) -> Self {
         Self {
             context,
             module,

@@ -93,14 +93,14 @@ impl<'a> Context<'a> {
         result
     }
 
-    pub(crate) const fn report_diagnostic<'ctx>(
+    pub(crate) fn report_diagnostic<'ctx>(
         &'ctx self,
         rule: &'static DiagnosticType,
     ) -> DiagnosticGuardBuilder<'ctx, 'a> {
         DiagnosticGuardBuilder::new(self, rule, false)
     }
 
-    pub(crate) const fn report_discovery_diagnostic<'ctx>(
+    pub(crate) fn report_discovery_diagnostic<'ctx>(
         &'ctx self,
         rule: &'static DiagnosticType,
     ) -> DiagnosticGuardBuilder<'ctx, 'a> {

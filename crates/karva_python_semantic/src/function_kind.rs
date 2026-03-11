@@ -9,7 +9,7 @@ pub enum FunctionKind {
 
 impl FunctionKind {
     /// Return the kind as a capitalised string (e.g., `"Test"` or `"Fixture"`).
-    pub const fn capitalised(self) -> &'static str {
+    pub fn capitalised(self) -> &'static str {
         match self {
             Self::Test => "Test",
             Self::Fixture => "Fixture",

@@ -11,7 +11,7 @@ pub struct UseFixturesTag {
 }
 
 impl UseFixturesTag {
-    pub(crate) const fn new(fixture_names: Vec<String>) -> Self {
+    pub(crate) fn new(fixture_names: Vec<String>) -> Self {
         Self { fixture_names }
     }
 

@@ -56,7 +56,7 @@ pub struct DiagnosticGuardBuilder<'ctx, 'a> {
 }
 
 impl<'ctx, 'a> DiagnosticGuardBuilder<'ctx, 'a> {
-    pub(crate) const fn new(
+    pub(crate) fn new(
         context: &'ctx Context<'a>,
         diagnostic_type: &'static DiagnosticType,
         is_discovery: bool,

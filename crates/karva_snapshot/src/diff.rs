@@ -110,9 +110,7 @@ pub fn format_diff(old: &str, new: &str) -> String {
 ///
 /// Falls back to 80 characters if terminal width cannot be determined.
 pub fn print_changeset(out: &mut impl io::Write, old: &str, new: &str) -> io::Result<()> {
-    let width = terminal_size::terminal_size()
-        .map(|(w, _)| w.0 as usize)
-        .unwrap_or(80);
+    let width = terminal_size::terminal_size().map_or(80, |(w, _)| w.0 as usize);
     let mut output = String::new();
     render_diff(&mut output, old, new, width);
     write!(out, "{output}")

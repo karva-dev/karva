@@ -25,7 +25,7 @@ struct NotSetType;
 #[pymethods]
 impl NotSetType {
     #[expect(clippy::unused_self)]
-    const fn __repr__(&self) -> &'static str {
+    fn __repr__(&self) -> &'static str {
         "NOTSET"
     }
 }
@@ -467,7 +467,7 @@ impl MockEnv {
         Ok(())
     }
 
-    const fn __enter__(slf: PyRef<'_, Self>) -> PyRef<'_, Self> {
+    fn __enter__(slf: PyRef<'_, Self>) -> PyRef<'_, Self> {
         slf
     }
 

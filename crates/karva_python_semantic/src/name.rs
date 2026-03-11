@@ -14,7 +14,7 @@ pub struct QualifiedFunctionName {
 
 impl QualifiedFunctionName {
     /// Create a new qualified function name.
-    pub const fn new(function_name: String, module_path: ModulePath) -> Self {
+    pub fn new(function_name: String, module_path: ModulePath) -> Self {
         Self {
             function_name,
             module_path,
@@ -27,7 +27,7 @@ impl QualifiedFunctionName {
     }
 
     /// Return the module path this function belongs to.
-    pub const fn module_path(&self) -> &ModulePath {
+    pub fn module_path(&self) -> &ModulePath {
         &self.module_path
     }
 }
@@ -86,7 +86,7 @@ pub struct QualifiedTestName {
 
 impl QualifiedTestName {
     /// Create a new qualified test name.
-    pub const fn new(function_name: QualifiedFunctionName, full_name: Option<String>) -> Self {
+    pub fn new(function_name: QualifiedFunctionName, full_name: Option<String>) -> Self {
         Self {
             function_name,
             full_name,
@@ -94,7 +94,7 @@ impl QualifiedTestName {
     }
 
     /// Return the underlying qualified function name.
-    pub const fn function_name(&self) -> &QualifiedFunctionName {
+    pub fn function_name(&self) -> &QualifiedFunctionName {
         &self.function_name
     }
 
@@ -135,7 +135,7 @@ impl ModulePath {
     }
 
     /// Return the filesystem path of this module.
-    pub const fn path(&self) -> &Utf8PathBuf {
+    pub fn path(&self) -> &Utf8PathBuf {
         &self.path
     }
 }

@@ -13,7 +13,7 @@ use karva_logging::Printer;
 use karva_project::Project;
 use karva_runner::ParallelTestConfig;
 
-use crate::print_test_output;
+use super::print_test_output;
 
 fn run_and_print(
     project: &Project,
@@ -54,7 +54,7 @@ fn print_watching_message(printer: Printer) -> Result<()> {
     Ok(())
 }
 
-pub(crate) fn run_watch_loop(
+pub fn run_watch_loop(
     project: &Project,
     config: &ParallelTestConfig,
     sub_command: &SubTestCommand,

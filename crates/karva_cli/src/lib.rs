@@ -40,7 +40,7 @@ impl Verbosity {
     /// Returns the verbosity level based on the number of `-v` and `-q` flags.
     ///
     /// Returns `None` if the user did not specify any verbosity flags.
-    pub const fn level(&self) -> VerbosityLevel {
+    pub fn level(&self) -> VerbosityLevel {
         // `--quiet` and `--verbose` are mutually exclusive in Clap, so we can just check one first.
         match self.quiet {
             0 => {}
@@ -283,7 +283,7 @@ pub struct TestCommand {
 }
 
 impl TestCommand {
-    pub const fn verbosity(&self) -> &Verbosity {
+    pub fn verbosity(&self) -> &Verbosity {
         &self.sub_command.verbosity
     }
 }

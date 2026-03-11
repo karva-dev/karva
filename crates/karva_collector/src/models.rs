@@ -21,11 +21,7 @@ pub struct CollectedModule {
 }
 
 impl CollectedModule {
-    pub(crate) const fn new(
-        path: ModulePath,
-        module_type: ModuleType,
-        source_text: String,
-    ) -> Self {
+    pub(crate) fn new(path: ModulePath, module_type: ModuleType, source_text: String) -> Self {
         Self {
             path,
             module_type,
@@ -43,11 +39,11 @@ impl CollectedModule {
         self.fixture_function_defs.push(function_def);
     }
 
-    pub(crate) const fn file_path(&self) -> &Utf8PathBuf {
+    pub(crate) fn file_path(&self) -> &Utf8PathBuf {
         self.path.path()
     }
 
-    pub const fn module_type(&self) -> ModuleType {
+    pub fn module_type(&self) -> ModuleType {
         self.module_type
     }
 
@@ -80,7 +76,7 @@ impl CollectedPackage {
         }
     }
 
-    pub(crate) const fn path(&self) -> &Utf8PathBuf {
+    pub(crate) fn path(&self) -> &Utf8PathBuf {
         &self.path
     }
 
@@ -107,12 +103,10 @@ impl CollectedPackage {
         if parent_path == self.path() {
             if let Some(existing_module) = self.modules.get_mut(module.file_path()) {
                 existing_module.update(module);
+            } else if module.module_type() == ModuleType::Configuration {
+                self.update_configuration_module(module);
             } else {
-                if module.module_type() == ModuleType::Configuration {
-                    self.update_configuration_module(module);
-                } else {
-                    self.modules.insert(module.file_path().clone(), module);
-                }
+                self.modules.insert(module.file_path().clone(), module);
             }
             return;
         }

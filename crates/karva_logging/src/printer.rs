@@ -9,7 +9,7 @@ pub struct Printer {
 }
 
 impl Printer {
-    pub const fn new(verbosity: VerbosityLevel, no_progress: bool) -> Self {
+    pub fn new(verbosity: VerbosityLevel, no_progress: bool) -> Self {
         Self {
             verbosity,
             no_progress,
@@ -20,7 +20,7 @@ impl Printer {
     ///
     /// Unlike [`Self::stdout_general`], the returned stream will be enabled when
     /// [`VerbosityLevel::Quiet`] is used.
-    const fn stdout_important(self) -> Stdout {
+    fn stdout_important(self) -> Stdout {
         match self.verbosity {
             VerbosityLevel::Silent => Stdout::disabled(),
             VerbosityLevel::Quiet
@@ -34,7 +34,7 @@ impl Printer {
     /// Return the [`Stdout`] stream for general messages.
     ///
     /// The returned stream will be disabled when [`VerbosityLevel::Quiet`] is used.
-    const fn stdout_general(self) -> Stdout {
+    fn stdout_general(self) -> Stdout {
         match self.verbosity {
             VerbosityLevel::Silent | VerbosityLevel::Quiet => Stdout::disabled(),
             VerbosityLevel::Default
@@ -46,26 +46,26 @@ impl Printer {
 
     /// Return the [`Stdout`] stream for a summary message that was explicitly requested by the
     /// user.
-    pub const fn stream_for_requested_summary(self) -> Stdout {
+    pub fn stream_for_requested_summary(self) -> Stdout {
         self.stdout_important()
     }
 
     /// Return the [`Stdout`] stream for a summary message on failure.
-    pub const fn stream_for_failure_summary(self) -> Stdout {
+    pub fn stream_for_failure_summary(self) -> Stdout {
         self.stdout_important()
     }
 
     /// Return the [`Stdout`] stream for a summary message on success.
-    pub const fn stream_for_success_summary(self) -> Stdout {
+    pub fn stream_for_success_summary(self) -> Stdout {
         self.stdout_general()
     }
 
     /// Return the [`Stdout`] stream for detailed messages.
-    pub const fn stream_for_details(self) -> Stdout {
+    pub fn stream_for_details(self) -> Stdout {
         self.stdout_general()
     }
 
-    pub const fn stream_for_test_result(self) -> Stdout {
+    pub fn stream_for_test_result(self) -> Stdout {
         if self.no_progress {
             Stdout::disabled()
         } else {
@@ -87,14 +87,14 @@ pub struct Stdout {
 }
 
 impl Stdout {
-    const fn enabled() -> Self {
+    fn enabled() -> Self {
         Self {
             status: StreamStatus::Enabled,
             lock: None,
         }
     }
 
-    const fn disabled() -> Self {
+    fn disabled() -> Self {
         Self {
             status: StreamStatus::Disabled,
             lock: None,
@@ -119,7 +119,7 @@ impl Stdout {
         }
     }
 
-    pub const fn is_enabled(&self) -> bool {
+    pub fn is_enabled(&self) -> bool {
         matches!(self.status, StreamStatus::Enabled)
     }
 }

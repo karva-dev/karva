@@ -73,7 +73,7 @@ impl ProjectMetadata {
     }
 
     /// Loads a project from a set of options with an optional pyproject-project table.
-    pub const fn from_options(
+    pub fn from_options(
         options: Options,
         root: Utf8PathBuf,
         python_version: PythonVersion,
@@ -190,11 +190,11 @@ impl ProjectMetadata {
         Ok(metadata)
     }
 
-    pub const fn python_version(&self) -> PythonVersion {
+    pub fn python_version(&self) -> PythonVersion {
         self.python_version
     }
 
-    pub const fn root(&self) -> &Utf8PathBuf {
+    pub fn root(&self) -> &Utf8PathBuf {
         &self.root
     }
 

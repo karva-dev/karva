@@ -110,7 +110,7 @@ impl TestPath {
         }
     }
 
-    pub const fn path(&self) -> &Utf8PathBuf {
+    pub fn path(&self) -> &Utf8PathBuf {
         match self {
             Self::File(path)
             | Self::Directory(path)
@@ -132,7 +132,7 @@ pub enum TestPathError {
 }
 
 impl TestPathError {
-    pub const fn path(&self) -> &Utf8PathBuf {
+    pub fn path(&self) -> &Utf8PathBuf {
         match self {
             Self::NotFound(path)
             | Self::WrongFileExtension(path)

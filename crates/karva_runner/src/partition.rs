@@ -21,14 +21,14 @@ struct ModuleGroup {
 }
 
 impl ModuleGroup {
-    const fn new(tests: Vec<TestInfo>, total_weight: u128) -> Self {
+    fn new(tests: Vec<TestInfo>, total_weight: u128) -> Self {
         Self {
             tests,
             total_weight,
         }
     }
 
-    const fn weight(&self) -> u128 {
+    fn weight(&self) -> u128 {
         self.total_weight
     }
 }
@@ -42,7 +42,7 @@ pub struct Partition {
 }
 
 impl Partition {
-    const fn new() -> Self {
+    fn new() -> Self {
         Self {
             tests: Vec::new(),
             weight: 0,
@@ -54,7 +54,7 @@ impl Partition {
         self.weight += test_weight;
     }
 
-    const fn weight(&self) -> u128 {
+    fn weight(&self) -> u128 {
         self.weight
     }
 

@@ -248,11 +248,11 @@ impl OutputFormat {
     ///
     /// This can be used to check whether information beyond the diagnostics, such as a header or
     /// `Found N diagnostics` footer, should be included.
-    pub const fn is_human_readable(self) -> bool {
+    pub fn is_human_readable(self) -> bool {
         matches!(self, Self::Full | Self::Concise)
     }
 
-    pub const fn as_str(&self) -> &'static str {
+    pub fn as_str(&self) -> &'static str {
         match self {
             Self::Full => "full",
             Self::Concise => "concise",
@@ -286,7 +286,7 @@ pub struct ProjectOptionsOverrides {
 }
 
 impl ProjectOptionsOverrides {
-    pub const fn new(config_file_override: Option<Utf8PathBuf>, options: Options) -> Self {
+    pub fn new(config_file_override: Option<Utf8PathBuf>, options: Options) -> Self {
         Self {
             config_file_override,
             options,

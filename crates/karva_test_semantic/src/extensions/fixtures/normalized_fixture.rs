@@ -110,14 +110,14 @@ impl NormalizedFixture {
     }
 
     /// Returns the fixture scope
-    pub(crate) const fn scope(&self) -> FixtureScope {
+    pub(crate) fn scope(&self) -> FixtureScope {
         match self {
             Self::BuiltIn(fixture) => fixture.scope,
             Self::UserDefined(fixture) => fixture.scope,
         }
     }
 
-    pub(crate) const fn as_user_defined(&self) -> Option<&UserDefinedFixture> {
+    pub(crate) fn as_user_defined(&self) -> Option<&UserDefinedFixture> {
         if let Self::UserDefined(v) = self {
             Some(v)
         } else {
@@ -125,7 +125,7 @@ impl NormalizedFixture {
         }
     }
 
-    pub(crate) const fn as_builtin(&self) -> Option<&BuiltInFixture> {
+    pub(crate) fn as_builtin(&self) -> Option<&BuiltInFixture> {
         if let Self::BuiltIn(v) = self {
             Some(v)
         } else {
@@ -182,7 +182,6 @@ impl NormalizedFixture {
     /// Returns `true` if the normalized fixture is [`UserDefined`].
     ///
     /// [`UserDefined`]: NormalizedFixture::UserDefined
-    #[must_use]
     pub fn is_user_defined(&self) -> bool {
         matches!(self, Self::UserDefined(..))
     }

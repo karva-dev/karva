@@ -207,7 +207,7 @@ pub enum TerminalColor {
 }
 
 impl TerminalColor {
-    pub const fn as_str(&self) -> &'static str {
+    pub fn as_str(&self) -> &'static str {
         match self {
             Self::Auto => "auto",
             Self::Always => "always",
