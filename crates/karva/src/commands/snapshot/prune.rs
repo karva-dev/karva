@@ -1,18 +1,14 @@
 use std::fmt::Write;
 
 use anyhow::Result;
-use camino::Utf8Path;
 use colored::Colorize;
+use karva_logging::Printer;
 
 use super::{matches_filter, resolve_filter_paths};
 use crate::ExitStatus;
+use crate::utils::cwd;
 
-pub fn prune(
-    cwd: &Utf8Path,
-    stdout: &mut impl Write,
-    filter_paths: &[String],
-    dry_run: bool,
-) -> Result<ExitStatus> {
+pub fn prune(filter_paths: &[String], dry_run: bool) -> Result<ExitStatus> {
     {
         use std::io::Write;
         writeln!(
@@ -21,8 +17,11 @@ pub fn prune(
             "warning:".yellow().bold()
         )?;
     }
-    let unreferenced = karva_snapshot::storage::find_unreferenced_snapshots(cwd);
-    let resolved = resolve_filter_paths(filter_paths, cwd);
+    let cwd = cwd()?;
+    let printer = Printer::default();
+    let mut stdout = printer.stream_for_requested_summary().lock();
+    let unreferenced = karva_snapshot::storage::find_unreferenced_snapshots(&cwd);
+    let resolved = resolve_filter_paths(filter_paths, &cwd);
     let filtered: Vec<_> = unreferenced
         .iter()
         .filter(|info| matches_filter(&info.snap_path, &resolved))

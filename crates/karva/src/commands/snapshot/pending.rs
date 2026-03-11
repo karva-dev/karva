@@ -1,18 +1,18 @@
 use std::fmt::Write;
 
 use anyhow::Result;
-use camino::Utf8Path;
+use karva_logging::Printer;
 
 use super::{matches_filter, resolve_filter_paths};
 use crate::ExitStatus;
+use crate::utils::cwd;
 
-pub fn pending(
-    cwd: &Utf8Path,
-    stdout: &mut impl Write,
-    filter_paths: &[String],
-) -> Result<ExitStatus> {
-    let pending = karva_snapshot::storage::find_pending_snapshots(cwd);
-    let resolved = resolve_filter_paths(filter_paths, cwd);
+pub fn pending(filter_paths: &[String]) -> Result<ExitStatus> {
+    let cwd = cwd()?;
+    let printer = Printer::default();
+    let mut stdout = printer.stream_for_requested_summary().lock();
+    let pending = karva_snapshot::storage::find_pending_snapshots(&cwd);
+    let resolved = resolve_filter_paths(filter_paths, &cwd);
     let filtered: Vec<_> = pending
         .iter()
         .filter(|info| matches_filter(&info.pending_path, &resolved))

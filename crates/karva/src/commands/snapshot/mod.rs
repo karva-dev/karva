@@ -8,31 +8,19 @@ mod review;
 use anyhow::Result;
 use camino::{Utf8Path, Utf8PathBuf};
 use karva_cli::{SnapshotAction, SnapshotCommand};
-use karva_logging::Printer;
 use karva_project::path::absolute;
 
 use crate::ExitStatus;
-use crate::utils::cwd;
 
 pub fn snapshot(args: SnapshotCommand) -> Result<ExitStatus> {
-    let cwd = cwd()?;
-
-    let printer = Printer::default();
-    let mut stdout = printer.stream_for_requested_summary().lock();
-
     match args.action {
-        SnapshotAction::Accept(filter) => accept::accept(&cwd, &mut stdout, &filter.paths),
-        SnapshotAction::Reject(filter) => reject::reject(&cwd, &mut stdout, &filter.paths),
-        SnapshotAction::Pending(filter) => pending::pending(&cwd, &mut stdout, &filter.paths),
-        SnapshotAction::Review(filter) => {
-            drop(stdout);
-            review::review(&cwd, &filter.paths)
-        }
-        SnapshotAction::Prune(prune_args) => {
-            prune::prune(&cwd, &mut stdout, &prune_args.paths, prune_args.dry_run)
-        }
+        SnapshotAction::Accept(filter) => accept::accept(&filter.paths),
+        SnapshotAction::Reject(filter) => reject::reject(&filter.paths),
+        SnapshotAction::Pending(filter) => pending::pending(&filter.paths),
+        SnapshotAction::Review(filter) => review::review(&filter.paths),
+        SnapshotAction::Prune(prune_args) => prune::prune(&prune_args.paths, prune_args.dry_run),
         SnapshotAction::Delete(delete_args) => {
-            delete::delete(&cwd, &mut stdout, &delete_args.paths, delete_args.dry_run)
+            delete::delete(&delete_args.paths, delete_args.dry_run)
         }
     }
 }
