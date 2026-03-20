@@ -21,12 +21,10 @@ pub fn reject(filter_paths: &[String]) -> Result<ExitStatus> {
         writeln!(stdout, "No pending snapshots found.")?;
         return Ok(ExitStatus::Success);
     }
-    let mut rejected = 0;
     for info in &filtered {
         karva_snapshot::storage::reject_pending(&info.pending_path)?;
         writeln!(stdout, "Rejected: {}", info.pending_path)?;
-        rejected += 1;
     }
-    writeln!(stdout, "\n{rejected} snapshot(s) rejected.")?;
+    writeln!(stdout, "\n{} snapshot(s) rejected.", filtered.len())?;
     Ok(ExitStatus::Success)
 }

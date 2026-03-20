@@ -40,13 +40,11 @@ pub fn prune(filter_paths: &[String], dry_run: bool) -> Result<ExitStatus> {
             filtered.len()
         )?;
     } else {
-        let mut removed = 0;
         for info in &filtered {
             karva_snapshot::storage::remove_snapshot(&info.snap_path)?;
             writeln!(stdout, "Removed: {} ({})", info.snap_path, info.reason)?;
-            removed += 1;
         }
-        writeln!(stdout, "\n{removed} snapshot(s) pruned.")?;
+        writeln!(stdout, "\n{} snapshot(s) pruned.", filtered.len())?;
     }
     Ok(ExitStatus::Success)
 }

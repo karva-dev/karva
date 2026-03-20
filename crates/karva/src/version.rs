@@ -13,7 +13,7 @@ impl fmt::Display for VersionInfo {
 }
 
 pub fn version() -> Option<VersionInfo> {
-    let version = option_env!("CARGO_PKG_VERSION").map(ToString::to_string);
-
-    version.map(|version| VersionInfo { version })
+    option_env!("CARGO_PKG_VERSION").map(|version| VersionInfo {
+        version: version.to_string(),
+    })
 }
