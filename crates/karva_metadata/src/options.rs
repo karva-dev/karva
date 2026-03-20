@@ -31,22 +31,10 @@ impl Options {
     }
 
     pub fn to_settings(&self) -> ProjectSettings {
-        let terminal_options = self.terminal.clone().unwrap_or_default();
-
-        let terminal = terminal_options.to_settings();
-
-        let src_options = self.src.clone().unwrap_or_default();
-
-        let src = src_options.to_settings();
-
-        let test_options = self.test.clone().unwrap_or_default();
-
-        let test = test_options.to_settings();
-
         ProjectSettings {
-            terminal,
-            src,
-            test,
+            terminal: self.terminal.clone().unwrap_or_default().to_settings(),
+            src: self.src.clone().unwrap_or_default().to_settings(),
+            test: self.test.clone().unwrap_or_default().to_settings(),
         }
     }
 

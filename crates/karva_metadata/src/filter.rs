@@ -30,10 +30,10 @@ pub struct NameFilterSet {
 
 impl NameFilterSet {
     pub fn new(patterns: &[String]) -> Result<Self, NameFilterError> {
-        let mut filters = Vec::with_capacity(patterns.len());
-        for pattern in patterns {
-            filters.push(NameFilter::new(pattern)?);
-        }
+        let filters = patterns
+            .iter()
+            .map(|pattern| NameFilter::new(pattern))
+            .collect::<Result<_, _>>()?;
         Ok(Self { filters })
     }
 
@@ -100,10 +100,10 @@ pub struct TagFilterSet {
 
 impl TagFilterSet {
     pub fn new(expressions: &[String]) -> Result<Self, TagFilterError> {
-        let mut filters = Vec::with_capacity(expressions.len());
-        for expr in expressions {
-            filters.push(TagFilter::new(expr)?);
-        }
+        let filters = expressions
+            .iter()
+            .map(|expr| TagFilter::new(expr))
+            .collect::<Result<_, _>>()?;
         Ok(Self { filters })
     }
 
