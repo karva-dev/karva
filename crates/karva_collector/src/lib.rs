@@ -53,15 +53,28 @@ pub fn collect_file(
                 continue;
             }
 
-            let should_collect = (function_names.is_empty()
-                && function_def.name.starts_with(settings.test_function_prefix))
-                || function_names.iter().any(|name| function_def.name == *name);
-
-            if should_collect {
+            if is_test_function_to_collect(
+                &function_def.name,
+                function_names,
+                settings.test_function_prefix,
+            ) {
                 collected_module.add_test_function_def(function_def);
             }
         }
     }
 
     Some(collected_module)
+}
+
+/// Returns `true` if a function should be collected as a test.
+///
+/// When `explicit_names` is empty, any function whose name starts with
+/// `prefix` is considered a test. When `explicit_names` is provided,
+/// only functions whose name appears in the list are collected.
+fn is_test_function_to_collect(name: &str, explicit_names: &[String], prefix: &str) -> bool {
+    if explicit_names.is_empty() {
+        name.starts_with(prefix)
+    } else {
+        explicit_names.iter().any(|n| n == name)
+    }
 }
