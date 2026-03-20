@@ -38,7 +38,7 @@ pub fn module_name(cwd: &Utf8PathBuf, path: &Utf8Path) -> Option<String> {
 
     let components: Vec<_> = relative_path
         .components()
-        .map(|c| c.as_os_str().to_string_lossy().to_string())
+        .map(|c| c.as_os_str().to_string_lossy().into_owned())
         .collect();
 
     Some(components.join(".").trim_end_matches(".py").to_string())
