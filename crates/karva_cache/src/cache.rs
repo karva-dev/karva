@@ -213,15 +213,13 @@ pub fn read_last_failed(cache_dir: &Utf8Path) -> Result<Vec<String>> {
 fn collect_run_dirs(cache_dir: &Utf8Path) -> Result<Vec<String>> {
     let mut run_dirs = Vec::new();
 
-    if let Ok(entries) = fs::read_dir(cache_dir) {
-        for entry in entries {
-            let entry = entry?;
-            let path = entry.path();
-            if path.is_dir() {
-                if let Some(dir_name) = path.file_name().and_then(|n| n.to_str()) {
-                    if dir_name.starts_with("run-") {
-                        run_dirs.push(dir_name.to_string());
-                    }
+    for entry in fs::read_dir(cache_dir)? {
+        let entry = entry?;
+        let path = entry.path();
+        if path.is_dir() {
+            if let Some(dir_name) = path.file_name().and_then(|n| n.to_str()) {
+                if dir_name.starts_with("run-") {
+                    run_dirs.push(dir_name.to_string());
                 }
             }
         }
@@ -281,6 +279,12 @@ pub struct PruneResult {
 
 /// Removes all but the most recent `run-*` directory from the cache.
 pub fn prune_cache(cache_dir: &Utf8Path) -> Result<PruneResult> {
+    if !cache_dir.exists() {
+        return Ok(PruneResult {
+            removed: Vec::new(),
+        });
+    }
+
     let mut run_dirs = collect_run_dirs(cache_dir)?;
 
     let to_remove = run_dirs.len().saturating_sub(1);
