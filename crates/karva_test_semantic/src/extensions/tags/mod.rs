@@ -21,7 +21,7 @@ use use_fixtures::UseFixturesTag;
 /// Parsed conditions and reason extracted from a pytest mark's args and kwargs.
 ///
 /// Used by both `SkipTag` and `ExpectFailTag` which share identical parsing logic.
-pub(crate) struct ParsedMarkArgs {
+pub struct ParsedMarkArgs {
     pub conditions: Vec<bool>,
     pub reason: Option<String>,
 }
@@ -31,7 +31,7 @@ pub(crate) struct ParsedMarkArgs {
 /// Pytest marks store boolean conditions as positional args and an optional
 /// `reason` as a keyword argument. A string in the first positional arg
 /// (when no booleans were found) is treated as an old-style positional reason.
-pub(crate) fn parse_pytest_mark_args(py_mark: &Bound<'_, PyAny>) -> Option<ParsedMarkArgs> {
+pub fn parse_pytest_mark_args(py_mark: &Bound<'_, PyAny>) -> Option<ParsedMarkArgs> {
     let kwargs = py_mark.getattr("kwargs").ok()?;
     let args = py_mark.getattr("args").ok()?;
 
