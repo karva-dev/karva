@@ -42,9 +42,8 @@ impl Verbosity {
     /// Returns `None` if the user did not specify any verbosity flags.
     pub fn level(&self) -> VerbosityLevel {
         // `--quiet` and `--verbose` are mutually exclusive in Clap, so we can just check one first.
-        match self.quiet {
-            0 => {}
-            _ => return VerbosityLevel::Quiet,
+        if self.quiet > 0 {
+            return VerbosityLevel::Quiet;
         }
 
         match self.verbose {
@@ -311,8 +310,8 @@ impl From<OutputFormat> for DiagnosticFormat {
 }
 
 impl From<OutputFormat> for karva_metadata::OutputFormat {
-    fn from(format: OutputFormat) -> Self {
-        match format {
+    fn from(value: OutputFormat) -> Self {
+        match value {
             OutputFormat::Full => Self::Full,
             OutputFormat::Concise => Self::Concise,
         }
