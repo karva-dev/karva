@@ -118,9 +118,15 @@ impl WorkerManager {
     }
 
     /// Kill and wait on any remaining worker processes.
+    ///
+    /// Uses two separate loops: the first sends kill signals to all workers
+    /// immediately, and the second reaps them. This ensures every worker
+    /// receives the signal without waiting for earlier ones to exit first.
     fn kill_remaining(&mut self) {
         for worker in &mut self.workers {
             let _ = worker.child.kill();
+        }
+        for worker in &mut self.workers {
             let _ = worker.child.wait();
         }
     }
