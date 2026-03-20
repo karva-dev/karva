@@ -118,16 +118,7 @@ fn run(f: impl FnOnce(Vec<OsString>) -> Vec<OsString>) -> anyhow::Result<ExitSta
 
     let _guard = setup_tracing(verbosity);
 
-    let cwd = {
-        let cwd = std::env::current_dir().context("Failed to get the current working directory")?;
-        Utf8PathBuf::from_path_buf(cwd)
-            .map_err(|path| {
-                anyhow::anyhow!(
-                    "The current working directory `{}` contains non-Unicode characters. karva only supports Unicode paths.",
-                    path.display()
-                )
-            })?
-    };
+    let cwd = cwd()?;
 
     let python_version = current_python_version();
 
@@ -220,4 +211,15 @@ impl FileResolver for DiagnosticFileResolver<'_> {
     fn current_directory(&self) -> &std::path::Path {
         self.cwd.as_std_path()
     }
+}
+
+/// Get the current working directory as a UTF-8 path.
+fn cwd() -> anyhow::Result<Utf8PathBuf> {
+    let cwd = std::env::current_dir().context("Failed to get the current working directory")?;
+    Utf8PathBuf::from_path_buf(cwd).map_err(|path| {
+        anyhow::anyhow!(
+            "The current working directory `{}` contains non-Unicode characters. karva only supports Unicode paths.",
+            path.display()
+        )
+    })
 }
