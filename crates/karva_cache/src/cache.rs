@@ -13,6 +13,7 @@ use crate::{
 };
 
 /// Aggregated test results collected from all worker processes.
+#[derive(Default)]
 pub struct AggregatedResults {
     pub stats: TestResultStats,
     pub diagnostics: String,
@@ -48,11 +49,7 @@ impl Cache {
 
     /// Reads and merges test results from all worker directories for this run.
     pub fn aggregate_results(&self) -> Result<AggregatedResults> {
-        let mut test_stats = TestResultStats::default();
-        let mut all_diagnostics = String::new();
-        let mut all_discovery_diagnostics = String::new();
-        let mut all_failed_tests = Vec::new();
-        let mut all_durations = HashMap::new();
+        let mut results = AggregatedResults::default();
 
         if self.run_dir.exists() {
             let mut worker_dirs: Vec<Utf8PathBuf> = fs::read_dir(&self.run_dir)?
@@ -73,24 +70,11 @@ impl Cache {
             worker_dirs.sort();
 
             for worker_dir in &worker_dirs {
-                read_worker_results(
-                    worker_dir,
-                    &mut test_stats,
-                    &mut all_diagnostics,
-                    &mut all_discovery_diagnostics,
-                    &mut all_failed_tests,
-                    &mut all_durations,
-                )?;
+                read_worker_results(worker_dir, &mut results)?;
             }
         }
 
-        Ok(AggregatedResults {
-            stats: test_stats,
-            diagnostics: all_diagnostics,
-            discovery_diagnostics: all_discovery_diagnostics,
-            failed_tests: all_failed_tests,
-            durations: all_durations,
-        })
+        Ok(results)
     }
 
     /// Persists a test run result (stats, diagnostics, and durations) to disk.
@@ -139,47 +123,40 @@ impl Cache {
     }
 }
 
-/// Read results from a single worker directory.
-fn read_worker_results(
-    worker_dir: &Utf8Path,
-    aggregated_stats: &mut TestResultStats,
-    all_diagnostics: &mut String,
-    all_discovery_diagnostics: &mut String,
-    all_failed_tests: &mut Vec<String>,
-    all_durations: &mut HashMap<String, Duration>,
-) -> Result<()> {
+/// Read results from a single worker directory into the accumulator.
+fn read_worker_results(worker_dir: &Utf8Path, results: &mut AggregatedResults) -> Result<()> {
     let stats_path = worker_dir.join(STATS_FILE);
 
     if stats_path.exists() {
         let content = fs::read_to_string(&stats_path)?;
         let stats = serde_json::from_str(&content)?;
-        aggregated_stats.merge(&stats);
+        results.stats.merge(&stats);
     }
 
     let diagnostics_path = worker_dir.join(DIAGNOSTICS_FILE);
     if diagnostics_path.exists() {
         let content = fs::read_to_string(&diagnostics_path)?;
-        all_diagnostics.push_str(&content);
+        results.diagnostics.push_str(&content);
     }
 
     let discovery_diagnostics_path = worker_dir.join(DISCOVER_DIAGNOSTICS_FILE);
     if discovery_diagnostics_path.exists() {
         let content = fs::read_to_string(&discovery_diagnostics_path)?;
-        all_discovery_diagnostics.push_str(&content);
+        results.discovery_diagnostics.push_str(&content);
     }
 
     let failed_tests_path = worker_dir.join(FAILED_TESTS_FILE);
     if failed_tests_path.exists() {
         let content = fs::read_to_string(&failed_tests_path)?;
         let failed_tests: Vec<String> = serde_json::from_str(&content)?;
-        all_failed_tests.extend(failed_tests);
+        results.failed_tests.extend(failed_tests);
     }
 
     let durations_path = worker_dir.join(DURATIONS_FILE);
     if durations_path.exists() {
         let content = fs::read_to_string(&durations_path)?;
         let durations: HashMap<String, Duration> = serde_json::from_str(&content)?;
-        all_durations.extend(durations);
+        results.durations.extend(durations);
     }
 
     Ok(())
