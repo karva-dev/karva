@@ -60,15 +60,17 @@ pub struct PendingSnapshotInfo {
     pub snap_path: Utf8PathBuf,
 }
 
-/// Recursively find all pending snapshot files (`.snap.new`) under a root directory.
-pub fn find_pending_snapshots(root: &Utf8Path) -> Vec<PendingSnapshotInfo> {
-    let mut results = Vec::new();
-    find_pending_recursive(root, &mut results);
-    results.sort_by(|a, b| a.pending_path.cmp(&b.pending_path));
-    results
-}
-
-fn find_pending_recursive(dir: &Utf8Path, results: &mut Vec<PendingSnapshotInfo>) {
+/// Recursively walk a directory tree and collect files that match a filter.
+///
+/// For each non-directory entry whose filename (as UTF-8) passes `filter`,
+/// the entry's `Utf8PathBuf` is passed to `map` which may produce a value
+/// to collect.
+fn find_recursive<T>(
+    dir: &Utf8Path,
+    filter: &impl Fn(&str) -> bool,
+    map: &impl Fn(Utf8PathBuf) -> Option<T>,
+    results: &mut Vec<T>,
+) {
     let Ok(entries) = std::fs::read_dir(dir) else {
         return;
     };
@@ -78,21 +80,47 @@ fn find_pending_recursive(dir: &Utf8Path, results: &mut Vec<PendingSnapshotInfo>
 
         if path.is_dir() {
             if let Ok(utf8_path) = Utf8PathBuf::try_from(path) {
-                find_pending_recursive(&utf8_path, results);
+                find_recursive(&utf8_path, filter, map, results);
             }
         } else if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
-            if name.ends_with(".snap.new") {
-                if let Ok(pending_path) = Utf8PathBuf::try_from(path) {
-                    let snap_path =
-                        Utf8PathBuf::from(pending_path.as_str().strip_suffix(".new").unwrap_or(""));
-                    results.push(PendingSnapshotInfo {
-                        pending_path,
-                        snap_path,
-                    });
+            if filter(name) {
+                if let Ok(utf8_path) = Utf8PathBuf::try_from(path) {
+                    if let Some(item) = map(utf8_path) {
+                        results.push(item);
+                    }
                 }
             }
         }
     }
+}
+
+/// Recursively find all pending snapshot files (`.snap.new`) under a root directory.
+pub fn find_pending_snapshots(root: &Utf8Path) -> Vec<PendingSnapshotInfo> {
+    let mut results = Vec::new();
+    find_recursive(
+        root,
+        &|name| name.ends_with(".snap.new"),
+        &|pending_path| {
+            let snap_path = Utf8PathBuf::from(pending_path.as_str().strip_suffix(".new")?);
+            Some(PendingSnapshotInfo {
+                pending_path,
+                snap_path,
+            })
+        },
+        &mut results,
+    );
+    results.sort_by(|a, b| a.pending_path.cmp(&b.pending_path));
+    results
+}
+
+/// Extract the bare function name from a snapshot's `source` metadata.
+///
+/// Given a source like `test_file.py:5::TestClass::test_foo(x=1)`,
+/// returns `Some("test_foo")`.
+fn extract_function_name(source: Option<&str>) -> Option<&str> {
+    source
+        .and_then(|s| s.rsplit("::").next())
+        .and_then(|s| s.split('(').next())
 }
 
 /// Accept a pending snapshot.
@@ -107,12 +135,7 @@ pub fn accept_pending(pending_path: &Utf8Path) -> io::Result<()> {
             snapshot.metadata.inline_line,
         ) {
             let content = snapshot.content.trim_end();
-            let function_name = snapshot
-                .metadata
-                .source
-                .as_deref()
-                .and_then(|s| s.rsplit("::").next())
-                .and_then(|s| s.split('(').next());
+            let function_name = extract_function_name(snapshot.metadata.source.as_deref());
             crate::inline::rewrite_inline_snapshot(source_file, line, content, function_name)?;
             return std::fs::remove_file(pending_path);
         }
@@ -152,13 +175,9 @@ pub fn accept_pending_batch(pending: &[&PendingSnapshotInfo]) -> io::Result<()> 
                 &snapshot.metadata.inline_source,
                 snapshot.metadata.inline_line,
             ) {
-                let function_name = snapshot
-                    .metadata
-                    .source
-                    .as_deref()
-                    .and_then(|s| s.rsplit("::").next())
-                    .and_then(|s| s.split('(').next())
-                    .map(String::from);
+                let function_name =
+                    extract_function_name(snapshot.metadata.source.as_deref())
+                        .map(String::from);
                 inline_by_source
                     .entry(source_file.clone())
                     .or_default()
@@ -286,35 +305,19 @@ pub fn function_exists_in_file(path: &Utf8Path, name: &str) -> bool {
 /// Recursively find all committed snapshot files (`.snap`, not `.snap.new`).
 pub fn find_snapshots(root: &Utf8Path) -> Vec<SnapshotInfo> {
     let mut results = Vec::new();
-    find_snapshots_recursive(root, &mut results);
-    results.sort_by(|a, b| a.snap_path.cmp(&b.snap_path));
-    results
-}
-
-fn find_snapshots_recursive(dir: &Utf8Path, results: &mut Vec<SnapshotInfo>) {
-    let Ok(entries) = std::fs::read_dir(dir) else {
-        return;
-    };
-
-    for entry in entries.flatten() {
-        let path = entry.path();
-
-        if path.is_dir() {
-            if let Ok(utf8_path) = Utf8PathBuf::try_from(path) {
-                find_snapshots_recursive(&utf8_path, results);
-            }
-        } else if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
-            if std::path::Path::new(name)
+    find_recursive(
+        root,
+        &|name| {
+            std::path::Path::new(name)
                 .extension()
                 .is_some_and(|ext| ext.eq_ignore_ascii_case("snap"))
                 && !name.ends_with(".snap.new")
-            {
-                if let Ok(snap_path) = Utf8PathBuf::try_from(path) {
-                    results.push(SnapshotInfo { snap_path });
-                }
-            }
-        }
-    }
+        },
+        &|snap_path| Some(SnapshotInfo { snap_path }),
+        &mut results,
+    );
+    results.sort_by(|a, b| a.snap_path.cmp(&b.snap_path));
+    results
 }
 
 /// A snapshot file of any kind (`.snap` or `.snap.new`) found on disk.
@@ -326,36 +329,19 @@ pub struct AnySnapshotInfo {
 /// Recursively find all snapshot files (`.snap` and `.snap.new`) under a root directory.
 pub fn find_all_snapshots(root: &Utf8Path) -> Vec<AnySnapshotInfo> {
     let mut results = Vec::new();
-    find_all_snapshots_recursive(root, &mut results);
+    find_recursive(
+        root,
+        &|name| {
+            name.ends_with(".snap.new")
+                || std::path::Path::new(name)
+                    .extension()
+                    .is_some_and(|ext| ext.eq_ignore_ascii_case("snap"))
+        },
+        &|path| Some(AnySnapshotInfo { path }),
+        &mut results,
+    );
     results.sort_by(|a, b| a.path.cmp(&b.path));
     results
-}
-
-fn find_all_snapshots_recursive(dir: &Utf8Path, results: &mut Vec<AnySnapshotInfo>) {
-    let Ok(entries) = std::fs::read_dir(dir) else {
-        return;
-    };
-
-    for entry in entries.flatten() {
-        let path = entry.path();
-
-        if path.is_dir() {
-            if let Ok(utf8_path) = Utf8PathBuf::try_from(path) {
-                find_all_snapshots_recursive(&utf8_path, results);
-            }
-        } else if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
-            let is_snap_new = name.ends_with(".snap.new");
-            let is_snap = !is_snap_new
-                && std::path::Path::new(name)
-                    .extension()
-                    .is_some_and(|ext| ext.eq_ignore_ascii_case("snap"));
-            if is_snap_new || is_snap {
-                if let Ok(utf8_path) = Utf8PathBuf::try_from(path) {
-                    results.push(AnySnapshotInfo { path: utf8_path });
-                }
-            }
-        }
-    }
 }
 
 /// Find all snapshot files whose source test no longer exists.

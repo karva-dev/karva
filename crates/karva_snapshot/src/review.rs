@@ -213,26 +213,22 @@ pub fn run_review(root: &Utf8Path, resolved_filters: &[Utf8PathBuf]) -> io::Resu
     writeln!(out)?;
     writeln!(out, "review finished")?;
 
-    if !summary.accepted.is_empty() {
-        writeln!(out, "accepted:")?;
-        for path in &summary.accepted {
-            writeln!(out, "  {path}")?;
-        }
-    }
-    if !summary.rejected.is_empty() {
-        writeln!(out, "rejected:")?;
-        for path in &summary.rejected {
-            writeln!(out, "  {path}")?;
-        }
-    }
-    if !summary.skipped.is_empty() {
-        writeln!(out, "skipped:")?;
-        for path in &summary.skipped {
-            writeln!(out, "  {path}")?;
-        }
-    }
+    print_summary_section(&mut out, "accepted:", &summary.accepted)?;
+    print_summary_section(&mut out, "rejected:", &summary.rejected)?;
+    print_summary_section(&mut out, "skipped:", &summary.skipped)?;
 
     Ok(summary)
+}
+
+/// Print a labeled list of paths if non-empty.
+fn print_summary_section(out: &mut impl Write, label: &str, paths: &[String]) -> io::Result<()> {
+    if !paths.is_empty() {
+        writeln!(out, "{label}")?;
+        for path in paths {
+            writeln!(out, "  {path}")?;
+        }
+    }
+    Ok(())
 }
 
 fn print_snapshot_diff(out: &mut impl Write, info: &PendingSnapshotInfo) -> io::Result<()> {
