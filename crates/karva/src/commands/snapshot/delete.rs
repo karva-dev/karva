@@ -1,26 +1,23 @@
 use std::fmt::Write;
 
 use anyhow::Result;
-use karva_logging::Printer;
 
-use super::{matches_filter, resolve_filter_paths};
+use super::{filter_or_empty, snapshot_setup};
 use crate::ExitStatus;
-use crate::utils::cwd;
 
 pub fn delete(filter_paths: &[String], dry_run: bool) -> Result<ExitStatus> {
-    let cwd = cwd()?;
-    let printer = Printer::default();
-    let mut stdout = printer.stream_for_requested_summary().lock();
+    let (mut stdout, cwd, resolved) = snapshot_setup(filter_paths)?;
     let all = karva_snapshot::storage::find_all_snapshots(&cwd);
-    let resolved = resolve_filter_paths(filter_paths, &cwd);
-    let filtered: Vec<_> = all
-        .iter()
-        .filter(|info| matches_filter(&info.path, &resolved))
-        .collect();
-    if filtered.is_empty() {
-        writeln!(stdout, "No snapshot files found.")?;
+    let Some(filtered) = filter_or_empty(
+        &all,
+        &resolved,
+        |i| &i.path,
+        "No snapshot files found.",
+        &mut stdout,
+    )?
+    else {
         return Ok(ExitStatus::Success);
-    }
+    };
     if dry_run {
         for info in &filtered {
             writeln!(stdout, "Would delete: {}", info.path)?;

@@ -101,6 +101,7 @@ impl Stdout {
         }
     }
 
+    #[must_use]
     pub fn lock(mut self) -> Self {
         match self.status {
             StreamStatus::Enabled => {

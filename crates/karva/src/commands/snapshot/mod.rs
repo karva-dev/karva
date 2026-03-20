@@ -5,12 +5,16 @@ mod prune;
 mod reject;
 mod review;
 
+use std::fmt::Write;
+
 use anyhow::Result;
 use camino::{Utf8Path, Utf8PathBuf};
 use karva_cli::{SnapshotAction, SnapshotCommand};
+use karva_logging::{Printer, Stdout};
 use karva_project::path::absolute;
 
 use crate::ExitStatus;
+use crate::utils::cwd;
 
 pub fn snapshot(args: SnapshotCommand) -> Result<ExitStatus> {
     match args.action {
@@ -23,6 +27,38 @@ pub fn snapshot(args: SnapshotCommand) -> Result<ExitStatus> {
             delete::delete(&delete_args.paths, delete_args.dry_run)
         }
     }
+}
+
+/// Common setup for snapshot commands: resolves the cwd, creates a printer
+/// with locked stdout, and resolves filter paths to absolute paths.
+fn snapshot_setup(filter_paths: &[String]) -> Result<(Stdout, Utf8PathBuf, Vec<Utf8PathBuf>)> {
+    let cwd = cwd()?;
+    let printer = Printer::default();
+    let stdout = printer.stream_for_requested_summary().lock();
+    let resolved = resolve_filter_paths(filter_paths, &cwd);
+    Ok((stdout, cwd, resolved))
+}
+
+/// Filters items by resolved path prefixes and handles the empty case.
+///
+/// Returns `None` (after writing `empty_message`) when no items match,
+/// or `Some(filtered)` with the matching subset.
+fn filter_or_empty<'a, T>(
+    items: &'a [T],
+    resolved: &[Utf8PathBuf],
+    path_fn: impl Fn(&T) -> &Utf8Path,
+    empty_message: &str,
+    stdout: &mut Stdout,
+) -> Result<Option<Vec<&'a T>>> {
+    let filtered: Vec<_> = items
+        .iter()
+        .filter(|item| matches_filter(path_fn(item), resolved))
+        .collect();
+    if filtered.is_empty() {
+        writeln!(stdout, "{empty_message}")?;
+        return Ok(None);
+    }
+    Ok(Some(filtered))
 }
 
 /// Resolve user-provided filter strings to absolute paths.
