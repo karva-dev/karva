@@ -113,7 +113,7 @@ impl WorkerManager {
                 break;
             }
 
-            std::thread::sleep(Duration::from_millis(10));
+            std::thread::sleep(WORKER_POLL_INTERVAL);
         }
     }
 
@@ -335,50 +335,35 @@ fn construct_binary_path(venv_root: &Utf8PathBuf, binary_name: &str) -> Utf8Path
     }
 }
 
-fn venv_binary(binary_name: &str, directory: &Utf8PathBuf) -> Option<Utf8PathBuf> {
-    let venv_dir = directory.join(".venv");
-    let binary_path = construct_binary_path(&venv_dir, binary_name);
+/// Check if a binary exists within a virtual environment root and return its path.
+fn venv_binary_at(venv_root: &Utf8PathBuf, binary_name: &str) -> Option<Utf8PathBuf> {
+    let binary_path = construct_binary_path(venv_root, binary_name);
+    binary_path.exists().then_some(binary_path)
+}
 
-    if binary_path.exists() {
-        Some(binary_path)
-    } else {
-        None
-    }
+fn venv_binary(binary_name: &str, directory: &Utf8PathBuf) -> Option<Utf8PathBuf> {
+    venv_binary_at(&directory.join(".venv"), binary_name)
 }
 
 fn venv_binary_from_active_env(binary_name: &str) -> Option<Utf8PathBuf> {
     let venv_root = std::env::var_os("VIRTUAL_ENV")?;
     let venv_root = Utf8PathBuf::from_path_buf(venv_root.into()).ok()?;
-    let binary_path = construct_binary_path(&venv_root, binary_name);
-
-    if binary_path.exists() {
-        Some(binary_path)
-    } else {
-        None
-    }
+    venv_binary_at(&venv_root, binary_name)
 }
 
 const MIN_TESTS_PER_WORKER: usize = 5;
 const KARVA_WORKER_BINARY_NAME: &str = "karva-worker";
+const WORKER_POLL_INTERVAL: Duration = Duration::from_millis(10);
 
-/// Find the `karva-worker` binary
+/// Find the `karva-worker` binary by checking PATH, the project venv, and the active venv.
 fn find_karva_worker_binary(current_dir: &Utf8PathBuf) -> Result<Utf8PathBuf> {
-    if let Ok(path) = which::which(KARVA_WORKER_BINARY_NAME) {
-        if let Ok(utf8_path) = Utf8PathBuf::try_from(path) {
-            tracing::debug!(path = %utf8_path, "Found binary in PATH");
-            return Ok(utf8_path);
-        }
-    }
-
-    if let Some(venv_binary) = venv_binary(KARVA_WORKER_BINARY_NAME, current_dir) {
-        return Ok(venv_binary);
-    }
-
-    if let Some(venv_binary) = venv_binary_from_active_env(KARVA_WORKER_BINARY_NAME) {
-        return Ok(venv_binary);
-    }
-
-    anyhow::bail!("Could not find karva-worker binary")
+    which::which(KARVA_WORKER_BINARY_NAME)
+        .ok()
+        .and_then(|path| Utf8PathBuf::try_from(path).ok())
+        .inspect(|path| tracing::debug!(path = %path, "Found binary in PATH"))
+        .or_else(|| venv_binary(KARVA_WORKER_BINARY_NAME, current_dir))
+        .or_else(|| venv_binary_from_active_env(KARVA_WORKER_BINARY_NAME))
+        .context("Could not find karva-worker binary")
 }
 
 fn inner_cli_args(settings: &ProjectSettings, args: &SubTestCommand) -> Vec<String> {
@@ -416,30 +401,23 @@ fn inner_cli_args(settings: &ProjectSettings, args: &SubTestCommand) -> Vec<Stri
         cli_args.push("--snapshot-update");
     }
 
-    let retry = args.retry.map(|retry| retry.to_string());
-
-    if let Some(retry) = retry.as_deref() {
+    let retry_str = args.retry.map(|r| r.to_string());
+    if let Some(ref retry) = retry_str {
         cli_args.push("--retry");
         cli_args.push(retry);
     }
 
-    let tag_expressions: Vec<String> = args.tag_expressions.clone();
-    let name_patterns: Vec<String> = args.name_patterns.clone();
+    for expr in &args.tag_expressions {
+        cli_args.push("--tag");
+        cli_args.push(expr);
+    }
 
-    cli_args
-        .iter()
-        .map(ToString::to_string)
-        .chain(
-            tag_expressions
-                .iter()
-                .flat_map(|expr| vec!["--tag".to_string(), expr.clone()]),
-        )
-        .chain(
-            name_patterns
-                .iter()
-                .flat_map(|pattern| vec!["--match".to_string(), pattern.clone()]),
-        )
-        .collect()
+    for pattern in &args.name_patterns {
+        cli_args.push("--match");
+        cli_args.push(pattern);
+    }
+
+    cli_args.iter().map(ToString::to_string).collect()
 }
 
 #[cfg(test)]
