@@ -216,6 +216,10 @@ pub(crate) fn full_test_name(
     }
 }
 
+/// Maximum display length for parameter keys and values in test names.
+///
+/// Keeps parameterized test names (e.g., `test_foo(key=value)`) readable in
+/// CLI output by truncating long values with an ellipsis.
 const TRUNCATE_LENGTH: usize = 30;
 
 pub(crate) fn truncate_string(value: &str) -> String {

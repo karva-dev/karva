@@ -2,6 +2,7 @@ mod finalizer_cache;
 mod fixture_cache;
 mod fixture_resolver;
 mod package_runner;
+mod scoped_storage;
 mod test_iterator;
 
 use finalizer_cache::FinalizerCache;

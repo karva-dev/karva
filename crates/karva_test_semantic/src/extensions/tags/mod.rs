@@ -48,21 +48,17 @@ pub fn parse_pytest_mark_args(py_mark: &Bound<'_, PyAny>) -> Option<ParsedMarkAr
         }
     }
 
-    let reason = kwargs.get_item("reason").map_or_else(
-        |_| {
-            if conditions.is_empty() {
-                args.extract::<Bound<'_, pyo3::types::PyTuple>>()
-                    .map_or(None, |args_tuple| {
-                        args_tuple
-                            .get_item(0)
-                            .map_or(None, |first_arg| first_arg.extract::<String>().ok())
-                    })
-            } else {
-                None
-            }
-        },
-        |reason| reason.extract::<String>().ok(),
-    );
+    let reason = if let Ok(reason_item) = kwargs.get_item("reason") {
+        reason_item.extract::<String>().ok()
+    } else if conditions.is_empty() {
+        // Fall back to first positional arg as reason
+        args.extract::<Bound<'_, pyo3::types::PyTuple>>()
+            .ok()
+            .and_then(|t| t.get_item(0).ok())
+            .and_then(|a| a.extract::<String>().ok())
+    } else {
+        None
+    };
 
     Some(ParsedMarkArgs { conditions, reason })
 }
