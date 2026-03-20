@@ -211,6 +211,21 @@ fn find_snapshot_call(source: &str) -> Option<(usize, &'static str)> {
         .min_by_key(|(pos, _)| *pos)
 }
 
+/// Skip past a string literal starting at position `i` (which must point at a quote character).
+///
+/// Handles both triple-quoted (`"""` / `'''`) and single-quoted (`"` / `'`) strings.
+/// Returns the byte position immediately after the closing quote(s), or `None` if
+/// the string is unterminated.
+fn skip_string_literal(source: &str, i: usize, quote_char: u8) -> Option<usize> {
+    let bytes = source.as_bytes();
+    if i + 2 < source.len() && bytes[i + 1] == quote_char && bytes[i + 2] == quote_char {
+        let triple = if quote_char == b'"' { "\"\"\"" } else { "'''" };
+        find_triple_quote_end(source, i + 3, triple).map(|end| end + 3)
+    } else {
+        find_single_quote_end(source, i + 1, quote_char as char).map(|end| end + 1)
+    }
+}
+
 /// Find the matching close parenthesis for an open paren at `open_pos`.
 ///
 /// Tracks nesting depth and skips over string literals and comments
@@ -229,24 +244,8 @@ fn find_matching_close_paren(source: &str, open_pos: usize) -> Option<usize> {
                     return Some(i);
                 }
             }
-            b'"' => {
-                if i + 2 < source.len() && bytes[i + 1] == b'"' && bytes[i + 2] == b'"' {
-                    i += 3;
-                    i = find_triple_quote_end(source, i, "\"\"\"").map(|end| end + 3)?;
-                    continue;
-                }
-                i += 1;
-                i = find_single_quote_end(source, i, '"').map(|end| end + 1)?;
-                continue;
-            }
-            b'\'' => {
-                if i + 2 < source.len() && bytes[i + 1] == b'\'' && bytes[i + 2] == b'\'' {
-                    i += 3;
-                    i = find_triple_quote_end(source, i, "'''").map(|end| end + 3)?;
-                    continue;
-                }
-                i += 1;
-                i = find_single_quote_end(source, i, '\'').map(|end| end + 1)?;
+            b'"' | b'\'' => {
+                i = skip_string_literal(source, i, bytes[i])?;
                 continue;
             }
             b'#' => {
@@ -269,19 +268,8 @@ fn find_keyword_in_call(source: &str, start: usize, end: usize, keyword: &str) -
 
     while i < end {
         match bytes[i] {
-            b'"' => {
-                if i + 2 < end && bytes[i + 1] == b'"' && bytes[i + 2] == b'"' {
-                    i = find_triple_quote_end(source, i + 3, "\"\"\"").map(|p| p + 3)?;
-                } else {
-                    i = find_single_quote_end(source, i + 1, '"').map(|p| p + 1)?;
-                }
-            }
-            b'\'' => {
-                if i + 2 < end && bytes[i + 1] == b'\'' && bytes[i + 2] == b'\'' {
-                    i = find_triple_quote_end(source, i + 3, "'''").map(|p| p + 3)?;
-                } else {
-                    i = find_single_quote_end(source, i + 1, '\'').map(|p| p + 1)?;
-                }
+            b'"' | b'\'' => {
+                i = skip_string_literal(source, i, bytes[i])?;
             }
             b'#' => {
                 while i < end && bytes[i] != b'\n' {
