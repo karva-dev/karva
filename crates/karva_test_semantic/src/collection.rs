@@ -58,10 +58,10 @@ impl<'a> TestFunctionCollector<'a> {
         let mut current_path = if path.is_dir() {
             path
         } else {
-            match path.parent() {
-                Some(parent) => parent,
-                None => return,
-            }
+            let Some(parent) = path.parent() else {
+                return;
+            };
+            parent
         };
 
         loop {
@@ -79,10 +79,10 @@ impl<'a> TestFunctionCollector<'a> {
                 break;
             }
 
-            current_path = match current_path.parent() {
-                Some(parent) => parent,
-                None => break,
+            let Some(parent) = current_path.parent() else {
+                break;
             };
+            current_path = parent;
         }
     }
 }

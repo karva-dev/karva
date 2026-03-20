@@ -108,6 +108,16 @@ declare_diagnostic_type! {
     }
 }
 
+/// Annotate a diagnostic with a primary span pointing at a function's name.
+fn annotate_function_name(
+    diagnostic: &mut Diagnostic,
+    source_file: SourceFile,
+    stmt_function_def: &StmtFunctionDef,
+) {
+    let span = Span::from(source_file).with_range(stmt_function_def.name.range);
+    diagnostic.annotate(Annotation::primary(span));
+}
+
 /// Emits sub-diagnostics for each intermediate fixture in the dependency chain,
 /// showing a span annotation for each fixture between the test and the one that failed.
 fn report_dependency_chain(
@@ -161,9 +171,7 @@ pub fn report_invalid_fixture(
         stmt_function_def.name
     ));
 
-    let primary_span = Span::from(source_file).with_range(stmt_function_def.name.range);
-
-    diagnostic.annotate(Annotation::primary(primary_span));
+    annotate_function_name(&mut diagnostic, source_file, stmt_function_def);
 
     let error_string = error.value(py).to_string();
 
@@ -185,9 +193,7 @@ pub fn report_invalid_fixture_finalizer(
         stmt_function_def.name
     ));
 
-    let primary_span = Span::from(source_file).with_range(stmt_function_def.name.range);
-
-    diagnostic.annotate(Annotation::primary(primary_span));
+    annotate_function_name(&mut diagnostic, source_file, stmt_function_def);
 
     diagnostic.info(reason);
 }
@@ -236,9 +242,7 @@ pub fn report_missing_fixtures(
         stmt_function_def.name
     ));
 
-    let primary_span = Span::from(source_file).with_range(stmt_function_def.name.range);
-
-    diagnostic.annotate(Annotation::primary(primary_span));
+    annotate_function_name(&mut diagnostic, source_file, stmt_function_def);
 
     let missing_fixtures_string = missing_fixtures
         .iter()
@@ -302,9 +306,7 @@ pub fn report_test_pass_on_expect_failure(
         stmt_function_def.name
     ));
 
-    let primary_span = Span::from(source_file).with_range(stmt_function_def.name.range);
-
-    diagnostic.annotate(Annotation::primary(primary_span));
+    annotate_function_name(&mut diagnostic, source_file, stmt_function_def);
 
     if let Some(reason) = reason {
         diagnostic.info(format!("Reason: {reason}"));
@@ -344,9 +346,7 @@ fn handle_failed_function_call(
     function_kind: FunctionKind,
     error: &PyErr,
 ) {
-    let primary_span = Span::from(source_file).with_range(stmt_function_def.name.range);
-
-    diagnostic.annotate(Annotation::primary(primary_span));
+    annotate_function_name(diagnostic, source_file, stmt_function_def);
 
     if !arguments.is_empty() {
         diagnostic.info(format!(
