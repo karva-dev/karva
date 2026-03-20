@@ -53,8 +53,8 @@ pub fn collect_file(
                 continue;
             }
 
-            let should_collect = function_names.is_empty()
-                && function_def.name.starts_with(settings.test_function_prefix)
+            let should_collect = (function_names.is_empty()
+                && function_def.name.starts_with(settings.test_function_prefix))
                 || function_names.iter().any(|name| function_def.name == *name);
 
             if should_collect {
