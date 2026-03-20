@@ -48,7 +48,7 @@ impl<'a> ParallelCollector<'a> {
             package
         });
 
-        let walker = self.create_parallel_walker(&path.clone());
+        let walker = self.create_parallel_walker(path);
 
         walker.run(|| {
             let tx = tx.clone();

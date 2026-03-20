@@ -75,11 +75,11 @@ impl WorkerManager {
                 }
             }
 
-            if let Some(cache) = cache {
-                if cache.has_fail_fast_signal() {
-                    tracing::info!("Fail-fast signal received — stopping remaining workers");
-                    break;
-                }
+            if let Some(cache) = cache
+                && cache.has_fail_fast_signal()
+            {
+                tracing::info!("Fail-fast signal received — stopping remaining workers");
+                break;
             }
 
             self.workers
@@ -118,6 +118,10 @@ impl WorkerManager {
     }
 
     /// Kill and wait on any remaining worker processes.
+    ///
+    /// Uses two separate loops: the first sends kill signals to all workers
+    /// immediately, and the second reaps them. This ensures every worker
+    /// receives the signal without waiting for earlier ones to exit first.
     fn kill_remaining(&mut self) {
         for worker in &mut self.workers {
             let _ = worker.child.kill();
@@ -316,20 +320,24 @@ pub fn run_parallel_tests(
     Ok(result)
 }
 
-fn venv_binary(binary_name: &str, directory: &Utf8PathBuf) -> Option<Utf8PathBuf> {
-    let venv_dir = directory.join(".venv");
-
+/// Construct a platform-specific binary path within a virtual environment root directory.
+fn construct_binary_path(venv_root: &Utf8PathBuf, binary_name: &str) -> Utf8PathBuf {
     let binary_dir = if cfg!(target_os = "windows") {
-        venv_dir.join("Scripts")
+        venv_root.join("Scripts")
     } else {
-        venv_dir.join("bin")
+        venv_root.join("bin")
     };
 
-    let binary_path = if cfg!(target_os = "windows") {
+    if cfg!(target_os = "windows") {
         binary_dir.join(format!("{binary_name}.exe"))
     } else {
         binary_dir.join(binary_name)
-    };
+    }
+}
+
+fn venv_binary(binary_name: &str, directory: &Utf8PathBuf) -> Option<Utf8PathBuf> {
+    let venv_dir = directory.join(".venv");
+    let binary_path = construct_binary_path(&venv_dir, binary_name);
 
     if binary_path.exists() {
         Some(binary_path)
@@ -340,20 +348,8 @@ fn venv_binary(binary_name: &str, directory: &Utf8PathBuf) -> Option<Utf8PathBuf
 
 fn venv_binary_from_active_env(binary_name: &str) -> Option<Utf8PathBuf> {
     let venv_root = std::env::var_os("VIRTUAL_ENV")?;
-
     let venv_root = Utf8PathBuf::from_path_buf(venv_root.into()).ok()?;
-
-    let binary_dir = if cfg!(target_os = "windows") {
-        venv_root.join("Scripts")
-    } else {
-        venv_root.join("bin")
-    };
-
-    let binary_path = if cfg!(target_os = "windows") {
-        binary_dir.join(format!("{binary_name}.exe"))
-    } else {
-        binary_dir.join(binary_name)
-    };
+    let binary_path = construct_binary_path(&venv_root, binary_name);
 
     if binary_path.exists() {
         Some(binary_path)
