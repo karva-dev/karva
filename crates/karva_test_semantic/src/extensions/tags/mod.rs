@@ -18,6 +18,55 @@ use parametrize::{ParametrizationArgs, ParametrizeTag};
 use skip::SkipTag;
 use use_fixtures::UseFixturesTag;
 
+/// Parsed conditions and reason extracted from a pytest mark's args and kwargs.
+///
+/// Used by both `SkipTag` and `ExpectFailTag` which share identical parsing logic.
+pub struct ParsedMarkArgs {
+    pub conditions: Vec<bool>,
+    pub reason: Option<String>,
+}
+
+/// Extract conditions and reason from a pytest mark object.
+///
+/// Pytest marks store boolean conditions as positional args and an optional
+/// `reason` as a keyword argument. A string in the first positional arg
+/// (when no booleans were found) is treated as an old-style positional reason.
+pub fn parse_pytest_mark_args(py_mark: &Bound<'_, PyAny>) -> Option<ParsedMarkArgs> {
+    let kwargs = py_mark.getattr("kwargs").ok()?;
+    let args = py_mark.getattr("args").ok()?;
+
+    let mut conditions = Vec::new();
+    if let Ok(args_tuple) = args.extract::<Bound<'_, pyo3::types::PyTuple>>() {
+        for i in 0..args_tuple.len() {
+            if let Ok(item) = args_tuple.get_item(i) {
+                if let Ok(bool_val) = item.extract::<bool>() {
+                    conditions.push(bool_val);
+                } else if item.extract::<String>().is_ok() {
+                    break;
+                }
+            }
+        }
+    }
+
+    let reason = kwargs.get_item("reason").map_or_else(
+        |_| {
+            if conditions.is_empty() {
+                args.extract::<Bound<'_, pyo3::types::PyTuple>>()
+                    .map_or(None, |args_tuple| {
+                        args_tuple
+                            .get_item(0)
+                            .map_or(None, |first_arg| first_arg.extract::<String>().ok())
+                    })
+            } else {
+                None
+            }
+        },
+        |reason| reason.extract::<String>().ok(),
+    );
+
+    Some(ParsedMarkArgs { conditions, reason })
+}
+
 /// Represents a decorator/marker that modifies test behavior.
 ///
 /// Tags are extracted from Python decorators like `@pytest.mark.parametrize`,
@@ -125,6 +174,16 @@ impl Tags {
         Self { inner: tags }
     }
 
+    fn from_py_test_function(py: Python<'_>, test_function: &PyTestFunction) -> Self {
+        let tags = test_function
+            .tags
+            .inner
+            .iter()
+            .map(|tag| Tag::from_karva_tag(py, tag))
+            .collect();
+        Self::new(tags)
+    }
+
     pub(crate) fn extend(&mut self, other: &Self) {
         self.inner.extend(other.inner.iter().cloned());
     }
@@ -139,19 +198,11 @@ impl Tags {
         }
 
         if let Ok(py_test_function) = py_function.extract::<Py<PyTestFunction>>(py) {
-            let mut tags = Vec::new();
-            for tag in &py_test_function.borrow(py).tags.inner {
-                tags.push(Tag::from_karva_tag(py, tag));
-            }
-            return Self::new(tags);
-        } else if let Ok(wrapped) = py_function.getattr(py, "__wrapped__") {
-            if let Ok(py_wrapped_function) = wrapped.extract::<Py<PyTestFunction>>(py) {
-                let mut tags = Vec::new();
-                for tag in &py_wrapped_function.borrow(py).tags.inner {
-                    tags.push(Tag::from_karva_tag(py, tag));
-                }
-                return Self::new(tags);
-            }
+            return Self::from_py_test_function(py, &py_test_function.borrow(py));
+        } else if let Ok(wrapped) = py_function.getattr(py, "__wrapped__")
+            && let Ok(py_wrapped_function) = wrapped.extract::<Py<PyTestFunction>>(py)
+        {
+            return Self::from_py_test_function(py, &py_wrapped_function.borrow(py));
         }
 
         if let Ok(marks) = py_function.getattr(py, "pytestmark")
@@ -205,13 +256,14 @@ impl Tags {
 
     /// Get all required fixture names for the given test.
     pub(crate) fn required_fixtures_names(&self) -> Vec<String> {
-        let mut fixture_names = Vec::new();
-        for tag in &self.inner {
-            if let Tag::UseFixtures(use_fixtures_tag) = tag {
-                fixture_names.extend_from_slice(use_fixtures_tag.fixture_names());
-            }
-        }
-        fixture_names
+        self.inner
+            .iter()
+            .filter_map(|tag| match tag {
+                Tag::UseFixtures(use_fixtures_tag) => Some(use_fixtures_tag.fixture_names()),
+                _ => None,
+            })
+            .flat_map(|names| names.iter().cloned())
+            .collect()
     }
 
     /// Returns true if any skip tag should be skipped.

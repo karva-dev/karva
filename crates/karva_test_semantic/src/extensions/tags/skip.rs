@@ -1,5 +1,6 @@
 use pyo3::prelude::*;
 
+use super::parse_pytest_mark_args;
 use crate::extensions::functions::SkipError;
 
 /// Represents a test marked to be skipped.
@@ -36,44 +37,11 @@ impl SkipTag {
     }
 
     pub(crate) fn try_from_pytest_mark(py_mark: &Bound<'_, PyAny>) -> Option<Self> {
-        let kwargs = py_mark.getattr("kwargs").ok()?;
-        let args = py_mark.getattr("args").ok()?;
-
-        // Extract conditions from positional arguments (if any)
-        let mut conditions = Vec::new();
-        if let Ok(args_tuple) = args.extract::<Bound<'_, pyo3::types::PyTuple>>() {
-            for i in 0..args_tuple.len() {
-                if let Ok(item) = args_tuple.get_item(i) {
-                    if let Ok(bool_val) = item.extract::<bool>() {
-                        conditions.push(bool_val);
-                    } else if item.extract::<String>().is_ok() {
-                        // This is a reason passed as positional arg (old pytest style)
-                        // Skip this, we'll handle it below
-                        break;
-                    }
-                }
-            }
-        }
-
-        // Extract reason from kwargs or from first string arg
-        let reason = kwargs.get_item("reason").map_or_else(
-            |_| {
-                if conditions.is_empty() {
-                    // No boolean conditions found, check if first arg is a string reason
-                    args.extract::<Bound<'_, pyo3::types::PyTuple>>()
-                        .map_or(None, |args_tuple| {
-                            args_tuple
-                                .get_item(0)
-                                .map_or(None, |first_arg| first_arg.extract::<String>().ok())
-                        })
-                } else {
-                    None
-                }
-            },
-            |reason| reason.extract::<String>().ok(),
-        );
-
-        Some(Self { conditions, reason })
+        let parsed = parse_pytest_mark_args(py_mark)?;
+        Some(Self {
+            conditions: parsed.conditions,
+            reason: parsed.reason,
+        })
     }
 }
 
