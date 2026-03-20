@@ -31,13 +31,11 @@ pub fn delete(filter_paths: &[String], dry_run: bool) -> Result<ExitStatus> {
             filtered.len()
         )?;
     } else {
-        let mut deleted = 0;
         for info in &filtered {
             karva_snapshot::storage::remove_snapshot(&info.path)?;
             writeln!(stdout, "Deleted: {}", info.path)?;
-            deleted += 1;
         }
-        writeln!(stdout, "\n{deleted} snapshot file(s) deleted.")?;
+        writeln!(stdout, "\n{} snapshot file(s) deleted.", filtered.len())?;
     }
     Ok(ExitStatus::Success)
 }
