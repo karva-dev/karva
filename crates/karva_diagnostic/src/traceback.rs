@@ -105,11 +105,11 @@ fn calculate_line_range(source_text: &str, line_number: OneIndexed) -> Option<Te
 
             // Trim the line to remove leading/trailing whitespace for the range
             let line_text = &source_text[line_start.to_usize()..line_end.to_usize()];
-            let trimmed_start = line_text.len() - line_text.trim_start().len();
-            let trimmed_length = line_text.trim().len();
+            let leading_whitespace = line_text.len() - line_text.trim_start().len();
+            let content_length = line_text.trim().len();
 
-            let range_start = line_start + TextSize::new(trimmed_start as u32);
-            let range_end = range_start + TextSize::new(trimmed_length as u32);
+            let range_start = line_start + TextSize::new(leading_whitespace as u32);
+            let range_end = range_start + TextSize::new(content_length as u32);
 
             return Some(TextRange::new(range_start, range_end));
         }
@@ -135,11 +135,11 @@ fn filter_traceback(traceback: &str) -> String {
         filtered.push_str(line.strip_prefix("  ").unwrap_or(line));
         filtered.push('\n');
     }
-    filtered = filtered.trim_end_matches('\n').to_string();
-
-    filtered = filtered.trim_end_matches('^').to_string();
-
-    filtered.trim_end().to_string()
+    filtered
+        .trim_end_matches('\n')
+        .trim_end_matches('^')
+        .trim_end()
+        .to_string()
 }
 
 #[cfg(test)]
