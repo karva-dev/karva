@@ -2,11 +2,9 @@ use std::fmt::Write;
 
 use anyhow::Result;
 use colored::Colorize;
-use karva_logging::Printer;
 
-use super::{matches_filter, resolve_filter_paths};
+use super::{filter_or_empty, snapshot_setup};
 use crate::ExitStatus;
-use crate::utils::cwd;
 
 pub fn prune(filter_paths: &[String], dry_run: bool) -> Result<ExitStatus> {
     {
@@ -17,19 +15,18 @@ pub fn prune(filter_paths: &[String], dry_run: bool) -> Result<ExitStatus> {
             "warning:".yellow().bold()
         )?;
     }
-    let cwd = cwd()?;
-    let printer = Printer::default();
-    let mut stdout = printer.stream_for_requested_summary().lock();
+    let (mut stdout, cwd, resolved) = snapshot_setup(filter_paths)?;
     let unreferenced = karva_snapshot::storage::find_unreferenced_snapshots(&cwd);
-    let resolved = resolve_filter_paths(filter_paths, &cwd);
-    let filtered: Vec<_> = unreferenced
-        .iter()
-        .filter(|info| matches_filter(&info.snap_path, &resolved))
-        .collect();
-    if filtered.is_empty() {
-        writeln!(stdout, "No unreferenced snapshots found.")?;
+    let Some(filtered) = filter_or_empty(
+        &unreferenced,
+        &resolved,
+        |i| &i.snap_path,
+        "No unreferenced snapshots found.",
+        &mut stdout,
+    )?
+    else {
         return Ok(ExitStatus::Success);
-    }
+    };
     if dry_run {
         for info in &filtered {
             writeln!(stdout, "Would remove: {} ({})", info.snap_path, info.reason)?;

@@ -14,7 +14,7 @@ mod printer;
 pub mod time;
 mod verbosity;
 
-pub use printer::Printer;
+pub use printer::{Printer, Stdout};
 pub use verbosity::VerbosityLevel;
 
 pub fn setup_tracing(level: VerbosityLevel) -> TracingGuard {
