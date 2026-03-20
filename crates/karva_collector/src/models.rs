@@ -224,24 +224,21 @@ impl CollectedModule {
     /// Merges function definitions from the other module into this one.
     pub(crate) fn update(&mut self, module: Self) {
         if self.path == module.path {
-            for function_def in module.test_function_defs {
-                if !self
-                    .test_function_defs
-                    .iter()
-                    .any(|existing| existing.name == function_def.name)
-                {
-                    self.test_function_defs.push(function_def);
-                }
-            }
-            for function_def in module.fixture_function_defs {
-                if !self
-                    .fixture_function_defs
-                    .iter()
-                    .any(|existing| existing.name == function_def.name)
-                {
-                    self.fixture_function_defs.push(function_def);
-                }
-            }
+            add_unique_definitions(&mut self.test_function_defs, module.test_function_defs);
+            add_unique_definitions(
+                &mut self.fixture_function_defs,
+                module.fixture_function_defs,
+            );
+        }
+    }
+}
+
+/// Adds function definitions from `new_defs` into `existing`, skipping any
+/// whose name already appears.
+fn add_unique_definitions(existing: &mut Vec<StmtFunctionDef>, new_defs: Vec<StmtFunctionDef>) {
+    for def in new_defs {
+        if !existing.iter().any(|e| e.name == def.name) {
+            existing.push(def);
         }
     }
 }
