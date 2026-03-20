@@ -12,6 +12,13 @@ struct TestInfo {
     duration: Option<Duration>,
 }
 
+/// Calculate the weight of a test for partitioning.
+///
+/// Uses the actual duration in microseconds if available, otherwise defaults to 1.
+fn test_weight(duration: Option<Duration>) -> u128 {
+    duration.map_or(1, |d| d.as_micros())
+}
+
 /// A group of tests from the same module with calculated weight
 #[derive(Debug)]
 struct ModuleGroup {
@@ -113,11 +120,11 @@ pub fn partition_collected_tests(
     let mut module_weights: HashMap<String, u128> = HashMap::new();
 
     for test_info in test_infos {
-        let test_weight = test_info.duration.map_or(1, |d| d.as_micros());
+        let weight = test_weight(test_info.duration);
 
         *module_weights
             .entry(test_info.module_name.clone())
-            .or_default() += test_weight;
+            .or_default() += weight;
         module_groups
             .entry(test_info.module_name.clone())
             .or_default()
@@ -153,8 +160,8 @@ pub fn partition_collected_tests(
     for module_group in small_modules {
         let min_partition_idx = find_lightest_partition(&partitions);
         for test_info in module_group.tests {
-            let test_weight = test_info.duration.map_or(1, |d| d.as_micros());
-            partitions[min_partition_idx].add_test(test_info, test_weight);
+            let weight = test_weight(test_info.duration);
+            partitions[min_partition_idx].add_test(test_info, weight);
         }
     }
 
@@ -164,9 +171,9 @@ pub fn partition_collected_tests(
         module_group.tests.sort_by(compare_test_weights);
 
         for test_info in module_group.tests {
-            let test_weight = test_info.duration.map_or(1, |d| d.as_micros());
+            let weight = test_weight(test_info.duration);
             let min_partition_idx = find_lightest_partition(&partitions);
-            partitions[min_partition_idx].add_test(test_info, test_weight);
+            partitions[min_partition_idx].add_test(test_info, weight);
         }
     }
 
