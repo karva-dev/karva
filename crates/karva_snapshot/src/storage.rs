@@ -176,8 +176,7 @@ pub fn accept_pending_batch(pending: &[&PendingSnapshotInfo]) -> io::Result<()> 
                 snapshot.metadata.inline_line,
             ) {
                 let function_name =
-                    extract_function_name(snapshot.metadata.source.as_deref())
-                        .map(String::from);
+                    extract_function_name(snapshot.metadata.source.as_deref()).map(String::from);
                 inline_by_source
                     .entry(source_file.clone())
                     .or_default()
