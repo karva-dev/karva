@@ -115,13 +115,10 @@ impl CollectedPackage {
             return;
         };
 
-        let components: Vec<_> = relative_path.components().collect();
-
-        if components.is_empty() {
+        let Some(first_component) = relative_path.components().next() else {
             return;
-        }
+        };
 
-        let first_component = components[0];
         let intermediate_path = self.path().join(first_component);
 
         if let Some(existing_package) = self.packages.get_mut(&intermediate_path) {
@@ -158,13 +155,10 @@ impl CollectedPackage {
             return;
         };
 
-        let components: Vec<_> = relative_path.components().collect();
-
-        if components.is_empty() {
+        let Some(first_component) = relative_path.components().next() else {
             return;
-        }
+        };
 
-        let first_component = components[0];
         let intermediate_path = self.path().join(first_component);
 
         if let Some(existing_package) = self.packages.get_mut(&intermediate_path) {

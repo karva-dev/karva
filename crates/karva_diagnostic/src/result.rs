@@ -36,11 +36,11 @@ impl TestRunResult {
         self.discovery_diagnostics.len() + self.diagnostics.len()
     }
 
-    pub fn diagnostics(&self) -> &Vec<Diagnostic> {
+    pub fn diagnostics(&self) -> &[Diagnostic] {
         &self.diagnostics
     }
 
-    pub fn discovery_diagnostics(&self) -> &Vec<Diagnostic> {
+    pub fn discovery_diagnostics(&self) -> &[Diagnostic] {
         &self.discovery_diagnostics
     }
 
@@ -75,9 +75,10 @@ impl TestRunResult {
     ) {
         self.stats.add(result.clone().into());
 
+        let function_name = test_case_name.function_name().clone();
+
         if matches!(result, IndividualTestResultKind::Failed) {
-            self.failed_tests
-                .push(test_case_name.function_name().clone());
+            self.failed_tests.push(function_name.clone());
         }
 
         if let Some(reporter) = reporter {
@@ -85,7 +86,7 @@ impl TestRunResult {
         }
 
         self.durations
-            .entry(test_case_name.function_name().clone())
+            .entry(function_name)
             .and_modify(|existing_duration| *existing_duration += duration)
             .or_insert(duration);
     }

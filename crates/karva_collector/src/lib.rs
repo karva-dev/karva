@@ -53,11 +53,11 @@ pub fn collect_file(
                 continue;
             }
 
-            if function_names.is_empty() {
-                if function_def.name.starts_with(settings.test_function_prefix) {
-                    collected_module.add_test_function_def(function_def);
-                }
-            } else if function_names.iter().any(|name| function_def.name == *name) {
+            let should_collect = (function_names.is_empty()
+                && function_def.name.starts_with(settings.test_function_prefix))
+                || function_names.iter().any(|name| function_def.name == *name);
+
+            if should_collect {
                 collected_module.add_test_function_def(function_def);
             }
         }
