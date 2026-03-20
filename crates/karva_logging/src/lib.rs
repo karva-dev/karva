@@ -25,13 +25,7 @@ pub fn setup_tracing(level: VerbosityLevel) -> TracingGuard {
         level => {
             let level_filter = level.level_filter();
 
-            let filter = EnvFilter::default().add_directive(
-                format!("karva={level_filter}")
-                    .parse()
-                    .expect("Hardcoded directive to be valid"),
-            );
-
-            filter.add_directive(
+            EnvFilter::default().add_directive(
                 format!("karva={level_filter}")
                     .parse()
                     .expect("Hardcoded directive to be valid"),
