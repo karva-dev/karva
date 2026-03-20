@@ -43,18 +43,18 @@ impl TryFrom<&str> for TestPathFunction {
             let file_path = Utf8PathBuf::from(file_part);
             let path = try_convert_to_py_path(&file_path)?;
 
-            if path.is_file() {
-                if is_python_file(&path) {
-                    Ok(Self {
-                        path,
-                        function_name: function_name.to_string(),
-                    })
-                } else {
-                    Err(Some(TestPathError::WrongFileExtension(path)))
-                }
-            } else {
-                Err(Some(TestPathError::InvalidUtf8Path(path)))
+            if !path.is_file() {
+                return Err(Some(TestPathError::InvalidUtf8Path(path)));
             }
+
+            if !is_python_file(&path) {
+                return Err(Some(TestPathError::WrongFileExtension(path)));
+            }
+
+            Ok(Self {
+                path,
+                function_name: function_name.to_string(),
+            })
         } else {
             Err(None)
         }

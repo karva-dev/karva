@@ -209,27 +209,34 @@ pub fn read_last_failed(cache_dir: &Utf8Path) -> Result<Vec<String>> {
     Ok(failed_tests)
 }
 
-/// Reads durations from the most recent test run.
-///
-/// Finds the most recent `run-{timestamp}` directory, then aggregates
-/// all durations from all worker directories within it.
-pub fn read_recent_durations(cache_dir: &Utf8PathBuf) -> Result<HashMap<String, Duration>> {
-    let entries = fs::read_dir(cache_dir)?;
-
+/// Collects sorted `run-*` directory names from the cache directory.
+fn collect_run_dirs(cache_dir: &Utf8Path) -> Result<Vec<String>> {
     let mut run_dirs = Vec::new();
-    for entry in entries {
-        let entry = entry?;
-        let path = entry.path();
-        if path.is_dir() {
-            if let Some(dir_name) = path.file_name().and_then(|n| n.to_str()) {
-                if dir_name.starts_with("run-") {
-                    run_dirs.push(dir_name.to_string());
+
+    if let Ok(entries) = fs::read_dir(cache_dir) {
+        for entry in entries {
+            let entry = entry?;
+            let path = entry.path();
+            if path.is_dir() {
+                if let Some(dir_name) = path.file_name().and_then(|n| n.to_str()) {
+                    if dir_name.starts_with("run-") {
+                        run_dirs.push(dir_name.to_string());
+                    }
                 }
             }
         }
     }
 
     run_dirs.sort_by_key(|hash| RunHash::from_existing(hash).sort_key());
+    Ok(run_dirs)
+}
+
+/// Reads durations from the most recent test run.
+///
+/// Finds the most recent `run-{timestamp}` directory, then aggregates
+/// all durations from all worker directories within it.
+pub fn read_recent_durations(cache_dir: &Utf8PathBuf) -> Result<HashMap<String, Duration>> {
+    let run_dirs = collect_run_dirs(cache_dir)?;
 
     let most_recent = run_dirs
         .last()
@@ -274,31 +281,15 @@ pub struct PruneResult {
 
 /// Removes all but the most recent `run-*` directory from the cache.
 pub fn prune_cache(cache_dir: &Utf8Path) -> Result<PruneResult> {
-    let mut run_dirs = Vec::new();
-
-    if let Ok(entries) = fs::read_dir(cache_dir) {
-        for entry in entries {
-            let entry = entry?;
-            let path = entry.path();
-            if path.is_dir() {
-                if let Some(dir_name) = path.file_name().and_then(|n| n.to_str()) {
-                    if dir_name.starts_with("run-") {
-                        run_dirs.push(dir_name.to_string());
-                    }
-                }
-            }
-        }
-    }
-
-    run_dirs.sort_by_key(|hash| RunHash::from_existing(hash).sort_key());
+    let mut run_dirs = collect_run_dirs(cache_dir)?;
 
     let to_remove = run_dirs.len().saturating_sub(1);
     let mut removed = Vec::with_capacity(to_remove);
 
-    for dir_name in run_dirs.iter().take(to_remove) {
-        let path = cache_dir.join(dir_name);
+    for dir_name in run_dirs.drain(..to_remove) {
+        let path = cache_dir.join(&dir_name);
         fs::remove_dir_all(&path)?;
-        removed.push(dir_name.clone());
+        removed.push(dir_name);
     }
 
     Ok(PruneResult { removed })
