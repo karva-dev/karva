@@ -12,14 +12,6 @@ test *args:
 coverage *args:
     rm -rf target/wheels
     maturin build
-    cargo llvm-cov nextest -p karva --html {{args}}
-    rm -f default_*.profraw
-
-# Full coverage including karva-worker and karva_test_semantic.
-# Requires LLVM tools (brew install llvm).
-coverage-full *args:
-    rm -rf target/wheels
-    maturin build
     RUSTFLAGS="-C instrument-coverage -C llvm-args=--instrprof-atomic-counter-update-all" cargo build --target-dir target/llvm-cov-target -p karva_worker
     __KARVA_COVERAGE=1 cargo llvm-cov nextest -p karva --no-report {{args}}
     {{LLVM_PROFDATA}} merge -failure-mode=warn target/llvm-cov-target/*.profraw -o target/llvm-cov-target/merged.profdata
