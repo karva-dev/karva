@@ -173,6 +173,12 @@ jobs:
           name: coverage-report
           path: target/coverage-html/
 
+      - name: "Upload to Codecov"
+        uses: codecov/codecov-action@ad3126e916f78f00edff4ed0317cf185271ccc2d # v5.4.2
+        with:
+          files: target/coverage.lcov
+          token: ${{ secrets.CODECOV_TOKEN }}
+
   build-docs:
     name: "Build docs"
 
