@@ -106,88 +106,53 @@ impl ProjectMetadata {
         let mut closest_project: Option<Self> = None;
 
         for project_root in path.ancestors() {
-            let pyproject_path = project_root.join("pyproject.toml");
+            let pyproject = try_load_pyproject(project_root)?;
 
-            let pyproject = if let Ok(pyproject_str) = std::fs::read_to_string(&pyproject_path) {
-                match PyProject::from_toml_str(&pyproject_str) {
-                    Ok(pyproject) => Some(pyproject),
-                    Err(error) => {
-                        return Err(ProjectMetadataError::InvalidPyProject {
-                            path: pyproject_path,
-                            source: Box::new(error),
-                        });
-                    }
-                }
-            } else {
-                None
-            };
-
-            // A `karva.toml` takes precedence over a `pyproject.toml`.
-            let karva_toml_path = project_root.join("karva.toml");
-            if let Ok(karva_str) = std::fs::read_to_string(&karva_toml_path) {
-                let options = match Options::from_toml_str(&karva_str) {
-                    Ok(options) => options,
-                    Err(error) => {
-                        return Err(ProjectMetadataError::InvalidKarvaToml {
-                            path: karva_toml_path,
-                            source: Box::new(error),
-                        });
-                    }
-                };
-
-                if pyproject
-                    .as_ref()
-                    .is_some_and(|project| project.karva().is_some())
-                {
+            if let Some(options) = try_load_karva_toml(project_root)? {
+                if has_karva_section(pyproject.as_ref()) {
+                    let pyproject_path = project_root.join("pyproject.toml");
+                    let karva_toml_path = project_root.join("karva.toml");
                     tracing::warn!(
                         "Ignoring the `tool.karva` section in `{pyproject_path}` because `{karva_toml_path}` takes precedence."
                     );
                 }
 
                 tracing::debug!("Found project at '{}'", project_root);
-
-                let metadata =
-                    Self::from_options(options, project_root.to_path_buf(), python_version);
-
-                return Ok(metadata);
+                return Ok(Self::from_options(
+                    options,
+                    project_root.to_path_buf(),
+                    python_version,
+                ));
             }
 
             if let Some(pyproject) = pyproject {
-                let has_karva_section = pyproject.karva().is_some();
+                let has_karva = pyproject.karva().is_some();
                 let metadata =
                     Self::from_pyproject(pyproject, project_root.to_path_buf(), python_version);
 
-                if has_karva_section {
+                if has_karva {
                     tracing::debug!("Found project at '{}'", project_root);
-
                     return Ok(metadata);
                 }
 
-                // Not a project itself, keep looking for an enclosing project.
                 if closest_project.is_none() {
                     closest_project = Some(metadata);
                 }
             }
         }
 
-        // No project found, but maybe a pyproject.toml was found.
-        let metadata = if let Some(closest_project) = closest_project {
+        if let Some(closest_project) = closest_project {
             tracing::debug!(
                 "Project without `tool.karva` section: '{}'",
                 closest_project.root()
             );
-
-            closest_project
+            Ok(closest_project)
         } else {
             tracing::debug!(
                 "The ancestor directories contain no `pyproject.toml`. Falling back to a virtual project."
             );
-
-            // Create a project with a default configuration
-            Self::new(path.to_path_buf(), python_version)
-        };
-
-        Ok(metadata)
+            Ok(Self::new(path.to_path_buf(), python_version))
+        }
     }
 
     pub fn python_version(&self) -> PythonVersion {
@@ -212,6 +177,47 @@ impl ProjectMetadata {
     pub fn apply_options(&mut self, options: Options) {
         self.options = options.combine(std::mem::take(&mut self.options));
     }
+}
+
+/// Checks for a `karva.toml` in `dir` and parses it if present.
+fn try_load_karva_toml(dir: &Utf8Path) -> Result<Option<Options>, ProjectMetadataError> {
+    let path = dir.join("karva.toml");
+
+    let Ok(content) = std::fs::read_to_string(&path) else {
+        return Ok(None);
+    };
+
+    let options = Options::from_toml_str(&content).map_err(|error| {
+        ProjectMetadataError::InvalidKarvaToml {
+            source: Box::new(error),
+            path,
+        }
+    })?;
+
+    Ok(Some(options))
+}
+
+/// Checks for a `pyproject.toml` in `dir` and parses it if present.
+fn try_load_pyproject(dir: &Utf8Path) -> Result<Option<PyProject>, ProjectMetadataError> {
+    let path = dir.join("pyproject.toml");
+
+    let Ok(content) = std::fs::read_to_string(&path) else {
+        return Ok(None);
+    };
+
+    let pyproject = PyProject::from_toml_str(&content).map_err(|error| {
+        ProjectMetadataError::InvalidPyProject {
+            path,
+            source: Box::new(error),
+        }
+    })?;
+
+    Ok(Some(pyproject))
+}
+
+/// Returns `true` if the pyproject contains a `[tool.karva]` section.
+fn has_karva_section(pyproject: Option<&PyProject>) -> bool {
+    pyproject.is_some_and(|project| project.karva().is_some())
 }
 
 #[derive(Debug, Error)]
