@@ -164,6 +164,7 @@ jobs:
           PYO3_PYTHON: ${{ steps.setup-python.outputs.python-path }}
           KARVA_MAX_PARALLELISM: 2
           VIRTUAL_ENV: ""
+          PYTHON_VERSION: "3.10"
         run: just coverage
 
       - name: "Upload coverage report"
