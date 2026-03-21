@@ -144,10 +144,10 @@ impl TestContext {
             if let Some(worker) = cargo_worker_binary() {
                 cmd.env("KARVA_WORKER_BINARY", worker.as_str());
             }
-            // Pass VIRTUAL_ENV + __KARVA_COVERAGE so the embedded Python in the
+            // Pass VIRTUAL_ENV + coverage flag so the embedded Python in the
             // worker subprocess activates the venv (for pytest, karva package, etc.)
             cmd.env("VIRTUAL_ENV", self.venv_path.as_str());
-            cmd.env("__KARVA_COVERAGE", "1");
+            cmd.env(karva_static::EnvVars::KARVA_COVERAGE_INTERNAL, "1");
             cmd
         } else {
             Command::new(self.venv_binary("karva"))
@@ -359,11 +359,11 @@ fn cleanup_old_shared_venvs(cache_dir: &Utf8Path, current_venv_name: &str) {
 
 /// Returns the path to the cargo-built `karva` binary when coverage mode is enabled.
 ///
-/// Coverage mode is activated by setting `__KARVA_COVERAGE=1`. In this mode, the
-/// cargo-built binaries (instrumented by `cargo llvm-cov`) are used instead of
-/// the venv-installed console scripts.
+/// Coverage mode is activated by setting the internal coverage env var.
+/// In this mode, the cargo-built binaries (instrumented by `cargo llvm-cov`)
+/// are used instead of the venv-installed console scripts.
 fn cargo_karva_binary() -> Option<&'static str> {
-    if std::env::var("__KARVA_COVERAGE").is_ok() {
+    if std::env::var(karva_static::EnvVars::KARVA_COVERAGE_INTERNAL).is_ok() {
         option_env!("CARGO_BIN_EXE_karva")
     } else {
         None
