@@ -59,58 +59,42 @@ impl ParametrizationArgs {
     }
 }
 
+/// Normalize argument names from Python into a `Vec<String>`.
+///
+/// Handles both input formats for parameter names:
+/// - A list of strings: `["arg1", "arg2"]`
+/// - A single comma-separated string: `"arg1, arg2"` or just `"arg1"`
+fn normalize_arg_names(arg_names: &Bound<'_, PyAny>) -> Option<Vec<String>> {
+    if let Ok(names) = arg_names.extract::<Vec<String>>() {
+        return Some(names);
+    }
+    if let Ok(name) = arg_names.extract::<String>() {
+        return Some(name.split(',').map(|s| s.trim().to_string()).collect());
+    }
+    None
+}
+
 /// Parse parametrize arguments from Python objects.
 ///
 /// This helper function handles multiple input formats:
-/// - `("arg1, arg2", [(1, 2), (3, 4)])` - single arg name with values (wrapped into Vec<Vec>)
-/// - `("arg1", [3, 4])` - comma-separated arg names (re-extracted as Vec<Vec>)
-/// - `(["arg1", "arg2"], [(1, 2), (3, 4)])` - direct arg names and nested values
-/// - `(["arg1", "arg2"], [pytest.param(1, 2), pytest.param(3, 4)])` - direct arg names and single values
-/// - `(["arg1"], [pytest.param(1), pytest.param(3)])` - direct arg names and single values
+/// - `("arg1, arg2", [(1, 2), (3, 4)])` - comma-separated arg names with tuple values
+/// - `("arg1", [3, 4])` - single arg name with scalar values
+/// - `(["arg1", "arg2"], [(1, 2), (3, 4)])` - list of arg names with tuple values
+/// - `(["arg1", "arg2"], [pytest.param(1, 2), ...])` - list of arg names with param values
+/// - `(["arg1"], [pytest.param(1), ...])` - single-element list with param values
 pub(super) fn parse_parametrize_args(
     arg_names: &Bound<'_, PyAny>,
     arg_values: &Bound<'_, PyAny>,
 ) -> Option<(Vec<String>, Vec<Parametrization>)> {
     let py = arg_values.py();
-
-    // Try extracting as (String, Vec<Py<PyAny>>)
-    if let (Ok(name), Ok(values)) = (
-        arg_names.extract::<String>(),
-        arg_values.extract::<Vec<Py<PyAny>>>(),
-    ) {
-        // Check if the string contains comma-separated argument names
-        if name.contains(',') {
-            let names: Vec<String> = name.split(',').map(|s| s.trim().to_string()).collect();
-            let parametrizations = arg_values
-                .extract::<Vec<Py<PyAny>>>()
-                .ok()?
-                .into_iter()
-                .map(|param| handle_custom_parametrize_param(py, param, true))
-                .collect();
-
-            Some((names, parametrizations))
-        } else {
-            // Single argument name - wrap each value in a Vec
-            let parametrizations = values
-                .into_iter()
-                .map(|param| handle_custom_parametrize_param(py, param, false))
-                .collect();
-
-            Some((vec![name], parametrizations))
-        }
-    } else if let (Ok(names), Ok(values)) = (
-        arg_names.extract::<Vec<String>>(),
-        arg_values.extract::<Vec<Py<PyAny>>>(),
-    ) {
-        let parametrizations = values
-            .into_iter()
-            .map(|param| handle_custom_parametrize_param(py, param, true))
-            .collect();
-        // Direct extraction of Vec<String> and Vec<Vec<Py<PyAny>>>
-        Some((names, parametrizations))
-    } else {
-        None
-    }
+    let names = normalize_arg_names(arg_names)?;
+    let values = arg_values.extract::<Vec<Py<PyAny>>>().ok()?;
+    let expect_multiple = names.len() > 1;
+    let parametrizations = values
+        .into_iter()
+        .map(|param| handle_custom_parametrize_param(py, param, expect_multiple))
+        .collect();
+    Some((names, parametrizations))
 }
 
 /// Represents different argument names and values that can be given to a test.
