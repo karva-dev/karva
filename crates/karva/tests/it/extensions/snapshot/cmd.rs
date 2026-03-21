@@ -266,12 +266,14 @@ fn test_cmd_snapshot_with_current_dir() {
         r#"
 import karva
 import sys
+import tempfile
 
 def test_cwd():
+    tmpdir = tempfile.gettempdir()
     cmd = (
         karva.Command(sys.executable)
-        .args(["-c", "import os; print(os.path.basename(os.getcwd()))"])
-        .current_dir("/tmp")
+        .args(["-c", "import os; print('cwd_ok')"])
+        .current_dir(tmpdir)
     )
     karva.assert_cmd_snapshot(cmd)
         "#,
@@ -291,12 +293,12 @@ def test_cwd():
     let content = context.read_file("snapshots/test__test_cwd.snap");
     insta::assert_snapshot!(content, @r"
     ---
-    source: test.py:11::test_cwd
+    source: test.py:13::test_cwd
     ---
     success: true
     exit_code: 0
     ----- stdout -----
-    tmp
+    cwd_ok
     ----- stderr -----
     ");
 }
