@@ -150,6 +150,7 @@ where
     F: for<'py> FnOnce(Python<'py>) -> R,
 {
     attach(|py| {
+        coverage::activate_venv_if_coverage(py);
         let null_file = redirect_python_output(py, show_python_output);
         let result = f(py);
         if let Ok(Some(null_file)) = null_file {
@@ -157,6 +158,93 @@ where
         }
         result
     })
+}
+
+/// Coverage-only venv activation, gated behind `__KARVA_COVERAGE`.
+///
+/// When the cargo-built worker runs under `cargo llvm-cov`, `PyO3`'s embedded
+/// Python doesn't know about the venv. This module fixes that by:
+/// 1. Registering the embedded `karva._karva` module (prevents type mismatches
+///    with the wheel's `.so`)
+/// 2. Adding the venv's site-packages (for pytest, etc.)
+/// 3. Fixing `sys.executable` (so `Command(sys.executable)` runs Python, not karva)
+///
+/// All of this is a no-op unless `__KARVA_COVERAGE` is set.
+mod coverage {
+    use camino::{Utf8Path, Utf8PathBuf};
+    use pyo3::prelude::*;
+    use pyo3::types::PyAnyMethods;
+
+    pub(super) fn activate_venv_if_coverage(py: Python<'_>) {
+        if std::env::var(karva_static::EnvVars::KARVA_COVERAGE_INTERNAL).is_err() {
+            return;
+        }
+        let Ok(venv_path) = std::env::var("VIRTUAL_ENV") else {
+            return;
+        };
+
+        register_embedded_module(py);
+        add_site_packages(py, &venv_path);
+        fix_sys_executable(py, &venv_path);
+    }
+
+    fn register_embedded_module(py: Python<'_>) {
+        let Ok(module) = PyModule::new(py, "_karva") else {
+            return;
+        };
+        if crate::init_module(py, &module).is_err() {
+            return;
+        }
+        let _ = module.setattr("karva_run", py.None());
+        let _ = module.setattr("karva_worker_run", py.None());
+        if let Ok(sys) = py.import("sys") {
+            if let Ok(modules) = sys.getattr("modules") {
+                let _ = modules.set_item("karva._karva", &module);
+            }
+        }
+    }
+
+    fn add_site_packages(py: Python<'_>, venv_path: &str) {
+        let Some(sp) = find_site_packages(venv_path) else {
+            return;
+        };
+        if let Ok(site) = py.import("site") {
+            let _ = site.call_method1("addsitedir", (sp.as_str(),));
+        }
+    }
+
+    fn fix_sys_executable(py: Python<'_>, venv_path: &str) {
+        let venv = Utf8Path::new(venv_path);
+        let python_bin = if cfg!(windows) {
+            venv.join("Scripts").join("python.exe")
+        } else {
+            venv.join("bin").join("python")
+        };
+        if python_bin.exists() {
+            if let Ok(sys) = py.import("sys") {
+                let _ = sys.setattr("executable", python_bin.as_str());
+            }
+        }
+    }
+
+    fn find_site_packages(venv_path: &str) -> Option<Utf8PathBuf> {
+        let venv = Utf8Path::new(venv_path);
+        if cfg!(windows) {
+            let sp = venv.join("Lib").join("site-packages");
+            return sp.exists().then_some(sp);
+        }
+        let lib_dir = venv.join("lib");
+        for entry in std::fs::read_dir(&lib_dir).ok()?.flatten() {
+            if entry.file_name().to_string_lossy().starts_with("python") {
+                if let Ok(sp) = Utf8PathBuf::from_path_buf(entry.path().join("site-packages")) {
+                    if sp.exists() {
+                        return Some(sp);
+                    }
+                }
+            }
+        }
+        None
+    }
 }
 
 /// A simple wrapper around `Python::attach` that initializes the Python interpreter first.

@@ -132,8 +132,30 @@ impl TestContext {
             .unwrap_or_else(|e| panic!("Failed to read file `{full_path}`: {e}"))
     }
 
+    /// Create a base `Command` for the karva binary.
+    ///
+    /// When running under `cargo test` / `cargo llvm-cov`, uses the cargo-built
+    /// binary (instrumented for coverage) and sets env vars so the worker
+    /// binary and Python packages are found correctly.
+    fn karva_command(&self) -> Command {
+        if let Some(binary) = cargo_karva_binary() {
+            let mut cmd = Command::new(binary);
+            // Tell the karva process where to find the instrumented worker binary
+            if let Some(worker) = cargo_worker_binary() {
+                cmd.env("KARVA_WORKER_BINARY", worker.as_str());
+            }
+            // Pass VIRTUAL_ENV + coverage flag so the embedded Python in the
+            // worker subprocess activates the venv (for pytest, karva package, etc.)
+            cmd.env("VIRTUAL_ENV", self.venv_path.as_str());
+            cmd.env(karva_static::EnvVars::KARVA_COVERAGE_INTERNAL, "1");
+            cmd
+        } else {
+            Command::new(self.venv_binary("karva"))
+        }
+    }
+
     pub fn command(&self) -> Command {
-        let mut command = Command::new(self.venv_binary("karva"));
+        let mut command = self.karva_command();
         command.arg("test").current_dir(self.root());
         command
     }
@@ -145,7 +167,7 @@ impl TestContext {
     }
 
     pub fn snapshot(&self, subcommand: &str) -> Command {
-        let mut command = Command::new(self.venv_binary("karva"));
+        let mut command = self.karva_command();
         command
             .arg("snapshot")
             .arg(subcommand)
@@ -154,7 +176,7 @@ impl TestContext {
     }
 
     pub fn cache(&self, subcommand: &str) -> Command {
-        let mut command = Command::new(self.venv_binary("karva"));
+        let mut command = self.karva_command();
         command
             .arg("cache")
             .arg(subcommand)
@@ -333,6 +355,47 @@ fn cleanup_old_shared_venvs(cache_dir: &Utf8Path, current_venv_name: &str) {
             }
         }
     }
+}
+
+/// Returns the path to the cargo-built `karva` binary when coverage mode is enabled.
+///
+/// Coverage mode is activated by setting the internal coverage env var.
+/// In this mode, the cargo-built binaries (instrumented by `cargo llvm-cov`)
+/// are used instead of the venv-installed console scripts.
+fn cargo_karva_binary() -> Option<&'static str> {
+    if std::env::var(karva_static::EnvVars::KARVA_COVERAGE_INTERNAL).is_ok() {
+        option_env!("CARGO_BIN_EXE_karva")
+    } else {
+        None
+    }
+}
+
+/// Finds the `karva-worker` binary for coverage.
+///
+/// Checks the same directory as the `karva` binary first (coverage target dir),
+/// then falls back to the standard `target/debug/` directory.
+fn cargo_worker_binary() -> Option<Utf8PathBuf> {
+    let karva = cargo_karva_binary()?;
+    let name = if cfg!(windows) {
+        "karva-worker.exe"
+    } else {
+        "karva-worker"
+    };
+
+    // Check same directory as karva binary (e.g., target/llvm-cov-target/debug/)
+    if let Some(dir) = Utf8Path::new(karva).parent() {
+        let worker = dir.join(name);
+        if worker.exists() {
+            return Some(worker);
+        }
+    }
+
+    // Fall back to standard target/debug/ directory
+    let workspace_root = Utf8Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .and_then(|p| p.parent())?;
+    let worker = workspace_root.join("target").join("debug").join(name);
+    worker.exists().then_some(worker)
 }
 
 fn create_and_populate_venv(
