@@ -131,4 +131,39 @@ mod tests {
         exit 42
         ");
     }
+
+    #[test]
+    fn stderr_no_trailing_newline() {
+        let output = CommandOutput {
+            success: false,
+            exit_code: 1,
+            stdout: String::new(),
+            stderr: "error without newline".to_string(),
+        };
+        insta::assert_snapshot!(format_cmd_output(&output), @r"
+        success: false
+        exit_code: 1
+        ----- stdout -----
+        ----- stderr -----
+        error without newline
+        ");
+    }
+
+    #[test]
+    fn both_no_trailing_newline() {
+        let output = CommandOutput {
+            success: true,
+            exit_code: 0,
+            stdout: "out".to_string(),
+            stderr: "err".to_string(),
+        };
+        insta::assert_snapshot!(format_cmd_output(&output), @r"
+        success: true
+        exit_code: 0
+        ----- stdout -----
+        out
+        ----- stderr -----
+        err
+        ");
+    }
 }

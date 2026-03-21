@@ -260,6 +260,48 @@ def test_stdin():
 }
 
 #[test]
+fn test_cmd_snapshot_with_current_dir() {
+    let context = TestContext::with_file(
+        "test.py",
+        r#"
+import karva
+import sys
+
+def test_cwd():
+    cmd = (
+        karva.Command(sys.executable)
+        .args(["-c", "import os; print(os.path.basename(os.getcwd()))"])
+        .current_dir("/tmp")
+    )
+    karva.assert_cmd_snapshot(cmd)
+        "#,
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    test test::test_cwd ... ok
+
+    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+
+    ----- stderr -----
+    ");
+
+    let content = context.read_file("snapshots/test__test_cwd.snap");
+    insta::assert_snapshot!(content, @r"
+    ---
+    source: test.py:11::test_cwd
+    ---
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    tmp
+    ----- stderr -----
+    ");
+}
+
+#[test]
 fn test_cmd_snapshot_with_filters() {
     let context = TestContext::with_file(
         "test.py",

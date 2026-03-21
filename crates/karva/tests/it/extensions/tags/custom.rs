@@ -581,6 +581,40 @@ def test_linux_only():
 }
 
 #[test]
+fn test_pytest_custom_marks_with_tag_filter() {
+    let context = TestContext::with_file(
+        "test.py",
+        r#"
+import pytest
+
+@pytest.mark.slow
+def test_slow():
+    assert True
+
+@pytest.mark.slow("reason", key="value")
+def test_slow_with_args():
+    assert True
+
+def test_untagged():
+    assert True
+        "#,
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-t").arg("slow"), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    test test::test_slow ... ok
+    test test::test_slow_with_args ... ok
+    test test::test_untagged ... skipped
+
+    test result: ok. 2 passed; 0 failed; 1 skipped; finished in [TIME]
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
 fn test_tag_filter_with_skip() {
     let context = TestContext::with_file(
         "test.py",

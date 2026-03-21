@@ -4,7 +4,6 @@ use pyo3::prelude::*;
 
 use crate::Context;
 use crate::collection::TestFunctionCollector;
-use crate::diagnostic::report_invalid_path;
 use crate::discovery::visitor::discover;
 use crate::discovery::{DiscoveredModule, DiscoveredPackage};
 use crate::utils::add_to_sys_path;
@@ -41,10 +40,7 @@ impl<'ctx, 'a> StandardDiscoverer<'ctx, 'a> {
                     TestPath::Directory(_) | TestPath::File(_) => None,
                     TestPath::Function(function) => Some(function),
                 },
-                Err(error) => {
-                    report_invalid_path(self.context, &error);
-                    None
-                }
+                Err(_) => None,
             })
             .collect();
 

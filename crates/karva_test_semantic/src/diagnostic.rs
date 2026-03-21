@@ -7,7 +7,6 @@
 use std::collections::HashMap;
 
 use karva_diagnostic::Traceback;
-use karva_project::path::TestPathError;
 use karva_python_semantic::FunctionKind;
 use pyo3::{Py, PyAny, PyErr, Python};
 use ruff_db::diagnostic::{
@@ -23,16 +22,6 @@ pub use metadata::{DiagnosticGuardBuilder, DiagnosticType};
 use crate::runner::{FixtureCallError, FixtureChainEntry};
 use crate::utils::truncate_string;
 use crate::{Context, declare_diagnostic_type};
-
-declare_diagnostic_type! {
-    /// ## Invalid path
-    ///
-    /// User has provided an invalid path that we cannot resolve.
-    pub static INVALID_PATH = {
-        summary: "User provided an invalid path",
-        severity: Severity::Error,
-    }
-}
 
 declare_diagnostic_type! {
     /// ## Failed to import module
@@ -141,12 +130,6 @@ fn report_dependency_chain(
         sub.annotate(Annotation::primary(span));
         diagnostic.sub(sub);
     }
-}
-
-pub fn report_invalid_path(context: &Context, error: &TestPathError) {
-    let builder = context.report_discovery_diagnostic(&INVALID_PATH);
-
-    builder.into_diagnostic(format!("Invalid path: {error}"));
 }
 
 pub fn report_failed_to_import_module(context: &Context, module_name: &str, error: &str) {

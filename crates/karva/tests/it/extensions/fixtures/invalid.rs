@@ -57,6 +57,56 @@ fn test_invalid_pytest_fixture_scope() {
 }
 
 #[test]
+fn test_invalid_karva_fixture_scope() {
+    let context = TestContext::with_file(
+        "test.py",
+        r#"import karva
+
+@karva.fixture(scope="sessionss")
+def some_fixture() -> int:
+    return 1
+
+def test_all_scopes(some_fixture: int) -> None:
+    assert some_fixture == 1
+"#,
+    );
+
+    assert_cmd_snapshot!(context.command(), @r#"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+    test test::test_all_scopes ... FAILED
+
+    diagnostics:
+
+    error[invalid-fixture]: Discovered an invalid fixture `some_fixture`
+     --> test.py:4:5
+      |
+    3 | @karva.fixture(scope="sessionss")
+    4 | def some_fixture() -> int:
+      |     ^^^^^^^^^^^^
+    5 |     return 1
+      |
+    info: Invalid fixture scope: sessionss
+
+    error[missing-fixtures]: Test `test_all_scopes` has missing fixtures
+     --> test.py:7:5
+      |
+    5 |     return 1
+    6 |
+    7 | def test_all_scopes(some_fixture: int) -> None:
+      |     ^^^^^^^^^^^^^^^
+    8 |     assert some_fixture == 1
+      |
+    info: Missing fixtures: `some_fixture`
+
+    test result: FAILED. 0 passed; 1 failed; 0 skipped; finished in [TIME]
+
+    ----- stderr -----
+    "#);
+}
+
+#[test]
 fn test_missing_fixture() {
     let context = TestContext::with_file(
         "test.py",

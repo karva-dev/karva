@@ -5,7 +5,6 @@ use pyo3::prelude::*;
 use ruff_python_ast::StmtFunctionDef;
 
 use crate::discovery::DiscoveredModule;
-use crate::extensions::fixtures::RequiresFixtures;
 use crate::extensions::tags::Tags;
 
 /// Represents a single test function discovered from Python source code.
@@ -48,15 +47,5 @@ impl DiscoveredTestFunction {
             py_function,
             tags,
         }
-    }
-}
-
-impl RequiresFixtures for DiscoveredTestFunction {
-    fn required_fixtures(&self, py: Python<'_>) -> Vec<String> {
-        let mut required_fixtures = self.stmt_function_def.required_fixtures(py);
-
-        required_fixtures.extend(self.tags.required_fixtures_names());
-
-        required_fixtures
     }
 }
