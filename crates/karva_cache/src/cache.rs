@@ -6,6 +6,7 @@ use anyhow::Result;
 use camino::{Utf8Path, Utf8PathBuf};
 use karva_diagnostic::{TestResultStats, TestRunResult};
 use ruff_db::diagnostic::{DisplayDiagnosticConfig, DisplayDiagnostics, FileResolver};
+use serde::de::DeserializeOwned;
 
 use crate::{
     DIAGNOSTICS_FILE, DISCOVER_DIAGNOSTICS_FILE, DURATIONS_FILE, FAIL_FAST_SIGNAL_FILE,
@@ -77,7 +78,7 @@ impl Cache {
         Ok(results)
     }
 
-    /// Persists a test run result (stats, diagnostics, and durations) to disk.
+    /// Persists a test run result (stats, diagnostics, durations, and failed tests) to disk.
     pub fn write_result(
         &self,
         worker_id: usize,
@@ -88,74 +89,107 @@ impl Cache {
         let worker_dir = self.run_dir.join(worker_folder(worker_id));
         fs::create_dir_all(&worker_dir)?;
 
-        if !result.diagnostics().is_empty() {
-            let output = DisplayDiagnostics::new(resolver, config, result.diagnostics());
-            let path = worker_dir.join(DIAGNOSTICS_FILE);
-            fs::write(path, output.to_string())?;
-        }
-
-        if !result.discovery_diagnostics().is_empty() {
-            let output = DisplayDiagnostics::new(resolver, config, result.discovery_diagnostics());
-            let path = worker_dir.join(DISCOVER_DIAGNOSTICS_FILE);
-            fs::write(path, output.to_string())?;
-        }
-
-        let stats_path = worker_dir.join(STATS_FILE);
-        let json = serde_json::to_string_pretty(result.stats())?;
-        fs::write(&stats_path, json)?;
-
-        let durations_path = worker_dir.join(DURATIONS_FILE);
-        let json = serde_json::to_string_pretty(result.durations())?;
-        fs::write(&durations_path, json)?;
-
-        if !result.failed_tests().is_empty() {
-            let failed_tests: Vec<String> = result
-                .failed_tests()
-                .iter()
-                .map(ToString::to_string)
-                .collect();
-            let failed_path = worker_dir.join(FAILED_TESTS_FILE);
-            let json = serde_json::to_string_pretty(&failed_tests)?;
-            fs::write(failed_path, json)?;
-        }
+        write_diagnostics(&worker_dir, result, resolver, config)?;
+        write_stats(&worker_dir, result.stats())?;
+        write_durations(&worker_dir, result.durations())?;
+        write_failed_tests(&worker_dir, result.failed_tests())?;
 
         Ok(())
     }
 }
 
+/// Formats and writes test diagnostics and discovery diagnostics to files.
+fn write_diagnostics(
+    worker_dir: &Utf8Path,
+    result: &TestRunResult,
+    resolver: &dyn FileResolver,
+    config: &DisplayDiagnosticConfig,
+) -> Result<()> {
+    if !result.diagnostics().is_empty() {
+        let output = DisplayDiagnostics::new(resolver, config, result.diagnostics());
+        fs::write(worker_dir.join(DIAGNOSTICS_FILE), output.to_string())?;
+    }
+
+    if !result.discovery_diagnostics().is_empty() {
+        let output = DisplayDiagnostics::new(resolver, config, result.discovery_diagnostics());
+        fs::write(
+            worker_dir.join(DISCOVER_DIAGNOSTICS_FILE),
+            output.to_string(),
+        )?;
+    }
+
+    Ok(())
+}
+
+/// Writes test result stats as JSON.
+fn write_stats(worker_dir: &Utf8Path, stats: &TestResultStats) -> Result<()> {
+    let json = serde_json::to_string_pretty(stats)?;
+    fs::write(worker_dir.join(STATS_FILE), json)?;
+    Ok(())
+}
+
+/// Writes test durations as JSON.
+fn write_durations<K: serde::Serialize, V: serde::Serialize>(
+    worker_dir: &Utf8Path,
+    durations: &HashMap<K, V>,
+) -> Result<()> {
+    let json = serde_json::to_string_pretty(durations)?;
+    fs::write(worker_dir.join(DURATIONS_FILE), json)?;
+    Ok(())
+}
+
+/// Writes the list of failed test names as JSON, skipping if empty.
+fn write_failed_tests(worker_dir: &Utf8Path, failed_tests: &[impl ToString]) -> Result<()> {
+    if !failed_tests.is_empty() {
+        let names: Vec<String> = failed_tests.iter().map(ToString::to_string).collect();
+        let json = serde_json::to_string_pretty(&names)?;
+        fs::write(worker_dir.join(FAILED_TESTS_FILE), json)?;
+    }
+    Ok(())
+}
+
+/// Reads a JSON file from a directory and deserializes it, returning `None` if the file
+/// does not exist.
+fn read_and_parse<T: DeserializeOwned>(dir: &Utf8Path, filename: &str) -> Result<Option<T>> {
+    let path = dir.join(filename);
+    if !path.exists() {
+        return Ok(None);
+    }
+    let content = fs::read_to_string(&path)?;
+    let value = serde_json::from_str(&content)?;
+    Ok(Some(value))
+}
+
+/// Reads a text file from a directory, returning `None` if the file does not exist.
+fn read_text(dir: &Utf8Path, filename: &str) -> Result<Option<String>> {
+    let path = dir.join(filename);
+    if !path.exists() {
+        return Ok(None);
+    }
+    Ok(Some(fs::read_to_string(&path)?))
+}
+
 /// Read results from a single worker directory into the accumulator.
 fn read_worker_results(worker_dir: &Utf8Path, results: &mut AggregatedResults) -> Result<()> {
-    let stats_path = worker_dir.join(STATS_FILE);
-
-    if stats_path.exists() {
-        let content = fs::read_to_string(&stats_path)?;
-        let stats = serde_json::from_str(&content)?;
+    if let Some(stats) = read_and_parse::<TestResultStats>(worker_dir, STATS_FILE)? {
         results.stats.merge(&stats);
     }
 
-    let diagnostics_path = worker_dir.join(DIAGNOSTICS_FILE);
-    if diagnostics_path.exists() {
-        let content = fs::read_to_string(&diagnostics_path)?;
+    if let Some(content) = read_text(worker_dir, DIAGNOSTICS_FILE)? {
         results.diagnostics.push_str(&content);
     }
 
-    let discovery_diagnostics_path = worker_dir.join(DISCOVER_DIAGNOSTICS_FILE);
-    if discovery_diagnostics_path.exists() {
-        let content = fs::read_to_string(&discovery_diagnostics_path)?;
+    if let Some(content) = read_text(worker_dir, DISCOVER_DIAGNOSTICS_FILE)? {
         results.discovery_diagnostics.push_str(&content);
     }
 
-    let failed_tests_path = worker_dir.join(FAILED_TESTS_FILE);
-    if failed_tests_path.exists() {
-        let content = fs::read_to_string(&failed_tests_path)?;
-        let failed_tests: Vec<String> = serde_json::from_str(&content)?;
-        results.failed_tests.extend(failed_tests);
+    if let Some(failed) = read_and_parse::<Vec<String>>(worker_dir, FAILED_TESTS_FILE)? {
+        results.failed_tests.extend(failed);
     }
 
-    let durations_path = worker_dir.join(DURATIONS_FILE);
-    if durations_path.exists() {
-        let content = fs::read_to_string(&durations_path)?;
-        let durations: HashMap<String, Duration> = serde_json::from_str(&content)?;
+    if let Some(durations) =
+        read_and_parse::<HashMap<String, Duration>>(worker_dir, DURATIONS_FILE)?
+    {
         results.durations.extend(durations);
     }
 
@@ -221,9 +255,7 @@ pub fn read_recent_durations(cache_dir: &Utf8PathBuf) -> Result<HashMap<String, 
 
     let mut aggregated_durations = HashMap::new();
 
-    let worker_entries = fs::read_dir(&run_dir)?;
-
-    for entry in worker_entries {
+    for entry in fs::read_dir(&run_dir)? {
         let entry = entry?;
         let worker_path = Utf8PathBuf::try_from(entry.path())
             .map_err(|e| anyhow::anyhow!("Invalid UTF-8 path: {e}"))?;
@@ -232,16 +264,10 @@ pub fn read_recent_durations(cache_dir: &Utf8PathBuf) -> Result<HashMap<String, 
             continue;
         }
 
-        let durations_path = worker_path.join(DURATIONS_FILE);
-        if !durations_path.exists() {
-            continue;
-        }
-
-        let content = fs::read_to_string(&durations_path)?;
-        let durations: HashMap<String, Duration> = serde_json::from_str(&content)?;
-
-        for (test_name, duration) in durations {
-            aggregated_durations.insert(test_name, duration);
+        if let Some(durations) =
+            read_and_parse::<HashMap<String, Duration>>(&worker_path, DURATIONS_FILE)?
+        {
+            aggregated_durations.extend(durations);
         }
     }
 
