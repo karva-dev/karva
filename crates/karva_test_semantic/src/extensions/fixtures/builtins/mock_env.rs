@@ -68,6 +68,62 @@ impl MockEnv {
             .lock()
             .map_err(|e| PyRuntimeError::new_err(format!("lock poisoned: {e}")))
     }
+
+    /// Restore all `setattr`/`delattr` changes in reverse order.
+    fn undo_setattr(&self, py: Python<'_>) -> PyResult<()> {
+        let mut setattr_list = self.lock_setattr()?;
+        for (obj, name, value) in setattr_list.drain(..).rev() {
+            if value.bind(py).is_none() {
+                let _ = obj.bind(py).delattr(&name);
+            } else {
+                obj.bind(py).setattr(&name, value)?;
+            }
+        }
+        Ok(())
+    }
+
+    /// Restore all `setitem`/`delitem` changes in reverse order.
+    fn undo_setitem(&self, py: Python<'_>) -> PyResult<()> {
+        let mut setitem_list = self.lock_setitem()?;
+        for (dictionary, key, value) in setitem_list.drain(..).rev() {
+            let bound_dict = dictionary.bind(py);
+            let bound_value = value.bind(py);
+
+            if bound_value.is_none() {
+                let _ = bound_dict.del_item(&key);
+            } else {
+                bound_dict.set_item(&key, value)?;
+            }
+        }
+        Ok(())
+    }
+
+    /// Restore `sys.path` to its saved state.
+    fn undo_syspath(&self, py: Python<'_>) -> PyResult<()> {
+        let mut savesyspath = self.lock_savesyspath()?;
+        if let Some(saved_path) = savesyspath.take() {
+            drop(savesyspath);
+            let sys_module = py.import("sys")?;
+            let sys_path = sys_module.getattr("path")?;
+
+            sys_path.call_method0("clear")?;
+            for item in saved_path {
+                sys_path.call_method1("append", (item,))?;
+            }
+        }
+        Ok(())
+    }
+
+    /// Restore the working directory to its saved state.
+    fn undo_cwd(&self, py: Python<'_>) -> PyResult<()> {
+        let mut cwd = self.lock_cwd()?;
+        if let Some(saved_cwd) = cwd.take() {
+            drop(cwd);
+            let os_module = py.import("os")?;
+            os_module.call_method1("chdir", (saved_cwd,))?;
+        }
+        Ok(())
+    }
 }
 
 #[pymethods]
@@ -409,61 +465,10 @@ impl MockEnv {
 
     /// Undo previous changes.
     fn undo(&mut self, py: Python<'_>) -> PyResult<()> {
-        // Restore setattr changes in reverse order
-        {
-            let mut setattr_list = self.lock_setattr()?;
-            for (obj, name, value) in setattr_list.drain(..).rev() {
-                // Check if the value is Python's None (meaning the attribute didn't exist before)
-                if value.bind(py).is_none() {
-                    let _ = obj.bind(py).delattr(&name);
-                } else {
-                    obj.bind(py).setattr(&name, value)?;
-                }
-            }
-        }
-
-        // Restore setitem changes in reverse order
-        {
-            let mut setitem_list = self.lock_setitem()?;
-            for (dictionary, key, value) in setitem_list.drain(..).rev() {
-                let bound_dict = dictionary.bind(py);
-                let bound_value = value.bind(py);
-
-                // Check if the value is Python's None (meaning the key didn't exist before)
-                if bound_value.is_none() {
-                    let _ = bound_dict.del_item(&key);
-                } else {
-                    bound_dict.set_item(&key, value)?;
-                }
-            }
-        }
-
-        // Restore sys.path
-        {
-            let mut savesyspath = self.lock_savesyspath()?;
-            if let Some(saved_path) = savesyspath.take() {
-                drop(savesyspath);
-                let sys_module = py.import("sys")?;
-                let sys_path = sys_module.getattr("path")?;
-
-                // Clear and restore
-                sys_path.call_method0("clear")?;
-                for item in saved_path {
-                    sys_path.call_method1("append", (item,))?;
-                }
-            }
-        }
-
-        // Restore working directory
-        {
-            let mut cwd = self.lock_cwd()?;
-            if let Some(saved_cwd) = cwd.take() {
-                drop(cwd);
-                let os_module = py.import("os")?;
-                os_module.call_method1("chdir", (saved_cwd,))?;
-            }
-        }
-
+        self.undo_setattr(py)?;
+        self.undo_setitem(py)?;
+        self.undo_syspath(py)?;
+        self.undo_cwd(py)?;
         Ok(())
     }
 
