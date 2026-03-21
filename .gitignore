@@ -12,5 +12,8 @@ uv.lock
 # Compiled Python files
 *.so
 
+# Coverage profile data
+*.profraw
+
 # prek prettier cache
 node_modules

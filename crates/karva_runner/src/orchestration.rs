@@ -16,6 +16,7 @@ use karva_collector::{CollectedPackage, CollectionSettings};
 use karva_logging::time::format_duration;
 use karva_metadata::ProjectSettings;
 use karva_project::Project;
+use karva_static::EnvVars;
 
 use crate::collection::ParallelCollector;
 use crate::partition::{Partition, partition_collected_tests};
@@ -355,8 +356,17 @@ const MIN_TESTS_PER_WORKER: usize = 5;
 const KARVA_WORKER_BINARY_NAME: &str = "karva-worker";
 const WORKER_POLL_INTERVAL: Duration = Duration::from_millis(10);
 
-/// Find the `karva-worker` binary by checking PATH, the project venv, and the active venv.
+/// Find the `karva-worker` binary by checking the `KARVA_WORKER_BINARY` env var,
+/// then PATH, the project venv, and the active venv.
 fn find_karva_worker_binary(current_dir: &Utf8PathBuf) -> Result<Utf8PathBuf> {
+    if let Ok(path) = std::env::var(EnvVars::KARVA_WORKER_BINARY) {
+        let path = Utf8PathBuf::from(path);
+        if path.exists() {
+            tracing::debug!(path = %path, "Found binary from KARVA_WORKER_BINARY env var");
+            return Ok(path);
+        }
+    }
+
     which::which(KARVA_WORKER_BINARY_NAME)
         .ok()
         .and_then(|path| Utf8PathBuf::try_from(path).ok())
