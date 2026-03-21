@@ -65,6 +65,7 @@ impl TestContext {
         settings.add_filter(r"(\s|\()(\d+m )?(\d+\.)?\d+(ms|s)", "$1[TIME]");
         settings.add_filter(r"run-\d+", "run-[TIMESTAMP]");
         settings.add_filter(r"[-─]{30,}", "[LONG-LINE]");
+        settings.add_filter(r"karva \d+\.\d+\.\d+[a-zA-Z0-9._-]*", "karva [VERSION]");
 
         let settings_scope = settings.bind_to_scope();
 
@@ -181,6 +182,12 @@ impl TestContext {
             .arg("cache")
             .arg(subcommand)
             .current_dir(self.root());
+        command
+    }
+
+    pub fn version(&self) -> Command {
+        let mut command = self.karva_command();
+        command.arg("version").current_dir(self.root());
         command
     }
 }
