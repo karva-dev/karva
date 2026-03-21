@@ -1244,7 +1244,8 @@ def test_should_not_run(): pass
 }
 
 #[test]
-fn test_config_file_flag_nonexistent() {
+#[cfg(unix)]
+fn test_config_file_flag_nonexistent_unix() {
     let context = TestContext::with_file("test.py", "def test_a(): pass");
 
     assert_cmd_snapshot!(context.command().arg("--config-file").arg("nonexistent.toml"), @r"
@@ -1257,5 +1258,23 @@ fn test_config_file_flag_nonexistent() {
       Cause: <temp_dir>/nonexistent.toml is not a valid `karva.toml`: Failed to read `<temp_dir>/nonexistent.toml`: No such file or directory (os error 2)
       Cause: Failed to read `<temp_dir>/nonexistent.toml`: No such file or directory (os error 2)
       Cause: No such file or directory (os error 2)
+    ");
+}
+
+#[test]
+#[cfg(windows)]
+fn test_config_file_flag_nonexistent_windows() {
+    let context = TestContext::with_file("test.py", "def test_a(): pass");
+
+    assert_cmd_snapshot!(context.command().arg("--config-file").arg("nonexistent.toml"), @r"
+    success: false
+    exit_code: 2
+    ----- stdout -----
+
+    ----- stderr -----
+    Karva failed
+      Cause: <temp_dir>/nonexistent.toml is not a valid `karva.toml`: Failed to read `<temp_dir>/nonexistent.toml`: The system cannot find the file specified. (os error 2)
+      Cause: Failed to read `<temp_dir>/nonexistent.toml`: The system cannot find the file specified. (os error 2)
+      Cause: The system cannot find the file specified. (os error 2)
     ");
 }
