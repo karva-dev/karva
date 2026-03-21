@@ -43,44 +43,11 @@ fn render_diff(output: &mut String, old: &str, new: &str, width: usize) {
 
                 let mut content = String::new();
                 for (emphasized, value) in change.iter_strings_lossy() {
-                    if emphasized {
-                        match style {
-                            Style::Delete => {
-                                let _ = write!(content, "{}", value.red().underline());
-                            }
-                            Style::Insert => {
-                                let _ = write!(content, "{}", value.green().underline());
-                            }
-                            Style::Equal => {
-                                let _ = write!(content, "{value}");
-                            }
-                        }
-                    } else {
-                        match style {
-                            Style::Delete => {
-                                let _ = write!(content, "{}", value.red());
-                            }
-                            Style::Insert => {
-                                let _ = write!(content, "{}", value.green());
-                            }
-                            Style::Equal => {
-                                let _ = write!(content, "{}", value.dimmed());
-                            }
-                        }
-                    }
+                    let _ = write!(content, "{}", style_content(&value, &style, emphasized));
                 }
 
-                let colored_marker = match style {
-                    Style::Delete => marker.red().to_string(),
-                    Style::Insert => marker.green().to_string(),
-                    Style::Equal => marker.to_string(),
-                };
-
-                let (styled_old, styled_new) = match style {
-                    Style::Delete => (old_num.cyan().dimmed().to_string(), new_num.clone()),
-                    Style::Insert => (old_num.clone(), new_num.cyan().dimmed().bold().to_string()),
-                    Style::Equal => (old_num.dimmed().to_string(), new_num.dimmed().to_string()),
-                };
+                let colored_marker = style.apply_to_marker(marker);
+                let (styled_old, styled_new) = style.apply_to_line_numbers(old_num, new_num);
 
                 let _ = write!(
                     output,
@@ -123,10 +90,42 @@ fn format_line_num(num: Option<usize>, width: usize) -> String {
     }
 }
 
+/// Apply color and emphasis to a diff content fragment based on the change style.
+fn style_content(value: &str, style: &Style, emphasized: bool) -> String {
+    match (style, emphasized) {
+        (Style::Delete, true) => value.red().underline().to_string(),
+        (Style::Delete, false) => value.red().to_string(),
+        (Style::Insert, true) => value.green().underline().to_string(),
+        (Style::Insert, false) => value.green().to_string(),
+        (Style::Equal, true) => value.to_string(),
+        (Style::Equal, false) => value.dimmed().to_string(),
+    }
+}
+
 enum Style {
     Delete,
     Insert,
     Equal,
+}
+
+impl Style {
+    /// Color a gutter marker (`-`, `+`, or space) to match the change style.
+    fn apply_to_marker(&self, marker: &str) -> String {
+        match self {
+            Self::Delete => marker.red().to_string(),
+            Self::Insert => marker.green().to_string(),
+            Self::Equal => marker.to_string(),
+        }
+    }
+
+    /// Style old/new line number strings to match the change style.
+    fn apply_to_line_numbers(&self, old_num: String, new_num: String) -> (String, String) {
+        match self {
+            Self::Delete => (old_num.cyan().dimmed().to_string(), new_num),
+            Self::Insert => (old_num, new_num.cyan().dimmed().bold().to_string()),
+            Self::Equal => (old_num.dimmed().to_string(), new_num.dimmed().to_string()),
+        }
+    }
 }
 
 #[cfg(test)]
