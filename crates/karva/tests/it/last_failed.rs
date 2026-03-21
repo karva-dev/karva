@@ -131,3 +131,66 @@ fn last_failed_without_previous_run_runs_all() {
     ----- stderr -----
     ");
 }
+
+#[test]
+fn last_failed_with_multiple_files() {
+    let context = TestContext::with_files([
+        (
+            "test_a.py",
+            "
+def test_pass(): pass
+def test_fail_a(): assert False
+            ",
+        ),
+        (
+            "test_b.py",
+            "
+def test_pass_b(): pass
+def test_fail_b(): assert False
+            ",
+        ),
+    ]);
+
+    context.command_no_parallel().output().unwrap();
+
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--last-failed").arg("-q"), @r"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+    test result: FAILED. 0 passed; 2 failed; 0 skipped; finished in [TIME]
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn last_failed_fix_then_rerun() {
+    let context = TestContext::with_file(
+        "test_a.py",
+        "
+def test_pass(): pass
+def test_fail(): assert False
+        ",
+    );
+
+    context.command_no_parallel().output().unwrap();
+
+    context.write_file(
+        "test_a.py",
+        "
+def test_pass(): pass
+def test_fail(): assert True
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--last-failed"), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    test test_a::test_fail ... ok
+
+    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+
+    ----- stderr -----
+    ");
+}
