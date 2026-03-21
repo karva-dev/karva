@@ -1,13 +1,14 @@
 mod watch;
 
+use std::collections::HashMap;
 use std::fmt::Write;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use anyhow::Result;
 use karva_cache::AggregatedResults;
 use karva_cli::{OutputFormat, TestCommand};
 use karva_collector::CollectedPackage;
-use karva_logging::{Printer, set_colored_override, setup_tracing};
+use karva_logging::{Printer, Stdout, set_colored_override, setup_tracing};
 use karva_metadata::filter::{NameFilterSet, TagFilterSet};
 use karva_metadata::{ProjectMetadata, ProjectOptionsOverrides};
 use karva_project::Project;
@@ -44,19 +45,22 @@ pub fn test(args: TestCommand) -> Result<ExitStatus> {
         ProjectMetadata::discover(&cwd, python_version)?
     };
 
-    let sub_command = args.sub_command.clone();
-
-    let no_parallel = args.no_parallel.unwrap_or(false);
-    let no_cache = args.no_cache.unwrap_or(false);
-    let num_workers = args.num_workers;
-    let dry_run = args.dry_run;
-    let watch = args.watch;
-    let last_failed = args.last_failed;
-    let durations = args.durations;
-
-    if watch && dry_run {
+    if args.watch && args.dry_run {
         anyhow::bail!("`--watch` and `--dry-run` cannot be used together");
     }
+
+    let sub_command = args.sub_command.clone();
+    let dry_run = args.dry_run;
+    let watch = args.watch;
+    let durations = args.durations;
+    let last_failed = args.last_failed;
+    let no_cache = args.no_cache.unwrap_or(false);
+    let num_workers = if args.no_parallel.unwrap_or(false) {
+        1
+    } else {
+        args.num_workers
+            .unwrap_or_else(|| karva_static::max_parallelism().get())
+    };
 
     let project_options_overrides = ProjectOptionsOverrides::new(config_file, args.into_options());
     project_metadata.apply_overrides(&project_options_overrides);
@@ -68,12 +72,6 @@ pub fn test(args: TestCommand) -> Result<ExitStatus> {
         print_collected_tests(printer, &collected)?;
         return Ok(ExitStatus::Success);
     }
-
-    let num_workers = if no_parallel {
-        1
-    } else {
-        num_workers.unwrap_or_else(|| karva_static::max_parallelism().get())
-    };
 
     TagFilterSet::new(&sub_command.tag_expressions)?;
     NameFilterSet::new(&sub_command.name_patterns)?;
@@ -109,7 +107,7 @@ pub fn test(args: TestCommand) -> Result<ExitStatus> {
     }
 }
 
-/// Print test output.
+/// Print test output: diagnostics, durations, and result summary.
 pub fn print_test_output(
     printer: Printer,
     start_time: Instant,
@@ -118,16 +116,35 @@ pub fn print_test_output(
     durations: Option<usize>,
 ) -> Result<()> {
     let mut stdout = printer.stream_for_details().lock();
-
     let is_concise = matches!(output_format, Some(OutputFormat::Concise));
 
-    if (!result.diagnostics.is_empty() || !result.discovery_diagnostics.is_empty())
-        && result.stats.total() > 0
-        && stdout.is_enabled()
-    {
+    let has_diagnostics =
+        !result.diagnostics.is_empty() || !result.discovery_diagnostics.is_empty();
+
+    if has_diagnostics && result.stats.total() > 0 && stdout.is_enabled() {
         writeln!(stdout)?;
     }
 
+    print_diagnostics_section(&mut stdout, result, is_concise)?;
+
+    let durations_printed = print_durations_section(&mut stdout, &result.durations, durations)?;
+
+    if !has_diagnostics && !durations_printed && result.stats.total() > 0 && stdout.is_enabled() {
+        writeln!(stdout)?;
+    }
+
+    let mut result_stdout = printer.stream_for_failure_summary().lock();
+    write!(result_stdout, "{}", result.stats.display(start_time))?;
+
+    Ok(())
+}
+
+/// Print discovery diagnostics and regular diagnostics, with concise-mode spacing.
+fn print_diagnostics_section(
+    stdout: &mut Stdout,
+    result: &AggregatedResults,
+    is_concise: bool,
+) -> Result<()> {
     if !result.discovery_diagnostics.is_empty() {
         writeln!(stdout, "discovery diagnostics:")?;
         writeln!(stdout)?;
@@ -148,41 +165,39 @@ pub fn print_test_output(
         }
     }
 
-    if let Some(n) = durations
-        && n > 0
-        && !result.durations.is_empty()
-    {
-        let mut sorted: Vec<_> = result.durations.iter().collect();
-        sorted.sort_by(|a, b| b.1.cmp(a.1));
-        let count = n.min(sorted.len());
-
-        writeln!(stdout)?;
-        writeln!(stdout, "{count} slowest tests:")?;
-        for (name, duration) in sorted.into_iter().take(n) {
-            writeln!(
-                stdout,
-                "  {} ({})",
-                name,
-                karva_logging::time::format_duration(*duration)
-            )?;
-        }
-        writeln!(stdout)?;
-    }
-
-    let durations_printed = durations.is_some_and(|n| n > 0 && !result.durations.is_empty());
-    if (result.diagnostics.is_empty() && result.discovery_diagnostics.is_empty())
-        && !durations_printed
-        && result.stats.total() > 0
-        && stdout.is_enabled()
-    {
-        writeln!(stdout)?;
-    }
-
-    let mut result_stdout = printer.stream_for_failure_summary().lock();
-
-    write!(result_stdout, "{}", result.stats.display(start_time))?;
-
     Ok(())
+}
+
+/// Print the N slowest test durations. Returns whether anything was printed.
+fn print_durations_section(
+    stdout: &mut Stdout,
+    test_durations: &HashMap<String, Duration>,
+    durations: Option<usize>,
+) -> Result<bool> {
+    let Some(n) = durations else {
+        return Ok(false);
+    };
+    if n == 0 || test_durations.is_empty() {
+        return Ok(false);
+    }
+
+    let mut sorted: Vec<_> = test_durations.iter().collect();
+    sorted.sort_by(|a, b| b.1.cmp(a.1));
+    let count = n.min(sorted.len());
+
+    writeln!(stdout)?;
+    writeln!(stdout, "{count} slowest tests:")?;
+    for (name, duration) in sorted.into_iter().take(n) {
+        writeln!(
+            stdout,
+            "  {} ({})",
+            name,
+            karva_logging::time::format_duration(*duration)
+        )?;
+    }
+    writeln!(stdout)?;
+
+    Ok(true)
 }
 
 /// Recursively collect test names from a `CollectedPackage` as `(module_name, function_name)` pairs.
