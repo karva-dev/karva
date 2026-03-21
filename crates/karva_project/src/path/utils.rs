@@ -33,3 +33,38 @@ pub fn absolute(path: impl AsRef<Utf8Path>, cwd: impl AsRef<Utf8Path>) -> Utf8Pa
 
     ret
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn relative_path_is_joined_to_cwd() {
+        let result = absolute("foo/bar", "/home/user");
+        assert_eq!(result, Utf8PathBuf::from("/home/user/foo/bar"));
+    }
+
+    #[test]
+    fn absolute_path_ignores_cwd() {
+        let result = absolute("/absolute/path", "/home/user");
+        assert_eq!(result, Utf8PathBuf::from("/absolute/path"));
+    }
+
+    #[test]
+    fn parent_dir_pops_component() {
+        let result = absolute("../sibling", "/home/user");
+        assert_eq!(result, Utf8PathBuf::from("/home/sibling"));
+    }
+
+    #[test]
+    fn current_dir_is_ignored() {
+        let result = absolute("./foo", "/home/user");
+        assert_eq!(result, Utf8PathBuf::from("/home/user/foo"));
+    }
+
+    #[test]
+    fn mixed_components() {
+        let result = absolute("foo/../bar/./baz", "/cwd");
+        assert_eq!(result, Utf8PathBuf::from("/cwd/bar/baz"));
+    }
+}

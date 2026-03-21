@@ -1399,6 +1399,7 @@ dependencies = [
  "pyo3",
  "ruff_python_ast",
  "serde",
+ "serde_json",
 ]
 
 [[package]]

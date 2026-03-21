@@ -220,4 +220,33 @@ mod tests {
         let test_name = QualifiedTestName::new(func_name, None);
         assert_eq!(test_name.to_string(), "foo.bar::test_add");
     }
+
+    #[test]
+    fn test_qualified_function_name_serde_roundtrip() {
+        let name: QualifiedFunctionName =
+            "foo.bar::test_add".parse().expect("valid qualified name");
+        let json = serde_json::to_string(&name).expect("serialize");
+        let deserialized: QualifiedFunctionName = serde_json::from_str(&json).expect("deserialize");
+        assert_eq!(name, deserialized);
+    }
+
+    #[test]
+    fn test_module_path_serde_roundtrip() {
+        let path: ModulePath = "foo.bar.baz".parse().expect("valid module path");
+        let json = serde_json::to_string(&path).expect("serialize");
+        assert_eq!(json, r#""foo.bar.baz""#);
+        let deserialized: ModulePath = serde_json::from_str(&json).expect("deserialize");
+        assert_eq!(path, deserialized);
+    }
+
+    #[test]
+    fn test_qualified_test_name_full_name_accessor() {
+        let func_name: QualifiedFunctionName =
+            "mod::test_fn".parse().expect("valid qualified name");
+        let with_full = QualifiedTestName::new(func_name.clone(), Some("test_fn[1]".to_string()));
+        assert_eq!(with_full.full_name(), Some("test_fn[1]"));
+
+        let without_full = QualifiedTestName::new(func_name, None);
+        assert_eq!(without_full.full_name(), None);
+    }
 }

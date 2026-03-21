@@ -1211,3 +1211,70 @@ def cli_should_run(): pass
     WARN Ignoring the `tool.karva` section in `<temp_dir>/pyproject.toml` because `<temp_dir>/karva.toml` takes precedence.
     ");
 }
+
+#[test]
+fn test_config_file_flag() {
+    let context = TestContext::with_files([
+        (
+            "custom-config.toml",
+            r#"
+[test]
+test-function-prefix = "check"
+"#,
+        ),
+        (
+            "test.py",
+            r"
+def check_from_config(): pass
+def test_should_not_run(): pass
+",
+        ),
+    ]);
+
+    assert_cmd_snapshot!(context.command().arg("--config-file").arg("custom-config.toml"), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    test test::check_from_config ... ok
+
+    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+#[cfg(unix)]
+fn test_config_file_flag_nonexistent_unix() {
+    let context = TestContext::with_file("test.py", "def test_a(): pass");
+
+    assert_cmd_snapshot!(context.command().arg("--config-file").arg("nonexistent.toml"), @r"
+    success: false
+    exit_code: 2
+    ----- stdout -----
+
+    ----- stderr -----
+    Karva failed
+      Cause: <temp_dir>/nonexistent.toml is not a valid `karva.toml`: Failed to read `<temp_dir>/nonexistent.toml`: No such file or directory (os error 2)
+      Cause: Failed to read `<temp_dir>/nonexistent.toml`: No such file or directory (os error 2)
+      Cause: No such file or directory (os error 2)
+    ");
+}
+
+#[test]
+#[cfg(windows)]
+fn test_config_file_flag_nonexistent_windows() {
+    let context = TestContext::with_file("test.py", "def test_a(): pass");
+
+    assert_cmd_snapshot!(context.command().arg("--config-file").arg("nonexistent.toml"), @r"
+    success: false
+    exit_code: 2
+    ----- stdout -----
+
+    ----- stderr -----
+    Karva failed
+      Cause: <temp_dir>/nonexistent.toml is not a valid `karva.toml`: Failed to read `<temp_dir>/nonexistent.toml`: The system cannot find the file specified. (os error 2)
+      Cause: Failed to read `<temp_dir>/nonexistent.toml`: The system cannot find the file specified. (os error 2)
+      Cause: The system cannot find the file specified. (os error 2)
+    ");
+}
