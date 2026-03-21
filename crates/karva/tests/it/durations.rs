@@ -93,6 +93,39 @@ def test_a():
 }
 
 #[test]
+fn durations_with_skipped_tests() {
+    let context = TestContext::with_file(
+        "test_durations.py",
+        r"
+import karva
+
+def test_pass():
+    pass
+
+@karva.tags.skip
+def test_skipped():
+    pass
+",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel().args(["--durations", "5"]), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    test test_durations::test_pass ... ok
+    test test_durations::test_skipped ... skipped
+
+    2 slowest tests:
+      test_durations::test_pass ([TIME])
+      test_durations::test_skipped ([TIME])
+
+    test result: ok. 1 passed; 0 failed; 1 skipped; finished in [TIME]
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
 fn durations_with_failing_tests() {
     let context = TestContext::with_file(
         "test_durations.py",

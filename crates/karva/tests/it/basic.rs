@@ -1338,3 +1338,150 @@ def test_pass():
     ----- stderr -----
     ");
 }
+
+#[test]
+fn test_fail_fast() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+def test_1():
+    assert True
+
+def test_2():
+    assert False
+
+def test_3():
+    assert True
+        ",
+    );
+
+    let output = context
+        .command_no_parallel()
+        .arg("--fail-fast")
+        .output()
+        .expect("failed to run");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(!output.status.success());
+    assert!(
+        stdout.contains("test test::test_1 ... ok"),
+        "first test should pass"
+    );
+    assert!(
+        stdout.contains("test test::test_2 ... FAILED"),
+        "second test should fail"
+    );
+    assert!(
+        !stdout.contains("test test::test_3"),
+        "third test should not run due to --fail-fast"
+    );
+}
+
+#[test]
+fn test_fail_fast_across_modules() {
+    let context = TestContext::with_files([
+        (
+            "test_a.py",
+            r"
+def test_a_fail():
+    assert False
+            ",
+        ),
+        (
+            "test_b.py",
+            r"
+def test_b_pass():
+    assert True
+            ",
+        ),
+    ]);
+
+    let output = context
+        .command_no_parallel()
+        .arg("--fail-fast")
+        .arg("-q")
+        .output()
+        .expect("failed to run");
+    assert!(!output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("FAILED"), "should report failure");
+}
+
+#[test]
+fn test_dry_run_nested_packages() {
+    let context = TestContext::with_files([
+        (
+            "tests/test_root.py",
+            r"
+def test_root(): pass
+            ",
+        ),
+        (
+            "tests/sub/test_nested.py",
+            r"
+def test_nested(): pass
+            ",
+        ),
+    ]);
+
+    assert_cmd_snapshot!(context.command().arg("--dry-run"), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    <test> tests.sub.test_nested::test_nested
+    <test> tests.test_root::test_root
+
+    2 tests collected
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_show_python_output() {
+    let context = TestContext::with_file(
+        "test.py",
+        r#"
+def test_with_print():
+    print("hello from test")
+    assert True
+        "#,
+    );
+
+    assert_cmd_snapshot!(context.command().arg("-s"), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    hello from test
+    test test::test_with_print ... ok
+
+    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_retry_flag() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+counter = 0
+
+def test_flaky():
+    global counter
+    counter += 1
+    assert counter >= 2
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--retry=2"), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    test test::test_flaky ... ok
+
+    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+
+    ----- stderr -----
+    ");
+}

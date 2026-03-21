@@ -81,11 +81,7 @@ impl FunctionDefinitionVisitor<'_, '_, '_, '_> {
             return;
         };
 
-        let mut generator_function_visitor = GeneratorFunctionVisitor::default();
-
-        source_order::walk_body(&mut generator_function_visitor, &stmt_function_def.body);
-
-        let is_generator_function = generator_function_visitor.is_generator;
+        let is_generator_function = is_generator(&stmt_function_def);
 
         let stmt_function_def = Rc::new(stmt_function_def);
 
@@ -142,12 +138,22 @@ impl FunctionDefinitionVisitor<'_, '_, '_, '_> {
     }
 
     fn try_process_imported_symbol(&mut self, py_module: &Bound<'_, PyModule>, name: &str) {
-        let Ok(value) = py_module.getattr(name) else {
-            return;
-        };
+        let _ = self.resolve_imported_fixture(py_module, name);
+    }
+
+    /// Attempt to resolve an imported symbol as a fixture.
+    ///
+    /// Returns `None` at any step that fails — the symbol simply won't be
+    /// discovered as a fixture.
+    fn resolve_imported_fixture(
+        &mut self,
+        py_module: &Bound<'_, PyModule>,
+        name: &str,
+    ) -> Option<()> {
+        let value = py_module.getattr(name).ok()?;
 
         if !value.is_callable() {
-            return;
+            return None;
         }
 
         if self
@@ -156,7 +162,7 @@ impl FunctionDefinitionVisitor<'_, '_, '_, '_> {
             .iter()
             .any(|f| f.name().function_name() == name)
         {
-            return;
+            return None;
         }
 
         if self
@@ -165,75 +171,38 @@ impl FunctionDefinitionVisitor<'_, '_, '_, '_> {
             .iter()
             .any(|f| f.name.function_name() == name)
         {
-            return;
+            return None;
         }
 
-        let Ok(module_name_attr) = value.getattr("__module__") else {
-            return;
-        };
-
-        let Ok(mut module_name) = module_name_attr.extract::<String>() else {
-            return;
-        };
+        let mut module_name = value.getattr("__module__").ok()?.extract::<String>().ok()?;
 
         if module_name == "builtins" {
-            let Ok(function) = value.getattr("function") else {
-                return;
-            };
-
-            let Ok(function_module_name) = function.getattr("__module__") else {
-                return;
-            };
-
-            let Ok(actual_module_name) = function_module_name.extract::<String>() else {
-                return;
-            };
-
-            module_name = actual_module_name;
+            module_name = value
+                .getattr("function")
+                .ok()?
+                .getattr("__module__")
+                .ok()?
+                .extract::<String>()
+                .ok()?;
         }
 
-        let Ok(imported_module) = self.py.import(&module_name) else {
-            return;
-        };
-
-        let Ok(file_name) = imported_module.getattr("__file__") else {
-            return;
-        };
-
-        let Ok(file_name) = file_name.extract::<String>() else {
-            return;
-        };
-
-        let std_path = Path::new(&file_name);
-
-        let Some(utf8_file_name) = Utf8Path::from_path(std_path) else {
-            return;
-        };
-
-        let Some(module_path) = ModulePath::new(utf8_file_name, &self.context.cwd().to_path_buf())
-        else {
-            return;
-        };
-
-        let Ok(source_text) = std::fs::read_to_string(utf8_file_name) else {
-            return;
-        };
-
-        let Some(stmt_function_def) =
-            find_function_statement(name, &source_text, self.context.python_version())
-        else {
-            return;
-        };
+        let imported_module = self.py.import(&module_name).ok()?;
+        let file_name = imported_module
+            .getattr("__file__")
+            .ok()?
+            .extract::<String>()
+            .ok()?;
+        let utf8_file_name = Utf8Path::from_path(Path::new(&file_name))?;
+        let module_path = ModulePath::new(utf8_file_name, &self.context.cwd().to_path_buf())?;
+        let source_text = std::fs::read_to_string(utf8_file_name).ok()?;
+        let stmt_function_def =
+            find_function_statement(name, &source_text, self.context.python_version())?;
 
         if !is_fixture_function(&stmt_function_def) {
-            return;
+            return None;
         }
 
-        let mut generator_function_visitor = GeneratorFunctionVisitor::default();
-
-        source_order::walk_body(&mut generator_function_visitor, &stmt_function_def.body);
-
-        let is_generator_function = generator_function_visitor.is_generator;
+        let is_generator_function = is_generator(&stmt_function_def);
 
         match DiscoveredFixture::try_from_function(
             self.py,
@@ -253,6 +222,8 @@ impl FunctionDefinitionVisitor<'_, '_, '_, '_> {
                 );
             }
         }
+
+        Some(())
     }
 }
 
@@ -276,6 +247,13 @@ pub fn discover(
     if context.settings().test().try_import_fixtures {
         visitor.find_extra_fixtures();
     }
+}
+
+/// Returns `true` if the function body contains a yield or yield-from expression.
+fn is_generator(stmt_function_def: &StmtFunctionDef) -> bool {
+    let mut visitor = GeneratorFunctionVisitor::default();
+    source_order::walk_body(&mut visitor, &stmt_function_def.body);
+    visitor.is_generator
 }
 
 /// Visitor that detects whether a function contains yield expressions.

@@ -588,3 +588,41 @@ def test_should_fail():
     ----- stderr -----
     ");
 }
+
+#[rstest]
+fn test_expect_fail_with_parametrize(#[values("pytest", "karva")] framework: &str) {
+    let context = TestContext::with_file(
+        "test.py",
+        &format!(
+            r"
+import {framework}
+
+@{parametrize}('x', [1, 2, 3])
+@{expect_fail}
+def test_param(x):
+    assert x > 10
+        ",
+            expect_fail = get_expect_fail_decorator(framework),
+            parametrize = if framework == "pytest" {
+                "pytest.mark.parametrize"
+            } else {
+                "karva.tags.parametrize"
+            }
+        ),
+    );
+
+    allow_duplicates! {
+        assert_cmd_snapshot!(context.command(), @r"
+        success: true
+        exit_code: 0
+        ----- stdout -----
+        test test::test_param(x=1) ... ok
+        test test::test_param(x=2) ... ok
+        test test::test_param(x=3) ... ok
+
+        test result: ok. 3 passed; 0 failed; 0 skipped; finished in [TIME]
+
+        ----- stderr -----
+        ");
+    }
+}
