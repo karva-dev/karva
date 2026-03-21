@@ -163,8 +163,6 @@ jobs:
         env:
           PYO3_PYTHON: ${{ steps.setup-python.outputs.python-path }}
           KARVA_MAX_PARALLELISM: 2
-          LLVM_COV: llvm-cov
-          LLVM_PROFDATA: llvm-profdata
         run: just coverage
 
       - name: "Upload coverage report"
