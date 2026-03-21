@@ -558,6 +558,66 @@ def test_square(input, expected):
 }
 
 #[test]
+fn test_parametrize_with_pytest_param_marks_list() {
+    let test_context = TestContext::with_file(
+        "test.py",
+        r#"
+import pytest
+
+@pytest.mark.parametrize("x", [
+    pytest.param(1),
+    pytest.param(2, marks=[pytest.mark.skip]),
+    pytest.param(3, marks=[pytest.mark.xfail]),
+])
+def test_marks_list(x):
+    assert x != 3
+"#,
+    );
+
+    assert_cmd_snapshot!(test_context.command(), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    test test::test_marks_list(x=1) ... ok
+    test test::test_marks_list ... skipped
+    test test::test_marks_list(x=3) ... ok
+
+    test result: ok. 2 passed; 0 failed; 1 skipped; finished in [TIME]
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_parametrize_with_pytest_param_marks_skip_reason() {
+    let test_context = TestContext::with_file(
+        "test.py",
+        r#"
+import pytest
+
+@pytest.mark.parametrize("x", [
+    pytest.param(1),
+    pytest.param(2, marks=pytest.mark.skip(reason="not ready")),
+])
+def test_with_skip_reason(x):
+    assert x > 0
+"#,
+    );
+
+    assert_cmd_snapshot!(test_context.command_no_parallel(), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    test test::test_with_skip_reason(x=1) ... ok
+    test test::test_with_skip_reason ... skipped: not ready
+
+    test result: ok. 1 passed; 0 failed; 1 skipped; finished in [TIME]
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
 fn test_parametrize_kwargs() {
     let test_context = TestContext::with_file(
         "test.py",

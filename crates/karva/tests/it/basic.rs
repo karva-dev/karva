@@ -1282,3 +1282,59 @@ def test_gamma(): pass
     ----- stderr -----
     ");
 }
+
+#[test]
+fn test_concise_output_format_with_failure() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+def test_pass():
+    assert True
+
+def test_fail():
+    assert False
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--output-format=concise"), @r"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+    test test::test_pass ... ok
+    test test::test_fail ... FAILED
+
+    diagnostics:
+
+    test.py:5:5: error[test-failure] Test `test_fail` failed
+
+    test result: FAILED. 1 passed; 1 failed; 0 skipped; finished in [TIME]
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_concise_output_format_with_discovery_error() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+import nonexistent_module_xyz
+
+def test_pass():
+    assert True
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--output-format=concise"), @r"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+    discovery diagnostics:
+
+    error[failed-to-import-module] Failed to import python module `test`: No module named 'nonexistent_module_xyz'
+
+    test result: ok. 0 passed; 0 failed; 0 skipped; finished in [TIME]
+
+    ----- stderr -----
+    ");
+}

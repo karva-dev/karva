@@ -32,6 +32,152 @@ def test_fixture_generator(fixture_generator):
     ");
 }
 
+#[test]
+fn test_async_generator_fixture() {
+    let test_context = TestContext::with_file(
+        "test.py",
+        r"
+import karva
+
+@karva.fixture
+async def async_fixture():
+    yield 42
+
+async def test_async_fixture(async_fixture):
+    assert async_fixture == 42
+",
+    );
+
+    assert_cmd_snapshot!(test_context.command(), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    test test::test_async_fixture(async_fixture=42) ... ok
+
+    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_async_generator_fixture_with_teardown() {
+    let test_context = TestContext::with_file(
+        "test.py",
+        r"
+import karva
+
+arr = []
+
+@karva.fixture
+async def async_resource():
+    yield 'resource'
+    arr.append('cleaned')
+
+async def test_resource(async_resource):
+    assert async_resource == 'resource'
+    assert len(arr) == 0
+
+async def test_after_cleanup(async_resource):
+    assert len(arr) == 1
+",
+    );
+
+    assert_cmd_snapshot!(test_context.command_no_parallel(), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    test test::test_resource(async_resource=resource) ... ok
+    test test::test_after_cleanup(async_resource=resource) ... ok
+
+    test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_async_generator_fixture_multiple_yields() {
+    let test_context = TestContext::with_file(
+        "test.py",
+        r"import karva
+
+@karva.fixture
+async def bad_fixture():
+    yield 1
+    yield 2
+
+async def test_bad(bad_fixture):
+    assert bad_fixture == 1
+",
+    );
+
+    assert_cmd_snapshot!(test_context.command(), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    test test::test_bad(bad_fixture=1) ... ok
+
+    diagnostics:
+
+    warning[invalid-fixture-finalizer]: Discovered an invalid fixture finalizer `bad_fixture`
+     --> test.py:4:11
+      |
+    3 | @karva.fixture
+    4 | async def bad_fixture():
+      |           ^^^^^^^^^^^
+    5 |     yield 1
+    6 |     yield 2
+      |
+    info: Fixture had more than one yield statement
+
+    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_async_generator_fixture_error_in_teardown() {
+    let test_context = TestContext::with_file(
+        "test.py",
+        r#"import karva
+
+@karva.fixture
+async def error_fixture():
+    yield 1
+    raise RuntimeError("teardown failed")
+
+async def test_error(error_fixture):
+    assert error_fixture == 1
+"#,
+    );
+
+    assert_cmd_snapshot!(test_context.command(), @r#"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    test test::test_error(error_fixture=1) ... ok
+
+    diagnostics:
+
+    warning[invalid-fixture-finalizer]: Discovered an invalid fixture finalizer `error_fixture`
+     --> test.py:4:11
+      |
+    3 | @karva.fixture
+    4 | async def error_fixture():
+      |           ^^^^^^^^^^^^^
+    5 |     yield 1
+    6 |     raise RuntimeError("teardown failed")
+      |
+    info: Failed to reset fixture: teardown failed
+
+    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+
+    ----- stderr -----
+    "#);
+}
+
 #[rstest]
 fn test_fixture_generator_with_second_fixture(#[values("karva", "pytest")] framework: &str) {
     let test_context = TestContext::with_file(

@@ -305,6 +305,135 @@ def test_1():
     ");
 }
 
+#[test]
+fn test_monkeypatch_setattr_dotted_import_path() {
+    let context = TestContext::with_file(
+        "test.py",
+        r#"
+import os
+
+def test_setattr_dotted_path(monkeypatch):
+    monkeypatch.setattr("os.sep", "X")
+    assert os.sep == "X"
+
+def test_setattr_dotted_path_undo(monkeypatch):
+    original = os.sep
+    monkeypatch.setattr("os.sep", "Y")
+    assert os.sep == "Y"
+    monkeypatch.undo()
+    assert os.sep == original
+        "#,
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    test test::test_setattr_dotted_path(monkeypatch=<MockEnv object>) ... ok
+    test test::test_setattr_dotted_path_undo(monkeypatch=<MockEnv object>) ... ok
+
+    test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_monkeypatch_delattr_dotted_import_path() {
+    let context = TestContext::with_file(
+        "test.py",
+        r#"
+import os
+
+def test_delattr_dotted_path(monkeypatch):
+    monkeypatch.delattr("os.sep")
+    assert not hasattr(os, "sep")
+
+def test_delattr_dotted_path_undo(monkeypatch):
+    original = os.sep
+    monkeypatch.delattr("os.sep")
+    assert not hasattr(os, "sep")
+    monkeypatch.undo()
+    assert os.sep == original
+        "#,
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    test test::test_delattr_dotted_path(monkeypatch=<MockEnv object>) ... ok
+    test test::test_delattr_dotted_path_undo(monkeypatch=<MockEnv object>) ... ok
+
+    test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_monkeypatch_context_classmethod() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+from karva import MockEnv
+
+def test_context_classmethod():
+    class A:
+        x = 1
+
+    with MockEnv.context() as mp:
+        mp.setattr(A, 'x', 2)
+        assert A.x == 2
+        mp.undo()
+
+    assert A.x == 1
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command(), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    test test::test_context_classmethod ... ok
+
+    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_monkeypatch_delitem_raising() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+import karva
+
+def test_delitem_raises_key_error(monkeypatch):
+    d = {}
+    with karva.raises(KeyError):
+        monkeypatch.delitem(d, 'missing')
+
+def test_delitem_not_raising(monkeypatch):
+    d = {}
+    monkeypatch.delitem(d, 'missing', raising=False)
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    test test::test_delitem_raises_key_error(monkeypatch=<MockEnv object>) ... ok
+    test test::test_delitem_not_raising(monkeypatch=<MockEnv object>) ... ok
+
+    test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+
+    ----- stderr -----
+    ");
+}
+
 /// Taken from <https://github.com/pytest-dev/pytest/blob/main/testing/test_monkeypatch.py>
 #[test]
 fn test_mock_env() {

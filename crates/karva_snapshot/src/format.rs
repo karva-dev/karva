@@ -231,4 +231,20 @@ mod tests {
         some content
         ");
     }
+
+    #[test]
+    fn parse_inline_metadata() {
+        let input = "---\nsource: test.py:5::test_hello\ninline_source: /abs/path/to/test.py\ninline_line: 5\n---\nhello world\n";
+        let snapshot = SnapshotFile::parse(input).expect("should parse");
+        assert_eq!(
+            snapshot.metadata.source.as_deref(),
+            Some("test.py:5::test_hello")
+        );
+        assert_eq!(
+            snapshot.metadata.inline_source.as_deref(),
+            Some("/abs/path/to/test.py")
+        );
+        assert_eq!(snapshot.metadata.inline_line, Some(5));
+        assert_eq!(snapshot.content, "hello world\n");
+    }
 }

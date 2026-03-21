@@ -195,6 +195,72 @@ def test_second():
 }
 
 #[test]
+fn test_snapshot_accept_no_pending() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+def test_pass():
+    assert True
+        ",
+    );
+
+    let _ = context.command_no_parallel().output();
+
+    assert_cmd_snapshot!(context.snapshot("accept"), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    No pending snapshots found.
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_snapshot_reject_no_pending() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+def test_pass():
+    assert True
+        ",
+    );
+
+    let _ = context.command_no_parallel().output();
+
+    assert_cmd_snapshot!(context.snapshot("reject"), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    No pending snapshots found.
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_snapshot_pending_none() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+def test_pass():
+    assert True
+        ",
+    );
+
+    let _ = context.command_no_parallel().output();
+
+    assert_cmd_snapshot!(context.snapshot("pending"), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    No pending snapshots.
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
 fn test_snapshot_pending_multiple() {
     let context = TestContext::with_file(
         "test.py",

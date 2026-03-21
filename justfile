@@ -34,4 +34,5 @@ coverage *args:
     "$LLVM_PROFDATA" merge -failure-mode=warn target/llvm-cov-target/*.profraw -o target/llvm-cov-target/merged.profdata
     "$LLVM_COV" report target/llvm-cov-target/debug/karva -object target/llvm-cov-target/debug/karva-worker -instr-profile=target/llvm-cov-target/merged.profdata -ignore-filename-regex='(\.cargo|rustc-|/rustlib/|\.claude/)'
     "$LLVM_COV" show target/llvm-cov-target/debug/karva -object target/llvm-cov-target/debug/karva-worker -instr-profile=target/llvm-cov-target/merged.profdata -ignore-filename-regex='(\.cargo|rustc-|/rustlib/|\.claude/)' --format=html -output-dir=target/coverage-html
+    "$LLVM_COV" export target/llvm-cov-target/debug/karva -object target/llvm-cov-target/debug/karva-worker -instr-profile=target/llvm-cov-target/merged.profdata -ignore-filename-regex='(\.cargo|rustc-|/rustlib/|\.claude/)' --format=lcov > target/coverage.lcov
     rm -f default_*.profraw
