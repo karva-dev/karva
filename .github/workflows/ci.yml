@@ -167,12 +167,6 @@ jobs:
           PYTHON_VERSION: "3.10"
         run: just coverage
 
-      - name: "Upload coverage report"
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: coverage-report
-          path: target/coverage-html/
-
       - name: "Upload to Codecov"
         uses: codecov/codecov-action@ad3126e916f78f00edff4ed0317cf185271ccc2d # v5.4.2
         with:
