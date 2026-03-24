@@ -28,11 +28,12 @@ def test_main(): pass
     ]);
 
     // With respect-ignore-files = false, the ignored file should be included
-    assert_cmd_snapshot!(context.command().arg("-q"), @r"
+    assert_cmd_snapshot!(context.command().arg("-q"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -64,13 +65,15 @@ def test_main(): pass
     ]);
 
     // With respect-ignore-files = true, the ignored file should be excluded
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test_main::test_main ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test_main::test_main
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -107,11 +110,12 @@ def test_in_other(): pass
     ]);
 
     // Only files in 'src' and 'tests' should be included
-    assert_cmd_snapshot!(context.command().arg("-q"), @r"
+    assert_cmd_snapshot!(context.command().arg("-q"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -142,13 +146,15 @@ def test_other(): pass
     ]);
 
     // Only the specifically included file should be tested
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test_specific::test_specific ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test_specific::test_specific
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -172,13 +178,15 @@ def test_example(): pass
         ),
     ]);
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_example ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_example
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -202,13 +210,15 @@ def test_example(): pass
         ),
     ]);
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_example ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_example
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -235,13 +245,15 @@ def test_with_print():
     ]);
 
     // Python output should be hidden
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_with_print ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_with_print
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -268,14 +280,16 @@ def test_with_print():
     ]);
 
     // Python output should be visible
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
+        Starting 1 test across 1 worker
     This should be visible
-    test test::test_with_print ... ok
+            PASS [TIME] test::test_with_print
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -301,13 +315,15 @@ def test_should_not_run(): pass
     ]);
 
     // Only functions with 'check' prefix should run
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::check_example ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::check_example
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -333,13 +349,15 @@ def check_should_not_run(): pass
     ]);
 
     // Only functions with 'test' prefix should run
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_example ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_example
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -368,11 +386,12 @@ def test_second():
     ]);
 
     // Should stop after first failure
-    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: false
     exit_code: 1
     ----- stdout -----
-    test test::test_first ... FAILED
+        Starting 2 tests across 1 worker
+            FAIL [TIME] test::test_first
 
     diagnostics:
 
@@ -393,7 +412,8 @@ def test_second():
     5 | def test_second():
       |
 
-    test result: FAILED. 0 passed; 1 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -425,13 +445,14 @@ def test_third():
     ]);
 
     // Should run all tests even after failures
-    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: false
     exit_code: 1
     ----- stdout -----
-    test test::test_first ... FAILED
-    test test::test_second ... ok
-    test test::test_third ... FAILED
+        Starting 3 tests across 1 worker
+            FAIL [TIME] test::test_first
+            PASS [TIME] test::test_second
+            FAIL [TIME] test::test_third
 
     diagnostics:
 
@@ -469,7 +490,8 @@ def test_third():
       |     ^^^^^^^^^^^^
       |
 
-    test result: FAILED. 1 passed; 2 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 3 tests run: 1 passed, 2 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -511,13 +533,15 @@ def check_other(): pass
     ]);
 
     // Should respect all configuration options
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test tests.test::check_example ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] tests.test::check_example
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -552,13 +576,15 @@ def verify_in_tests(): pass
     ]);
 
     // Should only run verify_* functions in src directory
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test src.module::verify_in_src ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] src.module::verify_in_src
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -600,11 +626,12 @@ def test_other(): pass
     ]);
 
     // Should respect pyproject.toml configuration
-    assert_cmd_snapshot!(context.command().arg("-q"), @r"
+    assert_cmd_snapshot!(context.command().arg("-q"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -634,13 +661,15 @@ def test_example():
         ),
     ]);
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_example ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_example
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -669,13 +698,15 @@ def test_should_not_run(): pass
         ),
     ]);
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::spec_example ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::spec_example
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -722,15 +753,17 @@ def it_should_not_run(): pass
         ),
     ]);
 
-    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: true
     exit_code: 0
     ----- stdout -----
+        Starting 2 tests across 1 worker
     Output visible
-    test tests.spec::it_works ... ok
-    test tests.spec::it_also_works ... ok
+            PASS [TIME] tests.spec::it_works
+            PASS [TIME] tests.spec::it_also_works
 
-    test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -766,13 +799,15 @@ def pyproject_test(): pass
     ]);
 
     // karva.toml should take precedence, so only karva_* functions run
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::karva_test ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::karva_test
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     WARN Ignoring the `tool.karva` section in `<temp_dir>/pyproject.toml` because `<temp_dir>/karva.toml` takes precedence.
@@ -792,13 +827,15 @@ def test_default(): pass
     ]);
 
     // Should use default settings
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_default ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_default
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -823,13 +860,15 @@ def custom_test(): pass
     ]);
 
     // Should use custom prefix but default for other options
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::custom_test ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::custom_test
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -855,13 +894,15 @@ def cli_should_run(): pass
     ]);
 
     // CLI argument --test-prefix should override config file
-    assert_cmd_snapshot!(context.command().arg("--test-prefix").arg("cli"), @r"
+    assert_cmd_snapshot!(context.command().arg("--test-prefix").arg("cli"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::cli_should_run ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::cli_should_run
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -886,13 +927,15 @@ def test_example(): pass
     ]);
 
     // CLI argument --output-format should override config file
-    assert_cmd_snapshot!(context.command().arg("--output-format").arg("concise"), @r"
+    assert_cmd_snapshot!(context.command().arg("--output-format").arg("concise"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_example ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_example
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -919,14 +962,16 @@ def test_with_print():
     ]);
 
     // CLI argument -s should override config file and show output
-    assert_cmd_snapshot!(context.command().arg("-s"), @r"
+    assert_cmd_snapshot!(context.command().arg("-s"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+        Starting 1 test across 1 worker
     This should be visible with -s flag
-    test test::test_with_print ... ok
+            PASS [TIME] test::test_with_print
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -958,11 +1003,12 @@ def test_main(): pass
     ]);
 
     // CLI argument --no-ignore should override config and include ignored files
-    assert_cmd_snapshot!(context.command().arg("--no-ignore").arg("-q"), @r"
+    assert_cmd_snapshot!(context.command().arg("--no-ignore").arg("-q"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -991,11 +1037,12 @@ def test_second():
     ]);
 
     // CLI argument --fail-fast should override config and stop after first failure
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--fail-fast"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--fail-fast"), @"
     success: false
     exit_code: 1
     ----- stdout -----
-    test test::test_first ... FAILED
+        Starting 2 tests across 1 worker
+            FAIL [TIME] test::test_first
 
     diagnostics:
 
@@ -1016,7 +1063,8 @@ def test_second():
     5 | def test_second():
       |
 
-    test result: FAILED. 0 passed; 1 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -1047,11 +1095,12 @@ def test_from_cli(): pass
     ]);
 
     // CLI path argument should add to config include
-    assert_cmd_snapshot!(context.command().arg("cli_dir").arg("-q"), @r"
+    assert_cmd_snapshot!(context.command().arg("cli_dir").arg("-q"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -1104,14 +1153,16 @@ def config_should_not_run(): pass
             .arg("-s")
             .arg("--no-ignore")
             .arg("custom_dir"),
-        @r"
+        @"
     success: true
     exit_code: 0
     ----- stdout -----
+        Starting 1 test across 1 worker
     CLI output visible
-    test custom_dir.ignored::custom_test ... ok
+            PASS [TIME] custom_dir.ignored::custom_test
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     "
@@ -1154,14 +1205,16 @@ def cli_should_run():
             .arg("cli")
             .arg("-s")
             .arg("--fail-fast"),
-        @r"
+        @"
     success: true
     exit_code: 0
     ----- stdout -----
+        Starting 1 test across 1 worker
     Output from CLI override
-    test test::cli_should_run ... ok
+            PASS [TIME] test::cli_should_run
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     "
@@ -1199,13 +1252,15 @@ def cli_should_run(): pass
     ]);
 
     // CLI argument should override both karva.toml and pyproject.toml
-    assert_cmd_snapshot!(context.command().arg("--test-prefix").arg("cli"), @r"
+    assert_cmd_snapshot!(context.command().arg("--test-prefix").arg("cli"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::cli_should_run ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::cli_should_run
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     WARN Ignoring the `tool.karva` section in `<temp_dir>/pyproject.toml` because `<temp_dir>/karva.toml` takes precedence.
@@ -1231,13 +1286,15 @@ def test_should_not_run(): pass
         ),
     ]);
 
-    assert_cmd_snapshot!(context.command().arg("--config-file").arg("custom-config.toml"), @r"
+    assert_cmd_snapshot!(context.command().arg("--config-file").arg("custom-config.toml"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::check_from_config ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::check_from_config
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");

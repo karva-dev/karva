@@ -23,7 +23,7 @@ fn run_and_print(
     durations: Option<usize>,
 ) {
     let start_time = Instant::now();
-    match karva_runner::run_parallel_tests(project, config, sub_command) {
+    match karva_runner::run_parallel_tests(project, config, sub_command, printer) {
         Ok(result) => {
             if let Err(err) = print_test_output(
                 printer,

@@ -44,7 +44,7 @@ fn test_watch_runs_and_can_be_killed() {
     let stdout = String::from_utf8_lossy(&output.stdout);
 
     assert!(
-        stdout.contains("test test::test_1 ... ok"),
+        stdout.contains("PASS") && stdout.contains("test::test_1"),
         "Expected test output, got: {stdout}"
     );
 }

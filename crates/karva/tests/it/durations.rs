@@ -20,19 +20,21 @@ def test_slow():
 ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().args(["--durations", "2"]), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().args(["--durations", "2"]), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test_durations::test_fast ... ok
-    test test_durations::test_medium ... ok
-    test test_durations::test_slow ... ok
+        Starting 3 tests across 1 worker
+            PASS [TIME] test_durations::test_fast
+            PASS [TIME] test_durations::test_medium
+            PASS [TIME] test_durations::test_slow
 
     2 slowest tests:
       test_durations::test_slow ([TIME])
       test_durations::test_medium ([TIME])
 
-    test result: ok. 3 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 3 tests run: 3 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -53,18 +55,20 @@ def test_slow():
 ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().args(["--durations", "10"]), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().args(["--durations", "10"]), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test_durations::test_fast ... ok
-    test test_durations::test_slow ... ok
+        Starting 2 tests across 1 worker
+            PASS [TIME] test_durations::test_fast
+            PASS [TIME] test_durations::test_slow
 
     2 slowest tests:
       test_durations::test_slow ([TIME])
       test_durations::test_fast ([TIME])
 
-    test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -80,13 +84,15 @@ def test_a():
 ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().args(["--durations", "0"]), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().args(["--durations", "0"]), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test_durations::test_a ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test_durations::test_a
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -108,18 +114,20 @@ def test_skipped():
 ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().args(["--durations", "5"]), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().args(["--durations", "5"]), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test_durations::test_pass ... ok
-    test test_durations::test_skipped ... skipped
+        Starting 2 tests across 1 worker
+            PASS [TIME] test_durations::test_pass
+            SKIP [TIME] test_durations::test_skipped
 
     2 slowest tests:
       test_durations::test_pass ([TIME])
       test_durations::test_skipped ([TIME])
 
-    test result: ok. 1 passed; 0 failed; 1 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 1 passed, 0 failed, 1 skipped
 
     ----- stderr -----
     ");
@@ -132,12 +140,13 @@ fn durations_with_failing_tests() {
         "def test_pass():\n    pass\n\ndef test_fail():\n    assert False\n",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().args(["--durations", "5"]), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().args(["--durations", "5"]), @"
     success: false
     exit_code: 1
     ----- stdout -----
-    test test_durations::test_pass ... ok
-    test test_durations::test_fail ... FAILED
+        Starting 2 tests across 1 worker
+            PASS [TIME] test_durations::test_pass
+            FAIL [TIME] test_durations::test_fail
 
     diagnostics:
 
@@ -163,7 +172,8 @@ fn durations_with_failing_tests() {
       test_durations::test_fail ([TIME])
       test_durations::test_pass ([TIME])
 
-    test result: FAILED. 1 passed; 1 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 1 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");

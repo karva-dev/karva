@@ -23,13 +23,15 @@ def test_fixtures_given_by_decorator(a):
 ",
     );
 
-    assert_cmd_snapshot!(test_context.command(), @r"
+    assert_cmd_snapshot!(test_context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_fixtures_given_by_decorator ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_fixtures_given_by_decorator
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -62,13 +64,15 @@ def test_func(a, b):
 ",
     );
 
-    assert_cmd_snapshot!(test_context.command(), @r"
+    assert_cmd_snapshot!(test_context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_func(b=1) ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_func(b=1)
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -98,14 +102,16 @@ def test_func(a, b):
 "#,
     );
 
-    assert_cmd_snapshot!(test_context.command(), @r"
+    assert_cmd_snapshot!(test_context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_func(b=1) ... ok
-    test test::test_func(b=2) ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_func(b=1)
+            PASS [TIME] test::test_func(b=2)
 
-    test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -140,14 +146,16 @@ def test_func(a, b, c):
 "#,
     );
 
-    assert_cmd_snapshot!(test_context.command(), @r"
+    assert_cmd_snapshot!(test_context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_func(b=1, c=1) ... ok
-    test test::test_func(b=2, c=1) ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_func(b=1, c=1)
+            PASS [TIME] test::test_func(b=2, c=1)
 
-    test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -175,11 +183,12 @@ def test_fixtures_given_by_decorator(a, b):
 ",
     );
 
-    assert_cmd_snapshot!(test_context.command(), @r"
+    assert_cmd_snapshot!(test_context.command(), @"
     success: false
     exit_code: 1
     ----- stdout -----
-    test test::test_fixtures_given_by_decorator ... FAILED
+        Starting 1 test across 1 worker
+            FAIL [TIME] test::test_fixtures_given_by_decorator
 
     diagnostics:
 
@@ -194,7 +203,8 @@ def test_fixtures_given_by_decorator(a, b):
        |
     info: Missing fixtures: `b`
 
-    test result: FAILED. 0 passed; 1 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");

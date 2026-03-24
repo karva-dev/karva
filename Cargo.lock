@@ -1247,6 +1247,7 @@ dependencies = [
  "codspeed-criterion-compat",
  "codspeed-divan-compat",
  "karva_cli",
+ "karva_logging",
  "karva_metadata",
  "karva_project",
  "karva_runner",
@@ -1409,6 +1410,7 @@ version = "0.0.0"
 dependencies = [
  "anyhow",
  "camino",
+ "colored 3.1.1",
  "crossbeam-channel",
  "ctrlc",
  "fastrand",

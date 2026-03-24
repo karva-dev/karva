@@ -35,9 +35,11 @@ fn test_fixture_basic(#[values("pytest", "karva")] framework: &str) {
         success: true
         exit_code: 0
         ----- stdout -----
-        test test::test_with_fixture(my_fixture=value) ... ok
+            Starting 1 test across 1 worker
+                PASS [TIME] test::test_with_fixture(my_fixture=value)
 
-        test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+        ────────────
+             Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
         ----- stderr -----
         ");
@@ -74,9 +76,11 @@ fn test_fixture_in_conftest(#[values("pytest", "karva")] framework: &str) {
         success: true
         exit_code: 0
         ----- stdout -----
-        test test::test_with_number(number_fixture=42) ... ok
+            Starting 1 test across 1 worker
+                PASS [TIME] test::test_with_number(number_fixture=42)
 
-        test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+        ────────────
+             Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
         ----- stderr -----
         ");
@@ -123,10 +127,12 @@ fn test_fixture_module_scope(#[values("pytest", "karva")] framework: &str) {
         success: true
         exit_code: 0
         ----- stdout -----
-        test test::test_first(module_fixture=MODULE) ... ok
-        test test::test_second(module_fixture=MODULE) ... ok
+            Starting 2 tests across 1 worker
+                PASS [TIME] test::test_first(module_fixture=MODULE)
+                PASS [TIME] test::test_second(module_fixture=MODULE)
 
-        test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+        ────────────
+             Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
 
         ----- stderr -----
         ");
@@ -166,10 +172,12 @@ fn test_fixture_with_generator(#[values("pytest", "karva")] framework: &str) {
         success: true
         exit_code: 0
         ----- stdout -----
-        test test::test_with_setup(setup_fixture=resource) ... ok
-        test test::test_verify_finalizer_ran ... ok
+            Starting 2 tests across 1 worker
+                PASS [TIME] test::test_with_setup(setup_fixture=resource)
+                PASS [TIME] test::test_verify_finalizer_ran
 
-        test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+        ────────────
+             Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
 
         ----- stderr -----
         ");
@@ -215,11 +223,12 @@ fn test_fixture_session_scope(#[values("pytest", "karva")] framework: &str) {
     ]);
 
     allow_duplicates! {
-        assert_cmd_snapshot!(context.command().arg("-q"), @r"
+        assert_cmd_snapshot!(context.command().arg("-q"), @"
         success: true
         exit_code: 0
         ----- stdout -----
-        test result: ok. 3 passed; 0 failed; 0 skipped; finished in [TIME]
+        ────────────
+             Summary [TIME] 3 tests run: 3 passed, 0 failed, 0 skipped
 
         ----- stderr -----
         ");
@@ -254,9 +263,11 @@ fn test_fixture_with_multiple_fixtures(#[values("pytest", "karva")] framework: &
         success: true
         exit_code: 0
         ----- stdout -----
-        test test::test_combination(letter=X, number=100) ... ok
+            Starting 1 test across 1 worker
+                PASS [TIME] test::test_combination(letter=X, number=100)
 
-        test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+        ────────────
+             Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
         ----- stderr -----
         ");
@@ -289,10 +300,12 @@ fn test_fixture_with_test_parametrize(#[values("pytest", "karva")] framework: &s
         success: true
         exit_code: 0
         ----- stdout -----
-        test test::test_both(fixture_value=fixture_value, test_param=10) ... ok
-        test test::test_both(fixture_value=fixture_value, test_param=20) ... ok
+            Starting 1 test across 1 worker
+                PASS [TIME] test::test_both(fixture_value=fixture_value, test_param=10)
+                PASS [TIME] test::test_both(fixture_value=fixture_value, test_param=20)
 
-        test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+        ────────────
+             Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
 
         ----- stderr -----
         ");
@@ -335,10 +348,12 @@ fn test_fixture_generator_finalizer_order(#[values("pytest", "karva")] framework
         success: true
         exit_code: 0
         ----- stdout -----
-        test test::test_one(ordered_fixture=value) ... ok
-        test test::test_check_order ... ok
+            Starting 2 tests across 1 worker
+                PASS [TIME] test::test_one(ordered_fixture=value)
+                PASS [TIME] test::test_check_order
 
-        test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+        ────────────
+             Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
 
         ----- stderr -----
         ");
@@ -378,11 +393,12 @@ fn test_fixture_package_scope(#[values("pytest", "karva")] framework: &str) {
     ]);
 
     allow_duplicates! {
-        assert_cmd_snapshot!(context.command().arg("-q"), @r"
+        assert_cmd_snapshot!(context.command().arg("-q"), @"
         success: true
         exit_code: 0
         ----- stdout -----
-        test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+        ────────────
+             Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
 
         ----- stderr -----
         ");
@@ -416,9 +432,11 @@ fn test_fixture_with_dependency(#[values("pytest", "karva")] framework: &str) {
         success: true
         exit_code: 0
         ----- stdout -----
-        test test::test_dependent(dependent_fixture=1000) ... ok
+            Starting 1 test across 1 worker
+                PASS [TIME] test::test_dependent(dependent_fixture=1000)
 
-        test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+        ────────────
+             Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
         ----- stderr -----
         ");
@@ -456,10 +474,12 @@ fn test_fixture_finalizer_with_state(#[values("pytest", "karva")] framework: &st
         success: true
         exit_code: 0
         ----- stdout -----
-        test test::test_uses_resource(resource=resource) ... ok
-        test test::test_all_cleaned_up ... ok
+            Starting 2 tests across 1 worker
+                PASS [TIME] test::test_uses_resource(resource=resource)
+                PASS [TIME] test::test_all_cleaned_up
 
-        test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+        ────────────
+             Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
 
         ----- stderr -----
         ");
@@ -511,16 +531,18 @@ fn test_complex_fixture_generator_finalizer_order(#[values("pytest", "karva")] f
     );
 
     allow_duplicates! {
-        assert_cmd_snapshot!(context.command_no_parallel(), @r#"
+        assert_cmd_snapshot!(context.command_no_parallel(), @"
         success: true
         exit_code: 0
         ----- stdout -----
-        test test::test_one(ordered_fixture=value1, ordered_fixture2=value2) ... ok
-        test test::test_check_order ... ok
+            Starting 2 tests across 1 worker
+                PASS [TIME] test::test_one(ordered_fixture=value1, ordered_fixture2=value2)
+                PASS [TIME] test::test_check_order
 
-        test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+        ────────────
+             Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
 
         ----- stderr -----
-        "#);
+        ");
     }
 }

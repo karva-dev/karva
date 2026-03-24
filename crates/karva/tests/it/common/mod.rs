@@ -62,6 +62,7 @@ impl TestContext {
         settings.add_filter(&tempdir_filter(&project_path), "<temp_dir>/");
         settings.add_filter(r#"\\(\w\w|\s|\.|")"#, "/$1");
         settings.add_filter(r"\x1b\[[0-9;]*m", "");
+        settings.add_filter(r"\[\s*\d+\.\d+s\]", "[TIME]");
         settings.add_filter(r"(\s|\()(\d+m )?(\d+\.)?\d+(ms|s)", "$1[TIME]");
         settings.add_filter(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}", "[DATETIME]");
         settings.add_filter(r"run-\d+", "run-[TIMESTAMP]");

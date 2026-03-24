@@ -223,7 +223,8 @@ def test_poem():
     success: false
     exit_code: 1
     ----- stdout -----
-    test test::test_poem ... FAILED
+        Starting 1 test across 1 worker
+            FAIL [TIME] test::test_poem
 
     diagnostics:
 
@@ -252,7 +253,8 @@ def test_poem():
                     3 │ +sugar is sweet
           ────────────┴───────────────────────────
 
-    test result: FAILED. 0 passed; 1 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -312,13 +314,15 @@ def test_roundtrip():
     ----- stderr -----
     ");
 
-    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_roundtrip ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_roundtrip
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -344,13 +348,15 @@ def test_long():
     let content = context.read_file("snapshots/test__test_long.snap");
     assert!(content.contains(&"A".repeat(500)));
 
-    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_long ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_long
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");

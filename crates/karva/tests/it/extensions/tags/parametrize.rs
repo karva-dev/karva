@@ -29,15 +29,17 @@ def test_parametrize_with_fixture(a, fixture_value):
     assert fixture_value == 42"#,
     );
 
-    assert_cmd_snapshot!(test_context.command(), @r"
+    assert_cmd_snapshot!(test_context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_parametrize_with_fixture(a=1, fixture_value=42) ... ok
-    test test::test_parametrize_with_fixture(a=2, fixture_value=42) ... ok
-    test test::test_parametrize_with_fixture(a=3, fixture_value=42) ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_parametrize_with_fixture(a=1, fixture_value=42)
+            PASS [TIME] test::test_parametrize_with_fixture(a=2, fixture_value=42)
+            PASS [TIME] test::test_parametrize_with_fixture(a=3, fixture_value=42)
 
-    test result: ok. 3 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 3 tests run: 3 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -58,15 +60,17 @@ def test_parametrize_with_fixture(a):
     assert a > 0"#,
     );
 
-    assert_cmd_snapshot!(test_context.command(), @r"
+    assert_cmd_snapshot!(test_context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_parametrize_with_fixture(a=1) ... ok
-    test test::test_parametrize_with_fixture(a=2) ... ok
-    test test::test_parametrize_with_fixture(a=3) ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_parametrize_with_fixture(a=1)
+            PASS [TIME] test::test_parametrize_with_fixture(a=2)
+            PASS [TIME] test::test_parametrize_with_fixture(a=3)
 
-    test result: ok. 3 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 3 tests run: 3 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -85,16 +89,18 @@ def test_function(a: int, b: int):
 "#,
     );
 
-    assert_cmd_snapshot!(test_context.command(), @r"
+    assert_cmd_snapshot!(test_context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_function(a=1, b=1) ... ok
-    test test::test_function(a=2, b=1) ... ok
-    test test::test_function(a=1, b=2) ... ok
-    test test::test_function(a=2, b=2) ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_function(a=1, b=1)
+            PASS [TIME] test::test_function(a=2, b=1)
+            PASS [TIME] test::test_function(a=1, b=2)
+            PASS [TIME] test::test_function(a=2, b=2)
 
-    test result: ok. 4 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 4 tests run: 4 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -115,20 +121,22 @@ def test_function(a: int, b: int, c: int):
 "#,
     );
 
-    assert_cmd_snapshot!(test_context.command(), @r"
+    assert_cmd_snapshot!(test_context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_function(a=1, b=1, c=1) ... ok
-    test test::test_function(a=2, b=1, c=1) ... ok
-    test test::test_function(a=1, b=2, c=1) ... ok
-    test test::test_function(a=2, b=2, c=1) ... ok
-    test test::test_function(a=1, b=1, c=2) ... ok
-    test test::test_function(a=2, b=1, c=2) ... ok
-    test test::test_function(a=1, b=2, c=2) ... ok
-    test test::test_function(a=2, b=2, c=2) ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_function(a=1, b=1, c=1)
+            PASS [TIME] test::test_function(a=2, b=1, c=1)
+            PASS [TIME] test::test_function(a=1, b=2, c=1)
+            PASS [TIME] test::test_function(a=2, b=2, c=1)
+            PASS [TIME] test::test_function(a=1, b=1, c=2)
+            PASS [TIME] test::test_function(a=2, b=1, c=2)
+            PASS [TIME] test::test_function(a=1, b=2, c=2)
+            PASS [TIME] test::test_function(a=2, b=2, c=2)
 
-    test result: ok. 8 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 8 tests run: 8 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -155,14 +163,16 @@ fn test_parametrize_multiple_args_single_string(#[values("pytest", "karva")] fra
     );
 
     allow_duplicates! {
-        assert_cmd_snapshot!(test_context.command(), @r"
+        assert_cmd_snapshot!(test_context.command(), @"
         success: true
         exit_code: 0
         ----- stdout -----
-        test test::test_square(expected=4, input=2) ... ok
-        test test::test_square(expected=9, input=3) ... ok
+            Starting 1 test across 1 worker
+                PASS [TIME] test::test_square(expected=4, input=2)
+                PASS [TIME] test::test_square(expected=9, input=3)
 
-        test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+        ────────────
+             Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
 
         ----- stderr -----
         ");
@@ -186,15 +196,17 @@ def test_single_arg(a):
 "#,
     );
 
-    assert_cmd_snapshot!(test_context.command(), @r"
+    assert_cmd_snapshot!(test_context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_single_arg(a=1) ... ok
-    test test::test_single_arg(a=2) ... ok
-    test test::test_single_arg(a=3) ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_single_arg(a=1)
+            PASS [TIME] test::test_single_arg(a=2)
+            PASS [TIME] test::test_single_arg(a=3)
 
-    test result: ok. 3 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 3 tests run: 3 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -217,15 +229,17 @@ def test_square(input, expected):
 "#,
     );
 
-    assert_cmd_snapshot!(test_context.command(), @r"
+    assert_cmd_snapshot!(test_context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_square(expected=4, input=2) ... ok
-    test test::test_square(expected=9, input=3) ... ok
-    test test::test_square(expected=16, input=4) ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_square(expected=4, input=2)
+            PASS [TIME] test::test_square(expected=9, input=3)
+            PASS [TIME] test::test_square(expected=16, input=4)
 
-    test result: ok. 3 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 3 tests run: 3 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -248,15 +262,17 @@ def test_square(input, expected):
 "#,
     );
 
-    assert_cmd_snapshot!(test_context.command(), @r"
+    assert_cmd_snapshot!(test_context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_square(expected=4, input=2) ... ok
-    test test::test_square(expected=9, input=3) ... ok
-    test test::test_square(expected=16, input=4) ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_square(expected=4, input=2)
+            PASS [TIME] test::test_square(expected=9, input=3)
+            PASS [TIME] test::test_square(expected=16, input=4)
 
-    test result: ok. 3 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 3 tests run: 3 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -279,15 +295,17 @@ def test_square(input, expected):
 "#,
     );
 
-    assert_cmd_snapshot!(test_context.command(), @r"
+    assert_cmd_snapshot!(test_context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_square(expected=4, input=2) ... ok
-    test test::test_square(expected=9, input=3) ... ok
-    test test::test_square(expected=16, input=4) ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_square(expected=4, input=2)
+            PASS [TIME] test::test_square(expected=9, input=3)
+            PASS [TIME] test::test_square(expected=16, input=4)
 
-    test result: ok. 3 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 3 tests run: 3 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -316,15 +334,17 @@ def test_markup_mode_bullets_single_newline(length: int | None, nums: list[int])
 "#,
     );
 
-    assert_cmd_snapshot!(test_context.command(), @r"
+    assert_cmd_snapshot!(test_context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_markup_mode_bullets_single_newline(length=1, nums=[1]) ... ok
-    test test::test_markup_mode_bullets_single_newline(length=2, nums=[1, 2]) ... ok
-    test test::test_markup_mode_bullets_single_newline(length=None, nums=[]) ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_markup_mode_bullets_single_newline(length=1, nums=[1])
+            PASS [TIME] test::test_markup_mode_bullets_single_newline(length=2, nums=[1, 2])
+            PASS [TIME] test::test_markup_mode_bullets_single_newline(length=None, nums=[])
 
-    test result: ok. 3 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 3 tests run: 3 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -347,15 +367,17 @@ def test_square(input, expected):
 "#,
     );
 
-    assert_cmd_snapshot!(test_context.command(), @r"
+    assert_cmd_snapshot!(test_context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_square(expected=4, input=2) ... ok
-    test test::test_square ... skipped
-    test test::test_square(expected=26, input=5) ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_square(expected=4, input=2)
+            SKIP [TIME] test::test_square
+            PASS [TIME] test::test_square(expected=26, input=5)
 
-    test result: ok. 2 passed; 0 failed; 1 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 3 tests run: 2 passed, 0 failed, 1 skipped
 
     ----- stderr -----
     ");
@@ -378,15 +400,17 @@ def test_single_arg(a):
 "#,
     );
 
-    assert_cmd_snapshot!(test_context.command(), @r"
+    assert_cmd_snapshot!(test_context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_single_arg(a=1) ... ok
-    test test::test_single_arg(a=2) ... ok
-    test test::test_single_arg(a=3) ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_single_arg(a=1)
+            PASS [TIME] test::test_single_arg(a=2)
+            PASS [TIME] test::test_single_arg(a=3)
 
-    test result: ok. 3 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 3 tests run: 3 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -409,15 +433,17 @@ def test_square(input, expected):
 "#,
     );
 
-    assert_cmd_snapshot!(test_context.command(), @r"
+    assert_cmd_snapshot!(test_context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_square(expected=4, input=2) ... ok
-    test test::test_square(expected=9, input=3) ... ok
-    test test::test_square(expected=16, input=4) ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_square(expected=4, input=2)
+            PASS [TIME] test::test_square(expected=9, input=3)
+            PASS [TIME] test::test_square(expected=16, input=4)
 
-    test result: ok. 3 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 3 tests run: 3 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -440,15 +466,17 @@ def test_square(input, expected):
 "#,
     );
 
-    assert_cmd_snapshot!(test_context.command(), @r"
+    assert_cmd_snapshot!(test_context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_square(expected=4, input=2) ... ok
-    test test::test_square(expected=9, input=3) ... ok
-    test test::test_square(expected=16, input=4) ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_square(expected=4, input=2)
+            PASS [TIME] test::test_square(expected=9, input=3)
+            PASS [TIME] test::test_square(expected=16, input=4)
 
-    test result: ok. 3 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 3 tests run: 3 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -471,15 +499,17 @@ def test_square(input, expected):
 "#,
     );
 
-    assert_cmd_snapshot!(test_context.command(), @r"
+    assert_cmd_snapshot!(test_context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_square(expected=4, input=2) ... ok
-    test test::test_square(expected=9, input=3) ... ok
-    test test::test_square(expected=16, input=4) ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_square(expected=4, input=2)
+            PASS [TIME] test::test_square(expected=9, input=3)
+            PASS [TIME] test::test_square(expected=16, input=4)
 
-    test result: ok. 3 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 3 tests run: 3 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -508,15 +538,17 @@ def test_markup_mode_bullets_single_newline(length: int | None, nums: list[int])
 "#,
     );
 
-    assert_cmd_snapshot!(test_context.command(), @r"
+    assert_cmd_snapshot!(test_context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_markup_mode_bullets_single_newline(length=1, nums=[1]) ... ok
-    test test::test_markup_mode_bullets_single_newline(length=2, nums=[1, 2]) ... ok
-    test test::test_markup_mode_bullets_single_newline(length=None, nums=[]) ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_markup_mode_bullets_single_newline(length=1, nums=[1])
+            PASS [TIME] test::test_markup_mode_bullets_single_newline(length=2, nums=[1, 2])
+            PASS [TIME] test::test_markup_mode_bullets_single_newline(length=None, nums=[])
 
-    test result: ok. 3 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 3 tests run: 3 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -541,17 +573,19 @@ def test_square(input, expected):
 "#,
     );
 
-    assert_cmd_snapshot!(test_context.command(), @r"
+    assert_cmd_snapshot!(test_context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_square(expected=4, input=2) ... ok
-    test test::test_square ... skipped
-    test test::test_square(expected=26, input=5) ... ok
-    test test::test_square ... skipped
-    test test::test_square(expected=50, input=7) ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_square(expected=4, input=2)
+            SKIP [TIME] test::test_square
+            PASS [TIME] test::test_square(expected=26, input=5)
+            SKIP [TIME] test::test_square
+            PASS [TIME] test::test_square(expected=50, input=7)
 
-    test result: ok. 3 passed; 0 failed; 2 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 5 tests run: 3 passed, 0 failed, 2 skipped
 
     ----- stderr -----
     ");
@@ -574,15 +608,17 @@ def test_marks_list(x):
 "#,
     );
 
-    assert_cmd_snapshot!(test_context.command(), @r"
+    assert_cmd_snapshot!(test_context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_marks_list(x=1) ... ok
-    test test::test_marks_list ... skipped
-    test test::test_marks_list(x=3) ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_marks_list(x=1)
+            SKIP [TIME] test::test_marks_list
+            PASS [TIME] test::test_marks_list(x=3)
 
-    test result: ok. 2 passed; 0 failed; 1 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 3 tests run: 2 passed, 0 failed, 1 skipped
 
     ----- stderr -----
     ");
@@ -604,14 +640,16 @@ def test_with_skip_reason(x):
 "#,
     );
 
-    assert_cmd_snapshot!(test_context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(test_context.command_no_parallel(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_with_skip_reason(x=1) ... ok
-    test test::test_with_skip_reason ... skipped: not ready
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_with_skip_reason(x=1)
+            SKIP [TIME] test::test_with_skip_reason: not ready
 
-    test result: ok. 1 passed; 0 failed; 1 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 1 passed, 0 failed, 1 skipped
 
     ----- stderr -----
     ");
@@ -640,16 +678,18 @@ def test2(input, expected):
     "#,
     );
 
-    assert_cmd_snapshot!(test_context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(test_context.command_no_parallel(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test1(expected=4, input=2) ... ok
-    test test::test1(expected=16, input=4) ... ok
-    test test::test2(expected=4, input=2) ... ok
-    test test::test2(expected=16, input=4) ... ok
+        Starting 2 tests across 1 worker
+            PASS [TIME] test::test1(expected=4, input=2)
+            PASS [TIME] test::test1(expected=16, input=4)
+            PASS [TIME] test::test2(expected=4, input=2)
+            PASS [TIME] test::test2(expected=16, input=4)
 
-    test result: ok. 4 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 4 tests run: 4 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -668,15 +708,17 @@ def test_invalid(x):
 ",
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: false
     exit_code: 1
     ----- stdout -----
+        Starting 1 test across 1 worker
     discovery diagnostics:
 
     error[failed-to-import-module]: Failed to import python module `test`: Expected a string or a list of strings for the arg_names, and a list of lists of objects for the arg_values
 
-    test result: ok. 0 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 0 tests run: 0 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -699,15 +741,17 @@ def test_with_custom_marks(x):
 "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("-t").arg("slow"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-t").arg("slow"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_with_custom_marks ... skipped
-    test test::test_with_custom_marks(x=2) ... ok
-    test test::test_with_custom_marks(x=3) ... ok
+        Starting 1 test across 1 worker
+            SKIP [TIME] test::test_with_custom_marks
+            PASS [TIME] test::test_with_custom_marks(x=2)
+            PASS [TIME] test::test_with_custom_marks(x=3)
 
-    test result: ok. 2 passed; 0 failed; 1 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 3 tests run: 2 passed, 0 failed, 1 skipped
 
     ----- stderr -----
     ");

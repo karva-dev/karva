@@ -14,13 +14,15 @@ def test_hello():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_hello ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_hello
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -51,13 +53,15 @@ def test_hello():
         .arg("--snapshot-update")
         .output();
 
-    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_hello ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_hello
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -94,7 +98,8 @@ def test_hello():
     success: false
     exit_code: 1
     ----- stdout -----
-    test test::test_hello ... FAILED
+        Starting 1 test across 1 worker
+            FAIL [TIME] test::test_hello
 
     diagnostics:
 
@@ -121,7 +126,8 @@ def test_hello():
                     1 │ +goodbye world
           ────────────┴───────────────────────────
 
-    test result: FAILED. 0 passed; 1 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -140,13 +146,15 @@ def test_page():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_page ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_page
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -181,13 +189,15 @@ def test_mixed():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_mixed ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_mixed
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -221,11 +231,12 @@ def test_both():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: false
     exit_code: 1
     ----- stdout -----
-    test test::test_both ... FAILED
+        Starting 1 test across 1 worker
+            FAIL [TIME] test::test_both
 
     diagnostics:
 
@@ -247,7 +258,8 @@ def test_both():
       |
     info: assert_snapshot() cannot use both 'inline' and 'name' arguments
 
-    test result: FAILED. 0 passed; 1 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -356,14 +368,16 @@ def test_translate(lang):
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_translate(lang=en) ... ok
-    test test::test_translate(lang=fr) ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_translate(lang=en)
+            PASS [TIME] test::test_translate(lang=fr)
 
-    test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");

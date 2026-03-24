@@ -20,13 +20,15 @@ def test_fixture_generator(fixture_generator):
 ",
     );
 
-    assert_cmd_snapshot!(test_context.command(), @r"
+    assert_cmd_snapshot!(test_context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_fixture_generator(fixture_generator=1) ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_fixture_generator(fixture_generator=1)
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -48,13 +50,15 @@ async def test_async_fixture(async_fixture):
 ",
     );
 
-    assert_cmd_snapshot!(test_context.command(), @r"
+    assert_cmd_snapshot!(test_context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_async_fixture(async_fixture=42) ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_async_fixture(async_fixture=42)
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -83,14 +87,16 @@ async def test_after_cleanup(async_resource):
 ",
     );
 
-    assert_cmd_snapshot!(test_context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(test_context.command_no_parallel(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_resource(async_resource=resource) ... ok
-    test test::test_after_cleanup(async_resource=resource) ... ok
+        Starting 2 tests across 1 worker
+            PASS [TIME] test::test_resource(async_resource=resource)
+            PASS [TIME] test::test_after_cleanup(async_resource=resource)
 
-    test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -112,11 +118,12 @@ async def test_bad(bad_fixture):
 ",
     );
 
-    assert_cmd_snapshot!(test_context.command(), @r"
+    assert_cmd_snapshot!(test_context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_bad(bad_fixture=1) ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_bad(bad_fixture=1)
 
     diagnostics:
 
@@ -131,7 +138,8 @@ async def test_bad(bad_fixture):
       |
     info: Fixture had more than one yield statement
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -157,7 +165,8 @@ async def test_error(error_fixture):
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_error(error_fixture=1) ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_error(error_fixture=1)
 
     diagnostics:
 
@@ -172,7 +181,8 @@ async def test_error(error_fixture):
       |
     info: Failed to reset fixture: teardown failed
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     "#);
@@ -201,13 +211,15 @@ def test_fixture_generator(fixture_generator):
     );
 
     allow_duplicates! {
-        assert_cmd_snapshot!(test_context.command(), @r"
+        assert_cmd_snapshot!(test_context.command(), @"
         success: true
         exit_code: 0
         ----- stdout -----
-        test test::test_fixture_generator(fixture_generator=1) ... ok
+            Starting 1 test across 1 worker
+                PASS [TIME] test::test_fixture_generator(fixture_generator=1)
 
-        test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+        ────────────
+             Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
         ----- stderr -----
         ");

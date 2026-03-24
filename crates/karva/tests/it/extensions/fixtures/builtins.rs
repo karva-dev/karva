@@ -24,11 +24,12 @@ fn test_temp_directory_fixture(
     );
 
     allow_duplicates! {
-        assert_cmd_snapshot!(test_context.command().arg("-q"), @r"
+        assert_cmd_snapshot!(test_context.command().arg("-q"), @"
         success: true
         exit_code: 0
         ----- stdout -----
-        test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+        ────────────
+             Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
         ----- stderr -----
         ");
@@ -67,15 +68,17 @@ def test_setattr_undo(monkeypatch):
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_setattr_simple(monkeypatch=<MockEnv object>) ... ok
-    test test::test_setattr_new_attribute(monkeypatch=<MockEnv object>) ... ok
-    test test::test_setattr_undo(monkeypatch=<MockEnv object>) ... ok
+        Starting 3 tests across 1 worker
+            PASS [TIME] test::test_setattr_simple(monkeypatch=<MockEnv object>)
+            PASS [TIME] test::test_setattr_new_attribute(monkeypatch=<MockEnv object>)
+            PASS [TIME] test::test_setattr_undo(monkeypatch=<MockEnv object>)
 
-    test result: ok. 3 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 3 tests run: 3 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -106,15 +109,17 @@ def test_setitem_undo(monkeypatch):
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_setitem_dict(monkeypatch=<MockEnv object>) ... ok
-    test test::test_setitem_new_key(monkeypatch=<MockEnv object>) ... ok
-    test test::test_setitem_undo(monkeypatch=<MockEnv object>) ... ok
+        Starting 3 tests across 1 worker
+            PASS [TIME] test::test_setitem_dict(monkeypatch=<MockEnv object>)
+            PASS [TIME] test::test_setitem_new_key(monkeypatch=<MockEnv object>)
+            PASS [TIME] test::test_setitem_undo(monkeypatch=<MockEnv object>)
 
-    test result: ok. 3 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 3 tests run: 3 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -147,15 +152,17 @@ def test_delenv(monkeypatch):
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_setenv(monkeypatch=<MockEnv object>) ... ok
-    test test::test_setenv_undo(monkeypatch=<MockEnv object>) ... ok
-    test test::test_delenv(monkeypatch=<MockEnv object>) ... ok
+        Starting 3 tests across 1 worker
+            PASS [TIME] test::test_setenv(monkeypatch=<MockEnv object>)
+            PASS [TIME] test::test_setenv_undo(monkeypatch=<MockEnv object>)
+            PASS [TIME] test::test_delenv(monkeypatch=<MockEnv object>)
 
-    test result: ok. 3 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 3 tests run: 3 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -186,14 +193,16 @@ def test_syspath_prepend_multiple(monkeypatch):
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_syspath_prepend(monkeypatch=<MockEnv object>) ... ok
-    test test::test_syspath_prepend_multiple(monkeypatch=<MockEnv object>) ... ok
+        Starting 2 tests across 1 worker
+            PASS [TIME] test::test_syspath_prepend(monkeypatch=<MockEnv object>)
+            PASS [TIME] test::test_syspath_prepend_multiple(monkeypatch=<MockEnv object>)
 
-    test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -222,14 +231,16 @@ def test_delattr_undo(monkeypatch):
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_delattr(monkeypatch=<MockEnv object>) ... ok
-    test test::test_delattr_undo(monkeypatch=<MockEnv object>) ... ok
+        Starting 2 tests across 1 worker
+            PASS [TIME] test::test_delattr(monkeypatch=<MockEnv object>)
+            PASS [TIME] test::test_delattr_undo(monkeypatch=<MockEnv object>)
 
-    test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -263,14 +274,16 @@ def test_context_manager_auto_undo():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_context_manager ... ok
-    test test::test_context_manager_auto_undo ... ok
+        Starting 2 tests across 1 worker
+            PASS [TIME] test::test_context_manager
+            PASS [TIME] test::test_context_manager_auto_undo
 
-    test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -292,14 +305,16 @@ def test_1():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_setenv(monkeypatch=<MockEnv object>) ... ok
-    test test::test_1 ... ok
+        Starting 2 tests across 1 worker
+            PASS [TIME] test::test_setenv(monkeypatch=<MockEnv object>)
+            PASS [TIME] test::test_1
 
-    test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -325,14 +340,16 @@ def test_setattr_dotted_path_undo(monkeypatch):
         "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_setattr_dotted_path(monkeypatch=<MockEnv object>) ... ok
-    test test::test_setattr_dotted_path_undo(monkeypatch=<MockEnv object>) ... ok
+        Starting 2 tests across 1 worker
+            PASS [TIME] test::test_setattr_dotted_path(monkeypatch=<MockEnv object>)
+            PASS [TIME] test::test_setattr_dotted_path_undo(monkeypatch=<MockEnv object>)
 
-    test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -358,14 +375,16 @@ def test_delattr_dotted_path_undo(monkeypatch):
         "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_delattr_dotted_path(monkeypatch=<MockEnv object>) ... ok
-    test test::test_delattr_dotted_path_undo(monkeypatch=<MockEnv object>) ... ok
+        Starting 2 tests across 1 worker
+            PASS [TIME] test::test_delattr_dotted_path(monkeypatch=<MockEnv object>)
+            PASS [TIME] test::test_delattr_dotted_path_undo(monkeypatch=<MockEnv object>)
 
-    test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -391,13 +410,15 @@ def test_context_classmethod():
         ",
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_context_classmethod ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_context_classmethod
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -421,14 +442,16 @@ def test_delitem_not_raising(monkeypatch):
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_delitem_raises_key_error(monkeypatch=<MockEnv object>) ... ok
-    test test::test_delitem_not_raising(monkeypatch=<MockEnv object>) ... ok
+        Starting 2 tests across 1 worker
+            PASS [TIME] test::test_delitem_raises_key_error(monkeypatch=<MockEnv object>)
+            PASS [TIME] test::test_delitem_not_raising(monkeypatch=<MockEnv object>)
 
-    test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -662,11 +685,12 @@ fn test_mock_env() {
     );
 
     if cfg!(target_os = "macos") {
-        assert_cmd_snapshot!(context.command().arg("-q"), @r"
+        assert_cmd_snapshot!(context.command().arg("-q"), @"
         success: true
         exit_code: 0
         ----- stdout -----
-        test result: ok. 13 passed; 0 failed; 3 skipped; finished in [TIME]
+        ────────────
+             Summary [TIME] 16 tests run: 13 passed, 0 failed, 3 skipped
 
         ----- stderr -----
         ");
@@ -695,13 +719,15 @@ def test_setattr_non_absolute(monkeypatch):
         "#,
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_setattr_non_absolute(monkeypatch=<MockEnv object>) ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_setattr_non_absolute(monkeypatch=<MockEnv object>)
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -720,13 +746,15 @@ def test_delattr_string_with_name(monkeypatch):
         "#,
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_delattr_string_with_name(monkeypatch=<MockEnv object>) ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_delattr_string_with_name(monkeypatch=<MockEnv object>)
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -747,13 +775,15 @@ def test_delattr_no_name(monkeypatch):
         "#,
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_delattr_no_name(monkeypatch=<MockEnv object>) ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_delattr_no_name(monkeypatch=<MockEnv object>)
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -773,13 +803,15 @@ def test_setattr_nonexistent(monkeypatch):
         "#,
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_setattr_nonexistent(monkeypatch=<MockEnv object>) ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_setattr_nonexistent(monkeypatch=<MockEnv object>)
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -798,13 +830,15 @@ def test_setattr_missing_attr(monkeypatch):
         "#,
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_setattr_missing_attr(monkeypatch=<MockEnv object>) ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_setattr_missing_attr(monkeypatch=<MockEnv object>)
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -824,11 +858,12 @@ def test_chdir(monkeypatch, tmp_path):
         ",
     );
 
-    assert_cmd_snapshot!(context.command().arg("-q"), @r"
+    assert_cmd_snapshot!(context.command().arg("-q"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");

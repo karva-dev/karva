@@ -14,13 +14,15 @@ def test_data():
         "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_data ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_data
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -50,13 +52,15 @@ def test_nested():
         "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_nested ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_nested
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -94,13 +98,15 @@ def test_json():
         "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_json ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_json
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -113,13 +119,15 @@ def test_json():
         "Expected .snap file to be created"
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_json ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_json
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -137,13 +145,15 @@ def test_inline_json():
         "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_inline_json ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_inline_json
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -164,13 +174,15 @@ def test_json_filtered():
         "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_json_filtered ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_json_filtered
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -199,13 +211,15 @@ def test_inline_json():
         "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_inline_json ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_inline_json
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -261,13 +275,15 @@ def test_fn():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_fn ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_fn
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -296,11 +312,12 @@ def test_not_json():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @"
     success: false
     exit_code: 1
     ----- stdout -----
-    test test::test_not_json ... FAILED
+        Starting 1 test across 1 worker
+            FAIL [TIME] test::test_not_json
 
     diagnostics:
 
@@ -322,7 +339,8 @@ def test_not_json():
       |
     info: assert_json_snapshot() value is not JSON serializable
 
-    test result: FAILED. 0 passed; 1 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -359,7 +377,8 @@ def test_json():
     success: false
     exit_code: 1
     ----- stdout -----
-    test test::test_json ... FAILED
+        Starting 1 test across 1 worker
+            FAIL [TIME] test::test_json
 
     diagnostics:
 
@@ -389,7 +408,8 @@ def test_json():
                     3 │ +}
           ────────────┴───────────────────────────
 
-    test result: FAILED. 0 passed; 1 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     "#);
@@ -407,13 +427,15 @@ def test_list():
         "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_list ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_list
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");

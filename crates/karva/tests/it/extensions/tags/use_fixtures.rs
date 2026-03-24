@@ -21,13 +21,15 @@ def test_with_use_fixture():
 "#,
     );
 
-    assert_cmd_snapshot!(test_context.command(), @r"
+    assert_cmd_snapshot!(test_context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_with_use_fixture ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_with_use_fixture
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -56,13 +58,15 @@ def test_with_multiple_use_fixtures():
 "#,
     );
 
-    assert_cmd_snapshot!(test_context.command(), @r"
+    assert_cmd_snapshot!(test_context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_with_multiple_use_fixtures ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_with_multiple_use_fixtures
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -90,13 +94,15 @@ def test_combined_fixtures(param_fixture):
 "#,
     );
 
-    assert_cmd_snapshot!(test_context.command(), @r"
+    assert_cmd_snapshot!(test_context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_combined_fixtures(param_fixture=param_value) ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_combined_fixtures(param_fixture=param_value)
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -122,15 +128,17 @@ def test_use_fixtures_with_parametrize(value):
 "#,
     );
 
-    assert_cmd_snapshot!(test_context.command(), @r"
+    assert_cmd_snapshot!(test_context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_use_fixtures_with_parametrize(value=1) ... ok
-    test test::test_use_fixtures_with_parametrize(value=2) ... ok
-    test test::test_use_fixtures_with_parametrize(value=3) ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_use_fixtures_with_parametrize(value=1)
+            PASS [TIME] test::test_use_fixtures_with_parametrize(value=2)
+            PASS [TIME] test::test_use_fixtures_with_parametrize(value=3)
 
-    test result: ok. 3 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 3 tests run: 3 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -161,13 +169,15 @@ def test_multiple_use_fixtures_decorators():
 "#,
     );
 
-    assert_cmd_snapshot!(test_context.command(), @r"
+    assert_cmd_snapshot!(test_context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_multiple_use_fixtures_decorators ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_multiple_use_fixtures_decorators
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -186,13 +196,15 @@ def test_missing_fixture():
 "#,
     );
 
-    assert_cmd_snapshot!(test_context.command(), @r"
+    assert_cmd_snapshot!(test_context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_missing_fixture ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_missing_fixture
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -218,13 +230,15 @@ def test_use_fixtures_with_generator():
 "#,
     );
 
-    assert_cmd_snapshot!(test_context.command(), @r"
+    assert_cmd_snapshot!(test_context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_use_fixtures_with_generator ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_use_fixtures_with_generator
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -253,14 +267,16 @@ def test_session_2():
 "#,
     )]);
 
-    assert_cmd_snapshot!(test_context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(test_context.command_no_parallel(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_session_1 ... ok
-    test test::test_session_2 ... ok
+        Starting 2 tests across 1 worker
+            PASS [TIME] test::test_session_1
+            PASS [TIME] test::test_session_2
 
-    test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -295,13 +311,15 @@ def test_mixed_fixtures(shared_fixture):
         ),
     ]);
 
-    assert_cmd_snapshot!(test_context.command(), @r"
+    assert_cmd_snapshot!(test_context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_mixed_fixtures(shared_fixture=shared_value) ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_mixed_fixtures(shared_fixture=shared_value)
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -326,13 +344,15 @@ def test_with_pytest_use_fixture():
 "#,
     );
 
-    assert_cmd_snapshot!(test_context.command(), @r"
+    assert_cmd_snapshot!(test_context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_with_pytest_use_fixture ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_with_pytest_use_fixture
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -361,13 +381,15 @@ def test_with_multiple_pytest_use_fixtures():
 "#,
     );
 
-    assert_cmd_snapshot!(test_context.command(), @r"
+    assert_cmd_snapshot!(test_context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_with_multiple_pytest_use_fixtures ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_with_multiple_pytest_use_fixtures
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -395,15 +417,17 @@ def test_pytest_use_fixtures_with_parametrize(value):
 "#,
     );
 
-    assert_cmd_snapshot!(test_context.command(), @r"
+    assert_cmd_snapshot!(test_context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_pytest_use_fixtures_with_parametrize(value=1) ... ok
-    test test::test_pytest_use_fixtures_with_parametrize(value=2) ... ok
-    test test::test_pytest_use_fixtures_with_parametrize(value=3) ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_pytest_use_fixtures_with_parametrize(value=1)
+            PASS [TIME] test::test_pytest_use_fixtures_with_parametrize(value=2)
+            PASS [TIME] test::test_pytest_use_fixtures_with_parametrize(value=3)
 
-    test result: ok. 3 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 3 tests run: 3 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -432,14 +456,16 @@ def test_pytest_session_2():
 "#,
     )]);
 
-    assert_cmd_snapshot!(test_context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(test_context.command_no_parallel(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_pytest_session_1 ... ok
-    test test::test_pytest_session_2 ... ok
+        Starting 2 tests across 1 worker
+            PASS [TIME] test::test_pytest_session_1
+            PASS [TIME] test::test_pytest_session_2
 
-    test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -458,15 +484,17 @@ def test_1():
 ",
     );
 
-    assert_cmd_snapshot!(test_context.command(), @r"
+    assert_cmd_snapshot!(test_context.command(), @"
     success: false
     exit_code: 1
     ----- stdout -----
+        Starting 1 test across 1 worker
     discovery diagnostics:
 
     error[failed-to-import-module]: Failed to import python module `test`: Expected a string or a list of strings for fixture names
 
-    test result: ok. 0 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 0 tests run: 0 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");

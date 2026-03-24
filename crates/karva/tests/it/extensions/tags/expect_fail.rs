@@ -29,13 +29,15 @@ def test_1():
     );
 
     allow_duplicates! {
-        assert_cmd_snapshot!(context.command(), @r"
+        assert_cmd_snapshot!(context.command(), @"
         success: true
         exit_code: 0
         ----- stdout -----
-        test test::test_1 ... ok
+            Starting 1 test across 1 worker
+                PASS [TIME] test::test_1
 
-        test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+        ────────────
+             Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
         ----- stderr -----
         ");
@@ -56,11 +58,12 @@ def test_1():
     );
 
     allow_duplicates! {
-        assert_cmd_snapshot!(context.command(), @r"
+        assert_cmd_snapshot!(context.command(), @"
         success: false
         exit_code: 1
         ----- stdout -----
-        test test::test_1 ... FAILED
+            Starting 1 test across 1 worker
+                FAIL [TIME] test::test_1
 
         diagnostics:
 
@@ -74,7 +77,8 @@ def test_1():
           |
         info: Reason: Expected to fail but passes
 
-        test result: FAILED. 0 passed; 1 failed; 0 skipped; finished in [TIME]
+        ────────────
+             Summary [TIME] 1 tests run: 0 passed, 1 failed, 0 skipped
 
         ----- stderr -----
         ");
@@ -95,11 +99,12 @@ def test_1():
     );
 
     allow_duplicates! {
-        assert_cmd_snapshot!(context.command(), @r"
+        assert_cmd_snapshot!(context.command(), @"
         success: false
         exit_code: 1
         ----- stdout -----
-        test test::test_1 ... FAILED
+            Starting 1 test across 1 worker
+                FAIL [TIME] test::test_1
 
         diagnostics:
 
@@ -113,7 +118,8 @@ def test_1():
           |
         info: Reason: Expected to fail but passes
 
-        test result: FAILED. 0 passed; 1 failed; 0 skipped; finished in [TIME]
+        ────────────
+             Summary [TIME] 1 tests run: 0 passed, 1 failed, 0 skipped
 
         ----- stderr -----
         ");
@@ -137,13 +143,15 @@ def test_1():
     );
 
     allow_duplicates! {
-        assert_cmd_snapshot!(context.command(), @r"
+        assert_cmd_snapshot!(context.command(), @"
         success: true
         exit_code: 0
         ----- stdout -----
-        test test::test_1 ... ok
+            Starting 1 test across 1 worker
+                PASS [TIME] test::test_1
 
-        test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+        ────────────
+             Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
         ----- stderr -----
         ");
@@ -167,13 +175,15 @@ def test_1():
     );
 
     allow_duplicates! {
-        assert_cmd_snapshot!(context.command(), @r"
+        assert_cmd_snapshot!(context.command(), @"
         success: true
         exit_code: 0
         ----- stdout -----
-        test test::test_1 ... ok
+            Starting 1 test across 1 worker
+                PASS [TIME] test::test_1
 
-        test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+        ────────────
+             Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
         ----- stderr -----
         ");
@@ -197,13 +207,15 @@ def test_1():
     );
 
     allow_duplicates! {
-        assert_cmd_snapshot!(context.command(), @r"
+        assert_cmd_snapshot!(context.command(), @"
         success: true
         exit_code: 0
         ----- stdout -----
-        test test::test_1 ... ok
+            Starting 1 test across 1 worker
+                PASS [TIME] test::test_1
 
-        test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+        ────────────
+             Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
         ----- stderr -----
         ");
@@ -227,13 +239,15 @@ def test_1():
     );
 
     allow_duplicates! {
-        assert_cmd_snapshot!(context.command(), @r"
+        assert_cmd_snapshot!(context.command(), @"
         success: true
         exit_code: 0
         ----- stdout -----
-        test test::test_1 ... ok
+            Starting 1 test across 1 worker
+                PASS [TIME] test::test_1
 
-        test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+        ────────────
+             Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
         ----- stderr -----
         ");
@@ -258,13 +272,15 @@ def test_1():
     );
 
     allow_duplicates! {
-        assert_cmd_snapshot!(context.command(), @r"
+        assert_cmd_snapshot!(context.command(), @"
         success: true
         exit_code: 0
         ----- stdout -----
-        test test::test_1 ... ok
+            Starting 1 test across 1 worker
+                PASS [TIME] test::test_1
 
-        test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+        ────────────
+             Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
         ----- stderr -----
         ");
@@ -288,13 +304,15 @@ def test_1():
     );
 
     allow_duplicates! {
-        assert_cmd_snapshot!(context.command(), @r"
+        assert_cmd_snapshot!(context.command(), @"
         success: true
         exit_code: 0
         ----- stdout -----
-        test test::test_1 ... ok
+            Starting 1 test across 1 worker
+                PASS [TIME] test::test_1
 
-        test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+        ────────────
+             Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
         ----- stderr -----
         ");
@@ -318,13 +336,15 @@ def test_1():
     );
 
     allow_duplicates! {
-        assert_cmd_snapshot!(context.command(), @r"
+        assert_cmd_snapshot!(context.command(), @"
         success: true
         exit_code: 0
         ----- stdout -----
-        test test::test_1 ... ok
+            Starting 1 test across 1 worker
+                PASS [TIME] test::test_1
 
-        test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+        ────────────
+             Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
         ----- stderr -----
         ");
@@ -344,13 +364,15 @@ def test_1():
         ",
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_1 ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_1
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -369,13 +391,15 @@ def test_1():
         ",
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_1 ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_1
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -402,13 +426,14 @@ def test_expected_fail_passes():
     );
 
     allow_duplicates! {
-        assert_cmd_snapshot!(context.command_no_parallel(), @r"
+        assert_cmd_snapshot!(context.command_no_parallel(), @"
         success: false
         exit_code: 1
         ----- stdout -----
-        test test::test_expected_to_fail ... ok
-        test test::test_normal_pass ... ok
-        test test::test_expected_fail_passes ... FAILED
+            Starting 3 tests across 1 worker
+                PASS [TIME] test::test_expected_to_fail
+                PASS [TIME] test::test_normal_pass
+                FAIL [TIME] test::test_expected_fail_passes
 
         diagnostics:
 
@@ -421,7 +446,8 @@ def test_expected_fail_passes():
         13 |     assert True
            |
 
-        test result: FAILED. 2 passed; 1 failed; 0 skipped; finished in [TIME]
+        ────────────
+             Summary [TIME] 3 tests run: 2 passed, 1 failed, 0 skipped
 
         ----- stderr -----
         ");
@@ -449,13 +475,14 @@ def test_expected_fail_passes():
     );
 
     allow_duplicates! {
-        assert_cmd_snapshot!(context.command_no_parallel(), @r"
+        assert_cmd_snapshot!(context.command_no_parallel(), @"
         success: false
         exit_code: 1
         ----- stdout -----
-        test test::test_expected_to_fail ... ok
-        test test::test_normal_pass ... ok
-        test test::test_expected_fail_passes ... FAILED
+            Starting 3 tests across 1 worker
+                PASS [TIME] test::test_expected_to_fail
+                PASS [TIME] test::test_normal_pass
+                FAIL [TIME] test::test_expected_fail_passes
 
         diagnostics:
 
@@ -468,7 +495,8 @@ def test_expected_fail_passes():
         13 |     assert True
            |
 
-        test result: FAILED. 2 passed; 1 failed; 0 skipped; finished in [TIME]
+        ────────────
+             Summary [TIME] 3 tests run: 2 passed, 1 failed, 0 skipped
 
         ----- stderr -----
         ");
@@ -488,13 +516,15 @@ def test_1():
         ",
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_1 ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_1
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -513,13 +543,15 @@ def test_1():
         ",
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_1 ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_1
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -540,13 +572,15 @@ def test_1():
     );
 
     // Skip takes precedence - test should be skipped, not treated as expected fail
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_1 ... skipped: Skipping this test
+        Starting 1 test across 1 worker
+            SKIP [TIME] test::test_1: Skipping this test
 
-    test result: ok. 0 passed; 0 failed; 1 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 0 passed, 0 failed, 1 skipped
 
     ----- stderr -----
     ");
@@ -565,11 +599,12 @@ def test_should_fail():
         ",
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: false
     exit_code: 1
     ----- stdout -----
-    test test::test_should_fail ... FAILED
+        Starting 1 test across 1 worker
+            FAIL [TIME] test::test_should_fail
 
     diagnostics:
 
@@ -583,7 +618,8 @@ def test_should_fail():
       |
     info: Reason: This should fail but passes
 
-    test result: FAILED. 0 passed; 1 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -612,15 +648,17 @@ def test_param(x):
     );
 
     allow_duplicates! {
-        assert_cmd_snapshot!(context.command(), @r"
+        assert_cmd_snapshot!(context.command(), @"
         success: true
         exit_code: 0
         ----- stdout -----
-        test test::test_param(x=1) ... ok
-        test test::test_param(x=2) ... ok
-        test test::test_param(x=3) ... ok
+            Starting 1 test across 1 worker
+                PASS [TIME] test::test_param(x=1)
+                PASS [TIME] test::test_param(x=2)
+                PASS [TIME] test::test_param(x=3)
 
-        test result: ok. 3 passed; 0 failed; 0 skipped; finished in [TIME]
+        ────────────
+             Summary [TIME] 3 tests run: 3 passed, 0 failed, 0 skipped
 
         ----- stderr -----
         ");

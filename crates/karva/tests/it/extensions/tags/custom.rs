@@ -134,13 +134,15 @@ def test_1():
         ",
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_1 ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_1
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -159,13 +161,15 @@ def test_1():
         "#,
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_1 ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_1
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -184,13 +188,15 @@ def test_1():
         ",
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_1 ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_1
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -209,13 +215,15 @@ def test_1():
         "#,
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_1 ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_1
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -236,13 +244,15 @@ def test_1():
         ",
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_1 ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_1
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -266,14 +276,16 @@ def test_runs():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_skipped ... skipped
-    test test::test_runs ... ok
+        Starting 2 tests across 1 worker
+            SKIP [TIME] test::test_skipped
+            PASS [TIME] test::test_runs
 
-    test result: ok. 1 passed; 0 failed; 1 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 1 passed, 0 failed, 1 skipped
 
     ----- stderr -----
     ");
@@ -295,14 +307,16 @@ def test_fast():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("-t").arg("slow"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-t").arg("slow"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_slow ... ok
-    test test::test_fast ... skipped
+        Starting 2 tests across 1 worker
+            PASS [TIME] test::test_slow
+            SKIP [TIME] test::test_fast
 
-    test result: ok. 1 passed; 0 failed; 1 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 1 passed, 0 failed, 1 skipped
 
     ----- stderr -----
     ");
@@ -324,14 +338,16 @@ def test_fast():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("-t").arg("not slow"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-t").arg("not slow"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_slow ... skipped
-    test test::test_fast ... ok
+        Starting 2 tests across 1 worker
+            SKIP [TIME] test::test_slow
+            PASS [TIME] test::test_fast
 
-    test result: ok. 1 passed; 0 failed; 1 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 1 passed, 0 failed, 1 skipped
 
     ----- stderr -----
     ");
@@ -359,15 +375,17 @@ def test_integration_only():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("-t").arg("slow and integration"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-t").arg("slow and integration"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_slow_integration ... ok
-    test test::test_slow_only ... skipped
-    test test::test_integration_only ... skipped
+        Starting 3 tests across 1 worker
+            PASS [TIME] test::test_slow_integration
+            SKIP [TIME] test::test_slow_only
+            SKIP [TIME] test::test_integration_only
 
-    test result: ok. 1 passed; 0 failed; 2 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 3 tests run: 1 passed, 0 failed, 2 skipped
 
     ----- stderr -----
     ");
@@ -393,15 +411,17 @@ def test_untagged():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("-t").arg("slow or integration"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-t").arg("slow or integration"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_slow ... ok
-    test test::test_integration ... ok
-    test test::test_untagged ... skipped
+        Starting 3 tests across 1 worker
+            PASS [TIME] test::test_slow
+            PASS [TIME] test::test_integration
+            SKIP [TIME] test::test_untagged
 
-    test result: ok. 2 passed; 0 failed; 1 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 3 tests run: 2 passed, 0 failed, 1 skipped
 
     ----- stderr -----
     ");
@@ -429,15 +449,17 @@ def test_integration_only():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("-t").arg("slow").arg("-t").arg("integration"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-t").arg("slow").arg("-t").arg("integration"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_both ... ok
-    test test::test_slow_only ... ok
-    test test::test_integration_only ... ok
+        Starting 3 tests across 1 worker
+            PASS [TIME] test::test_both
+            PASS [TIME] test::test_slow_only
+            PASS [TIME] test::test_integration_only
 
-    test result: ok. 3 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 3 tests run: 3 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -459,14 +481,16 @@ def test_fast():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("-t").arg("slow"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-t").arg("slow"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_untagged ... skipped
-    test test::test_fast ... skipped
+        Starting 2 tests across 1 worker
+            SKIP [TIME] test::test_untagged
+            SKIP [TIME] test::test_fast
 
-    test result: ok. 0 passed; 0 failed; 2 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 0 passed, 0 failed, 2 skipped
 
     ----- stderr -----
     ");
@@ -489,15 +513,17 @@ def test_untagged():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("-t").arg("slow"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-t").arg("slow"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_param(x=1) ... ok
-    test test::test_param(x=2) ... ok
-    test test::test_untagged ... skipped
+        Starting 2 tests across 1 worker
+            PASS [TIME] test::test_param(x=1)
+            PASS [TIME] test::test_param(x=2)
+            SKIP [TIME] test::test_untagged
 
-    test result: ok. 2 passed; 0 failed; 1 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 3 tests run: 2 passed, 0 failed, 1 skipped
 
     ----- stderr -----
     ");
@@ -524,15 +550,17 @@ def test_untagged():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("-t").arg("slow and not flaky"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-t").arg("slow and not flaky"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_slow_flaky ... skipped
-    test test::test_slow_stable ... ok
-    test test::test_untagged ... skipped
+        Starting 3 tests across 1 worker
+            SKIP [TIME] test::test_slow_flaky
+            PASS [TIME] test::test_slow_stable
+            SKIP [TIME] test::test_untagged
 
-    test result: ok. 1 passed; 0 failed; 2 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 3 tests run: 1 passed, 0 failed, 2 skipped
 
     ----- stderr -----
     ");
@@ -565,16 +593,18 @@ def test_linux_only():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("-t").arg("(slow or fast) and linux"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-t").arg("(slow or fast) and linux"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_slow_linux ... ok
-    test test::test_fast_linux ... ok
-    test test::test_slow_only ... skipped
-    test test::test_linux_only ... skipped
+        Starting 4 tests across 1 worker
+            PASS [TIME] test::test_slow_linux
+            PASS [TIME] test::test_fast_linux
+            SKIP [TIME] test::test_slow_only
+            SKIP [TIME] test::test_linux_only
 
-    test result: ok. 2 passed; 0 failed; 2 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 4 tests run: 2 passed, 0 failed, 2 skipped
 
     ----- stderr -----
     ");
@@ -600,15 +630,17 @@ def test_untagged():
         "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("-t").arg("slow"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-t").arg("slow"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_slow ... ok
-    test test::test_slow_with_args ... ok
-    test test::test_untagged ... skipped
+        Starting 3 tests across 1 worker
+            PASS [TIME] test::test_slow
+            PASS [TIME] test::test_slow_with_args
+            SKIP [TIME] test::test_untagged
 
-    test result: ok. 2 passed; 0 failed; 1 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 3 tests run: 2 passed, 0 failed, 1 skipped
 
     ----- stderr -----
     ");
@@ -635,15 +667,17 @@ def test_untagged():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("-t").arg("slow"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-t").arg("slow"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_slow_skipped ... skipped
-    test test::test_slow_runs ... ok
-    test test::test_untagged ... skipped
+        Starting 3 tests across 1 worker
+            SKIP [TIME] test::test_slow_skipped
+            PASS [TIME] test::test_slow_runs
+            SKIP [TIME] test::test_untagged
 
-    test result: ok. 1 passed; 0 failed; 2 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 3 tests run: 1 passed, 0 failed, 2 skipped
 
     ----- stderr -----
     ");

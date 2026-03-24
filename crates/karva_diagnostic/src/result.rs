@@ -3,7 +3,7 @@ use std::time::Instant;
 use std::{collections::HashMap, fmt};
 
 use colored::Colorize;
-use karva_logging::time::format_duration;
+use karva_logging::time::format_duration_bracketed;
 use karva_python_semantic::{QualifiedFunctionName, QualifiedTestName};
 use ruff_db::diagnostic::Diagnostic;
 use serde::de::{self, MapAccess};
@@ -68,7 +68,7 @@ impl TestRunResult {
         }
 
         if let Some(reporter) = reporter {
-            reporter.report_test_case_result(test_case_name, result);
+            reporter.report_test_case_result(test_case_name, result, duration);
         }
 
         self.durations
@@ -247,24 +247,25 @@ impl<'a> DisplayTestResultStats<'a> {
 impl std::fmt::Display for DisplayTestResultStats<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let success = self.stats.is_success();
-
-        write!(f, "test result: ")?;
-
-        if success {
-            write!(f, "{}", "ok".green())?;
-        } else {
-            write!(f, "{}", "FAILED".red())?;
-        }
-
         let elapsed = self.start_time.elapsed();
+
+        writeln!(f, "{}", "─".repeat(12))?;
+
+        let label = format!("{:>12}", "Summary");
+        if success {
+            write!(f, "{}", label.green().bold())?;
+        } else {
+            write!(f, "{}", label.red().bold())?;
+        }
 
         writeln!(
             f,
-            ". {} passed; {} failed; {} skipped; finished in {}",
+            " {} {} tests run: {} passed, {} failed, {} skipped",
+            format_duration_bracketed(elapsed),
+            self.stats.total(),
             self.stats.passed(),
             self.stats.failed(),
             self.stats.skipped(),
-            format_duration(elapsed)
         )
     }
 }

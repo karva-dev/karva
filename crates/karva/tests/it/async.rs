@@ -17,13 +17,15 @@ async def test_async_with_given(x):
         ",
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_async_with_given ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_async_with_given
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -42,13 +44,15 @@ async def test_async_passes():
         ",
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_async_passes ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_async_passes
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -67,11 +71,12 @@ async def test_async_fails():
         ",
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: false
     exit_code: 1
     ----- stdout -----
-    test test::test_async_fails ... FAILED
+        Starting 1 test across 1 worker
+            FAIL [TIME] test::test_async_fails
 
     diagnostics:
 
@@ -95,7 +100,8 @@ async def test_async_fails():
       |
     info: async test failed
 
-    test result: FAILED. 0 passed; 1 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -119,13 +125,15 @@ async def test_with_async_fixture(async_value):
         ",
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_with_async_fixture(async_value=42) ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_with_async_fixture(async_value=42)
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -160,14 +168,16 @@ def test_teardown_ran():
         ",
     )]);
 
-    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_async_gen_fixture(async_resource=resource) ... ok
-    test test::test_teardown_ran ... ok
+        Starting 2 tests across 1 worker
+            PASS [TIME] test::test_async_gen_fixture(async_resource=resource)
+            PASS [TIME] test::test_teardown_ran
 
-    test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -191,13 +201,15 @@ async def test_async_with_sync(sync_value):
         ",
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_async_with_sync(sync_value=10) ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_async_with_sync(sync_value=10)
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -221,13 +233,15 @@ def test_sync_with_async(async_value):
         ",
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_sync_with_async(async_value=99) ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_sync_with_async(async_value=99)
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");

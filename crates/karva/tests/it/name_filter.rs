@@ -13,14 +13,16 @@ def test_beta():
 #[test]
 fn name_filter_substring_match() {
     let context = TestContext::with_file("test.py", TWO_TESTS);
-    assert_cmd_snapshot!(context.command_no_parallel().arg("-m").arg("alpha"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-m").arg("alpha"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_alpha ... ok
-    test test::test_beta ... skipped
+        Starting 2 tests across 1 worker
+            PASS [TIME] test::test_alpha
+            SKIP [TIME] test::test_beta
 
-    test result: ok. 1 passed; 0 failed; 1 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 1 passed, 0 failed, 1 skipped
 
     ----- stderr -----
     ");
@@ -29,14 +31,16 @@ fn name_filter_substring_match() {
 #[test]
 fn name_filter_anchored_regex() {
     let context = TestContext::with_file("test.py", TWO_TESTS);
-    assert_cmd_snapshot!(context.command_no_parallel().arg("-m").arg("beta$"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-m").arg("beta$"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_alpha ... skipped
-    test test::test_beta ... ok
+        Starting 2 tests across 1 worker
+            SKIP [TIME] test::test_alpha
+            PASS [TIME] test::test_beta
 
-    test result: ok. 1 passed; 0 failed; 1 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 1 passed, 0 failed, 1 skipped
 
     ----- stderr -----
     ");
@@ -45,14 +49,16 @@ fn name_filter_anchored_regex() {
 #[test]
 fn name_filter_multiple_flags_or_semantics() {
     let context = TestContext::with_file("test.py", TWO_TESTS);
-    assert_cmd_snapshot!(context.command_no_parallel().arg("-m").arg("alpha").arg("-m").arg("beta"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-m").arg("alpha").arg("-m").arg("beta"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_alpha ... ok
-    test test::test_beta ... ok
+        Starting 2 tests across 1 worker
+            PASS [TIME] test::test_alpha
+            PASS [TIME] test::test_beta
 
-    test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -61,14 +67,16 @@ fn name_filter_multiple_flags_or_semantics() {
 #[test]
 fn name_filter_no_matches() {
     let context = TestContext::with_file("test.py", TWO_TESTS);
-    assert_cmd_snapshot!(context.command_no_parallel().arg("-m").arg("nonexistent"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-m").arg("nonexistent"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_alpha ... skipped
-    test test::test_beta ... skipped
+        Starting 2 tests across 1 worker
+            SKIP [TIME] test::test_alpha
+            SKIP [TIME] test::test_beta
 
-    test result: ok. 0 passed; 0 failed; 2 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 0 passed, 0 failed, 2 skipped
 
     ----- stderr -----
     ");
@@ -107,16 +115,18 @@ def test_other():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("-m").arg("test_param"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-m").arg("test_param"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_param(x=1) ... ok
-    test test::test_param(x=2) ... ok
-    test test::test_param(x=3) ... ok
-    test test::test_other ... skipped
+        Starting 2 tests across 1 worker
+            PASS [TIME] test::test_param(x=1)
+            PASS [TIME] test::test_param(x=2)
+            PASS [TIME] test::test_param(x=3)
+            SKIP [TIME] test::test_other
 
-    test result: ok. 3 passed; 0 failed; 1 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 4 tests run: 3 passed, 0 failed, 1 skipped
 
     ----- stderr -----
     ");
@@ -126,14 +136,16 @@ def test_other():
 #[cfg(unix)]
 fn name_filter_match_all() {
     let context = TestContext::with_file("test.py", TWO_TESTS);
-    assert_cmd_snapshot!(context.command_no_parallel().arg("-m").arg(".*"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-m").arg(".*"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_alpha ... ok
-    test test::test_beta ... ok
+        Starting 2 tests across 1 worker
+            PASS [TIME] test::test_alpha
+            PASS [TIME] test::test_beta
 
-    test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -155,15 +167,17 @@ def test_signup():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("-m").arg("login|signup"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-m").arg("login|signup"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_login ... ok
-    test test::test_logout ... skipped
-    test test::test_signup ... ok
+        Starting 3 tests across 1 worker
+            PASS [TIME] test::test_login
+            SKIP [TIME] test::test_logout
+            PASS [TIME] test::test_signup
 
-    test result: ok. 2 passed; 0 failed; 1 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 3 tests run: 2 passed, 0 failed, 1 skipped
 
     ----- stderr -----
     ");
@@ -185,15 +199,17 @@ def test_v10():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("-m").arg(r"test_v[12]$"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-m").arg(r"test_v[12]$"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_v1 ... ok
-    test test::test_v2 ... ok
-    test test::test_v10 ... skipped
+        Starting 3 tests across 1 worker
+            PASS [TIME] test::test_v1
+            PASS [TIME] test::test_v2
+            SKIP [TIME] test::test_v10
 
-    test result: ok. 2 passed; 0 failed; 1 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 3 tests run: 2 passed, 0 failed, 1 skipped
 
     ----- stderr -----
     ");
@@ -215,15 +231,17 @@ def test_abb():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("-m").arg(r"test_ab+$"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-m").arg(r"test_ab+$"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_a ... skipped
-    test test::test_ab ... ok
-    test test::test_abb ... ok
+        Starting 3 tests across 1 worker
+            SKIP [TIME] test::test_a
+            PASS [TIME] test::test_ab
+            PASS [TIME] test::test_abb
 
-    test result: ok. 2 passed; 0 failed; 1 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 3 tests run: 2 passed, 0 failed, 1 skipped
 
     ----- stderr -----
     ");
@@ -245,15 +263,17 @@ def test_signup():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("-m").arg("^test::test_log"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-m").arg("^test::test_log"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_login ... ok
-    test test::test_logout ... ok
-    test test::test_signup ... skipped
+        Starting 3 tests across 1 worker
+            PASS [TIME] test::test_login
+            PASS [TIME] test::test_logout
+            SKIP [TIME] test::test_signup
 
-    test result: ok. 2 passed; 0 failed; 1 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 3 tests run: 2 passed, 0 failed, 1 skipped
 
     ----- stderr -----
     ");
@@ -279,15 +299,17 @@ def test_fast_alpha():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("-t").arg("slow").arg("-m").arg("alpha"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-t").arg("slow").arg("-m").arg("alpha"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_slow_alpha ... ok
-    test test::test_slow_beta ... skipped
-    test test::test_fast_alpha ... skipped
+        Starting 3 tests across 1 worker
+            PASS [TIME] test::test_slow_alpha
+            SKIP [TIME] test::test_slow_beta
+            SKIP [TIME] test::test_fast_alpha
 
-    test result: ok. 1 passed; 0 failed; 2 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 3 tests run: 1 passed, 0 failed, 2 skipped
 
     ----- stderr -----
     ");
@@ -306,14 +328,16 @@ def test_alpha():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("-m").arg("Alpha"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-m").arg("Alpha"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_Alpha ... ok
-    test test::test_alpha ... skipped
+        Starting 2 tests across 1 worker
+            PASS [TIME] test::test_Alpha
+            SKIP [TIME] test::test_alpha
 
-    test result: ok. 1 passed; 0 failed; 1 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 1 passed, 0 failed, 1 skipped
 
     ----- stderr -----
     ");
@@ -332,14 +356,16 @@ def test_alpha():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("-m").arg("(?i)alpha"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-m").arg("(?i)alpha"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_Alpha ... ok
-    test test::test_alpha ... ok
+        Starting 2 tests across 1 worker
+            PASS [TIME] test::test_Alpha
+            PASS [TIME] test::test_alpha
 
-    test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -361,15 +387,17 @@ def test_ab():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("-m").arg(r"test_a\d"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-m").arg(r"test_a\d"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_a1 ... ok
-    test test::test_a2 ... ok
-    test test::test_ab ... skipped
+        Starting 3 tests across 1 worker
+            PASS [TIME] test::test_a1
+            PASS [TIME] test::test_a2
+            SKIP [TIME] test::test_ab
 
-    test result: ok. 2 passed; 0 failed; 1 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 3 tests run: 2 passed, 0 failed, 1 skipped
 
     ----- stderr -----
     ");
