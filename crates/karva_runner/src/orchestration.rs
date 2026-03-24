@@ -362,7 +362,6 @@ fn find_karva_worker_binary(current_dir: &Utf8PathBuf) -> Result<Utf8PathBuf> {
     if let Ok(path) = std::env::var(EnvVars::KARVA_WORKER_BINARY) {
         let path = Utf8PathBuf::from(path);
         if path.exists() {
-            tracing::debug!(path = %path, "Found binary from KARVA_WORKER_BINARY env var");
             return Ok(path);
         }
     }
