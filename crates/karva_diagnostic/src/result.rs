@@ -32,10 +32,6 @@ pub struct TestRunResult {
 }
 
 impl TestRunResult {
-    pub fn total_diagnostics(&self) -> usize {
-        self.discovery_diagnostics.len() + self.diagnostics.len()
-    }
-
     pub fn diagnostics(&self) -> &[Diagnostic] {
         &self.diagnostics
     }
@@ -52,18 +48,8 @@ impl TestRunResult {
         self.diagnostics.push(diagnostic);
     }
 
-    pub fn is_success(&self) -> bool {
-        self.stats().is_success() && self.discovery_diagnostics.is_empty()
-    }
-
     pub fn stats(&self) -> &TestResultStats {
         &self.stats
-    }
-
-    #[must_use]
-    pub fn with_stats(mut self, stats: TestResultStats) -> Self {
-        self.stats = stats;
-        self
     }
 
     pub fn register_test_case_result(
@@ -246,6 +232,7 @@ impl<'de> Deserialize<'de> for TestResultStats {
         deserializer.deserialize_map(StatsVisitor)
     }
 }
+
 pub struct DisplayTestResultStats<'a> {
     stats: &'a TestResultStats,
     start_time: Instant,
@@ -279,5 +266,75 @@ impl std::fmt::Display for DisplayTestResultStats<'_> {
             self.stats.skipped(),
             format_duration(elapsed)
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_serde_roundtrip() {
+        let mut stats = TestResultStats::default();
+        stats.add(TestResultKind::Passed);
+        stats.add(TestResultKind::Passed);
+        stats.add(TestResultKind::Failed);
+        stats.add(TestResultKind::Skipped);
+
+        let json = serde_json::to_string(&stats).unwrap();
+        let deserialized: TestResultStats = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(deserialized.passed(), 2);
+        assert_eq!(deserialized.failed(), 1);
+        assert_eq!(deserialized.skipped(), 1);
+        assert_eq!(deserialized.total(), 4);
+    }
+
+    #[test]
+    fn test_deserialize_empty() {
+        let stats: TestResultStats = serde_json::from_str("{}").unwrap();
+        assert_eq!(stats.passed(), 0);
+        assert_eq!(stats.failed(), 0);
+        assert_eq!(stats.skipped(), 0);
+    }
+
+    #[test]
+    fn test_deserialize_partial() {
+        let stats: TestResultStats = serde_json::from_str(r#"{"passed": 5}"#).unwrap();
+        assert_eq!(stats.passed(), 5);
+        assert_eq!(stats.failed(), 0);
+        assert_eq!(stats.skipped(), 0);
+    }
+
+    #[test]
+    fn test_deserialize_unknown_field() {
+        let result = serde_json::from_str::<TestResultStats>(r#"{"invalid": 1}"#);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_merge() {
+        let mut a = TestResultStats::default();
+        a.add(TestResultKind::Passed);
+
+        let mut b = TestResultStats::default();
+        b.add(TestResultKind::Passed);
+        b.add(TestResultKind::Failed);
+
+        a.merge(&b);
+        assert_eq!(a.passed(), 2);
+        assert_eq!(a.failed(), 1);
+    }
+
+    #[test]
+    fn test_is_success() {
+        let mut stats = TestResultStats::default();
+        assert!(stats.is_success());
+
+        stats.add(TestResultKind::Passed);
+        assert!(stats.is_success());
+
+        stats.add(TestResultKind::Failed);
+        assert!(!stats.is_success());
     }
 }

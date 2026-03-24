@@ -681,3 +681,155 @@ fn test_mock_env() {
         ");
     }
 }
+
+#[test]
+fn test_monkeypatch_setattr_non_absolute_path() {
+    let context = TestContext::with_file(
+        "test.py",
+        r#"
+import karva
+
+def test_setattr_non_absolute(monkeypatch):
+    with karva.raises(AttributeError, match="must be absolute import path string"):
+        monkeypatch.setattr("simple_name", "value")
+        "#,
+    );
+
+    assert_cmd_snapshot!(context.command(), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    test test::test_setattr_non_absolute(monkeypatch=<MockEnv object>) ... ok
+
+    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_monkeypatch_delattr_string_target_with_name() {
+    let context = TestContext::with_file(
+        "test.py",
+        r#"
+import karva
+
+def test_delattr_string_with_name(monkeypatch):
+    with karva.raises(AttributeError, match="use delattr"):
+        monkeypatch.delattr("os.sep", "extra_name")
+        "#,
+    );
+
+    assert_cmd_snapshot!(context.command(), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    test test::test_delattr_string_with_name(monkeypatch=<MockEnv object>) ... ok
+
+    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_monkeypatch_delattr_missing_name() {
+    let context = TestContext::with_file(
+        "test.py",
+        r#"
+import karva
+
+def test_delattr_no_name(monkeypatch):
+    class A:
+        x = 1
+    with karva.raises(AttributeError, match="use delattr"):
+        monkeypatch.delattr(A)
+        "#,
+    );
+
+    assert_cmd_snapshot!(context.command(), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    test test::test_delattr_no_name(monkeypatch=<MockEnv object>) ... ok
+
+    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_monkeypatch_setattr_nonexistent_module() {
+    let context = TestContext::with_file(
+        "test.py",
+        r#"
+def test_setattr_nonexistent(monkeypatch):
+    try:
+        monkeypatch.setattr("nonexistent_module_xyz123.attr", "value")
+        assert False, "Should have raised"
+    except (ImportError, ModuleNotFoundError):
+        pass
+        "#,
+    );
+
+    assert_cmd_snapshot!(context.command(), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    test test::test_setattr_nonexistent(monkeypatch=<MockEnv object>) ... ok
+
+    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_monkeypatch_setattr_nonexistent_attr_raising() {
+    let context = TestContext::with_file(
+        "test.py",
+        r#"
+import karva
+
+def test_setattr_missing_attr(monkeypatch):
+    with karva.raises(AttributeError):
+        monkeypatch.setattr("os.nonexistent_attr_xyz123", "value")
+        "#,
+    );
+
+    assert_cmd_snapshot!(context.command(), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    test test::test_setattr_missing_attr(monkeypatch=<MockEnv object>) ... ok
+
+    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_monkeypatch_chdir_with_tmp_path() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+import os
+
+def test_chdir(monkeypatch, tmp_path):
+    original = os.getcwd()
+    monkeypatch.chdir(tmp_path)
+    assert os.getcwd() != original
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command().arg("-q"), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+
+    ----- stderr -----
+    ");
+}

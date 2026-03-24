@@ -32,29 +32,23 @@ impl CustomTag {
     pub(crate) fn try_from_pytest_mark(py_mark: &Bound<'_, PyAny>) -> Option<Self> {
         let name = py_mark.getattr("name").ok()?.extract::<String>().ok()?;
 
-        // Extract args
-        let args = if let Ok(args_tuple) = py_mark.getattr("args") {
-            if let Ok(tuple) = args_tuple.cast::<PyTuple>() {
-                tuple.iter().map(|item| Arc::new(item.unbind())).collect()
-            } else {
-                Vec::new()
-            }
+        let args = if let Ok(args_tuple) = py_mark.getattr("args")
+            && let Ok(tuple) = args_tuple.cast::<PyTuple>()
+        {
+            tuple.iter().map(|item| Arc::new(item.unbind())).collect()
         } else {
             Vec::new()
         };
 
-        // Extract kwargs
-        let kwargs = if let Ok(kwargs_dict) = py_mark.getattr("kwargs") {
-            if let Ok(dict) = kwargs_dict.cast::<PyDict>() {
-                dict.iter()
-                    .filter_map(|(key, value)| {
-                        let key_str = key.extract::<String>().ok()?;
-                        Some((key_str, Arc::new(value.unbind())))
-                    })
-                    .collect()
-            } else {
-                Vec::new()
-            }
+        let kwargs = if let Ok(kwargs_dict) = py_mark.getattr("kwargs")
+            && let Ok(dict) = kwargs_dict.cast::<PyDict>()
+        {
+            dict.iter()
+                .filter_map(|(key, value)| {
+                    let key_str = key.extract::<String>().ok()?;
+                    Some((key_str, Arc::new(value.unbind())))
+                })
+                .collect()
         } else {
             Vec::new()
         };

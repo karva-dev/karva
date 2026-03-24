@@ -1,7 +1,7 @@
 use std::fmt::Write;
 
 use colored::Colorize;
-use karva_logging::{Printer, VerbosityLevel};
+use karva_logging::Printer;
 use karva_python_semantic::QualifiedTestName;
 
 use crate::result::IndividualTestResultKind;
@@ -32,12 +32,6 @@ impl Reporter for DummyReporter {
 /// A reporter that outputs test results to stdout as they complete.
 pub struct TestCaseReporter {
     printer: Printer,
-}
-
-impl Default for TestCaseReporter {
-    fn default() -> Self {
-        Self::new(Printer::new(VerbosityLevel::default(), false))
-    }
 }
 
 impl TestCaseReporter {

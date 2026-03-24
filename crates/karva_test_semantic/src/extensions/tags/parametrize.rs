@@ -220,43 +220,26 @@ pub(super) fn handle_custom_parametrize_param(
         return default_parametrization();
     };
 
-    let a_type = bound_param.get_type();
+    let is_parameter_set = bound_param
+        .get_type()
+        .name()
+        .ok()
+        .and_then(|n| n.to_str().ok().map(|s| s.contains("ParameterSet")))
+        .unwrap_or(false);
 
-    let Ok(type_name) = a_type.name() else {
-        return default_parametrization();
-    };
-
-    let Some(type_name_str) = type_name.to_str().ok() else {
-        return default_parametrization();
-    };
-
-    if type_name_str.contains("ParameterSet") {
-        // Handle pytest.param - extract the values attribute
-        let Ok(values_attr) = bound_param.getattr("values") else {
-            return default_parametrization();
-        };
-
-        // The values attribute is a tuple - extract it as a list
-        let values: Vec<Arc<Py<PyAny>>> = values_attr
-            .extract::<Vec<Py<PyAny>>>()
+    if is_parameter_set {
+        let values: Vec<Arc<Py<PyAny>>> = bound_param
+            .getattr("values")
+            .and_then(|v| v.extract::<Vec<Py<PyAny>>>())
             .map(|v| v.into_iter().map(Arc::new).collect())
             .unwrap_or_else(|_| vec![Arc::clone(&param_arc)]);
 
-        let Ok(marks) = bound_param.getattr("marks") else {
-            return Parametrization {
-                values,
-                tags: Tags::default(),
-            };
-        };
-
-        let Ok(marks) = marks.into_py_any(py) else {
-            return Parametrization {
-                values,
-                tags: Tags::default(),
-            };
-        };
-
-        let tags = Tags::from_pytest_marks(py, &marks).unwrap_or_default();
+        let tags = bound_param
+            .getattr("marks")
+            .ok()
+            .and_then(|m| m.into_py_any(py).ok())
+            .and_then(|m| Tags::from_pytest_marks(py, &m))
+            .unwrap_or_default();
 
         Parametrization { values, tags }
     } else if expect_multiple && let Ok(params) = bound_param.extract::<Vec<Py<PyAny>>>() {

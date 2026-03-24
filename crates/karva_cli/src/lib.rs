@@ -55,18 +55,6 @@ impl Verbosity {
     }
 }
 
-impl PartialEq<u8> for Verbosity {
-    fn eq(&self, other: &u8) -> bool {
-        self.verbose == *other
-    }
-}
-
-impl PartialOrd<u8> for Verbosity {
-    fn partial_cmp(&self, other: &u8) -> Option<std::cmp::Ordering> {
-        Some(self.verbose.cmp(other))
-    }
-}
-
 #[derive(Debug, Parser)]
 #[command(author, name = "karva", about = "A Python test runner.")]
 #[command(version)]

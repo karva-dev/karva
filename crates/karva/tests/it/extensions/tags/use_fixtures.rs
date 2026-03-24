@@ -444,3 +444,30 @@ def test_pytest_session_2():
     ----- stderr -----
     ");
 }
+
+#[test]
+fn test_use_fixtures_non_string_arg() {
+    let test_context = TestContext::with_file(
+        "test.py",
+        r"
+import karva
+
+@karva.tags.use_fixtures(123)
+def test_1():
+    assert True
+",
+    );
+
+    assert_cmd_snapshot!(test_context.command(), @r"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+    discovery diagnostics:
+
+    error[failed-to-import-module]: Failed to import python module `test`: Expected a string or a list of strings for fixture names
+
+    test result: ok. 0 passed; 0 failed; 0 skipped; finished in [TIME]
+
+    ----- stderr -----
+    ");
+}

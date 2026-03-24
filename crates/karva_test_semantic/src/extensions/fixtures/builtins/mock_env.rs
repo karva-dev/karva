@@ -17,19 +17,6 @@ pub fn create_mock_env_fixture(py: Python<'_>) -> Option<(Py<PyAny>, Py<PyAny>)>
     Some((mock.into_any(), undo_method))
 }
 
-/// Sentinel value representing "not set"
-#[pyclass(from_py_object)]
-#[derive(Clone)]
-struct NotSetType;
-
-#[pymethods]
-impl NotSetType {
-    #[expect(clippy::unused_self)]
-    fn __repr__(&self) -> &'static str {
-        "NOTSET"
-    }
-}
-
 type SetAttrEntry = (Py<PyAny>, String, Py<PyAny>);
 type SetItemEntry = (Py<PyAny>, Py<PyAny>, Py<PyAny>);
 type SetAttr = Arc<Mutex<Vec<SetAttrEntry>>>;
@@ -169,13 +156,6 @@ impl MockEnv {
         {
             // String target case - dotted import path
             let target_str = target.extract::<String>(py)?;
-
-            if !target_str.contains('.') {
-                return Err(PyAttributeError::new_err(format!(
-                    "must be absolute import path string, not {target_str:?}"
-                )));
-            }
-
             let actual_value = value.map_or(name, |v| v);
 
             let (attr_name, resolved_target) = derive_importpath(py, &target_str, raising)?;
@@ -517,10 +497,6 @@ impl MockEnvContext {
 /// Helper function to resolve dotted import paths
 fn resolve(py: Python<'_>, name: &str) -> PyResult<Py<PyAny>> {
     let parts: Vec<&str> = name.split('.').collect();
-
-    if parts.is_empty() {
-        return Err(PyAttributeError::new_err("Empty import path"));
-    }
 
     let importlib = py.import("importlib")?;
     let mut used = parts[0].to_string();

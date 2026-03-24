@@ -29,7 +29,7 @@ use crate::extensions::fixtures::scope::fixture_scope;
 /// Fixtures provide reusable setup and teardown logic for tests. They can be
 /// scoped to function, module, package, or session level, and may optionally
 /// be auto-used without explicit declaration.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct DiscoveredFixture {
     /// Fully qualified name including module path and function name.
     name: QualifiedFunctionName,
@@ -238,18 +238,6 @@ fn get_fixture_function<'py>(function: &Bound<'py, PyAny>) -> PyResult<Bound<'py
     ))
 }
 
-impl std::fmt::Debug for DiscoveredFixture {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "Fixture(name: {}, scope: {}, auto_use: {})",
-            self.name(),
-            self.scope(),
-            self.auto_use()
-        )
-    }
-}
-
 pub fn get_auto_use_fixtures<'a>(
     parents: &'a [&'a DiscoveredPackage],
     current: &'a dyn HasFixtures<'a>,
@@ -302,13 +290,5 @@ mod tests {
             FixtureScope::try_from("invalid".to_string()),
             Err("Invalid fixture scope: invalid".to_string())
         );
-    }
-
-    #[test]
-    fn test_fixture_scope_display() {
-        assert_eq!(FixtureScope::Function.to_string(), "function");
-        assert_eq!(FixtureScope::Module.to_string(), "module");
-        assert_eq!(FixtureScope::Package.to_string(), "package");
-        assert_eq!(FixtureScope::Session.to_string(), "session");
     }
 }

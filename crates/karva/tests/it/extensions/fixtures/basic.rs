@@ -619,3 +619,31 @@ def test_z(y):
     ----- stderr -----
     ");
 }
+
+#[test]
+fn test_pytest_named_fixture() {
+    let context = TestContext::with_file(
+        "test.py",
+        r#"
+import pytest
+
+@pytest.fixture(name="custom_name")
+def original_name():
+    return 42
+
+def test_named_fixture(custom_name):
+    assert custom_name == 42
+"#,
+    );
+
+    assert_cmd_snapshot!(context.command(), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    test test::test_named_fixture(custom_name=42) ... ok
+
+    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+
+    ----- stderr -----
+    ");
+}

@@ -654,3 +654,61 @@ def test2(input, expected):
     ----- stderr -----
     ");
 }
+
+#[test]
+fn test_parametrize_invalid_arg_names() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+import karva
+
+@karva.tags.parametrize(123, [1, 2])
+def test_invalid(x):
+    assert True
+",
+    );
+
+    assert_cmd_snapshot!(context.command(), @r"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+    discovery diagnostics:
+
+    error[failed-to-import-module]: Failed to import python module `test`: Expected a string or a list of strings for the arg_names, and a list of lists of objects for the arg_values
+
+    test result: ok. 0 passed; 0 failed; 0 skipped; finished in [TIME]
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_parametrize_pytest_param_with_custom_marks_filter() {
+    let context = TestContext::with_file(
+        "test.py",
+        r#"
+import pytest
+
+@pytest.mark.parametrize("x", [
+    pytest.param(1),
+    pytest.param(2, marks=pytest.mark.slow),
+    pytest.param(3, marks=[pytest.mark.slow, pytest.mark.integration]),
+])
+def test_with_custom_marks(x):
+    assert x > 0
+"#,
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-t").arg("slow"), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    test test::test_with_custom_marks ... skipped
+    test test::test_with_custom_marks(x=2) ... ok
+    test test::test_with_custom_marks(x=3) ... ok
+
+    test result: ok. 2 passed; 0 failed; 1 skipped; finished in [TIME]
+
+    ----- stderr -----
+    ");
+}

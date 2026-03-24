@@ -74,46 +74,6 @@ impl PyTag {
     }
 }
 
-#[pymethods]
-impl PyTag {
-    #[getter]
-    pub fn name(&self) -> String {
-        match self {
-            Self::Parametrize { .. } => "parametrize".to_string(),
-            Self::UseFixtures { .. } => "use_fixtures".to_string(),
-            Self::Skip { .. } => "skip".to_string(),
-            Self::ExpectFail { .. } => "expect_fail".to_string(),
-            Self::Custom { tag_name, .. } => tag_name.clone(),
-        }
-    }
-
-    #[getter]
-    pub fn args<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, pyo3::types::PyTuple>> {
-        match self {
-            Self::Custom { tag_args, .. } => {
-                let py_args: Vec<Bound<'py, PyAny>> =
-                    tag_args.iter().map(|arg| arg.bind(py).clone()).collect();
-                pyo3::types::PyTuple::new(py, py_args)
-            }
-            _ => Ok(pyo3::types::PyTuple::empty(py)),
-        }
-    }
-
-    #[getter]
-    pub fn kwargs<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, pyo3::types::PyDict>> {
-        match self {
-            Self::Custom { tag_kwargs, .. } => {
-                let py_dict = pyo3::types::PyDict::new(py);
-                for (key, value) in tag_kwargs {
-                    py_dict.set_item(key, value.bind(py))?;
-                }
-                Ok(py_dict)
-            }
-            _ => Ok(pyo3::types::PyDict::new(py)),
-        }
-    }
-}
-
 #[derive(Debug)]
 #[pyclass(name = "Tags")]
 pub struct PyTags {
@@ -132,29 +92,21 @@ impl PyTags {
 impl PyTags {
     #[pyo3(signature = (f, /))]
     pub fn __call__(&self, py: Python<'_>, f: Py<PyAny>) -> PyResult<Py<PyAny>> {
-        if let Ok(tag_obj) = f.cast_bound::<Self>(py) {
-            let cloned_inner: Vec<PyTag> = self.inner.iter().map(|tag| tag.clone_ref(py)).collect();
-            tag_obj.borrow_mut().inner.extend(cloned_inner);
-            return tag_obj.into_py_any(py);
-        } else if let Ok(test_case) = f.cast_bound::<PyTestFunction>(py) {
+        if let Ok(test_case) = f.cast_bound::<PyTestFunction>(py) {
             let cloned_inner: Vec<PyTag> = self.inner.iter().map(|tag| tag.clone_ref(py)).collect();
             test_case.borrow_mut().tags.inner.extend(cloned_inner);
-            return test_case.into_py_any(py);
+            test_case.into_py_any(py)
         } else if f.bind(py).is_callable() {
-            let test_case = PyTestFunction {
+            PyTestFunction {
                 tags: self.clone_ref(py),
                 function: f,
-            };
-            return test_case.into_py_any(py);
-        } else if let Ok(tag_bound) = f.cast_bound::<PyTag>(py) {
-            let tag = tag_bound.borrow();
-            let mut new_tags: Vec<PyTag> = self.inner.iter().map(|t| t.clone_ref(py)).collect();
-            new_tags.push(tag.clone_ref(py));
-            return new_tags.into_py_any(py);
+            }
+            .into_py_any(py)
+        } else {
+            Err(PyErr::new::<PyTypeError, _>(
+                "Expected a TestFunction or callable",
+            ))
         }
-        Err(PyErr::new::<PyTypeError, _>(
-            "Expected a Tags, TestCase, or Tag object",
-        ))
     }
 }
 
@@ -334,13 +286,6 @@ impl CustomTagBuilder {
                     }
                     .into_py_any(py);
                 }
-                // Check if it's a PyTags object
-                if let Ok(tag_obj) = first_item.extract::<PyRef<PyTags>>() {
-                    let mut new_tags: Vec<PyTag> =
-                        tag_obj.inner.iter().map(|t| t.clone_ref(py)).collect();
-                    new_tags.push(custom_tag);
-                    return PyTags { inner: new_tags }.into_py_any(py);
-                }
                 // Check if it's a plain callable function
                 if first_item.is_callable() {
                     return PyTestFunction {
@@ -387,11 +332,6 @@ pub struct PyTestFunction {
 
 #[pymethods]
 impl PyTestFunction {
-    #[getter]
-    fn tags(&self, py: Python<'_>) -> PyTags {
-        self.tags.clone_ref(py)
-    }
-
     #[pyo3(signature = (*args, **kwargs))]
     fn __call__(
         &self,
