@@ -68,7 +68,7 @@ impl Reporter for TestCaseReporter {
         let fn_name = test_name.function_name().function_name().blue().bold();
         let params = test_name
             .params()
-            .map(|p| p.purple().to_string())
+            .map(|p| p.blue().bold().to_string())
             .unwrap_or_default();
 
         let suffix = match &result_kind {
