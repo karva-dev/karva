@@ -31,7 +31,7 @@ def test_fixtures_given_by_decorator(a):
             PASS [TIME] test::test_fixtures_given_by_decorator
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -72,7 +72,7 @@ def test_func(a, b):
             PASS [TIME] test::test_func(b=1)
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -204,7 +204,7 @@ def test_fixtures_given_by_decorator(a, b):
     info: Missing fixtures: `b`
 
     ────────────
-         Summary [TIME] 1 tests run: 0 passed, 1 failed, 0 skipped
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");

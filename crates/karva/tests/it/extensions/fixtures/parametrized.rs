@@ -39,7 +39,7 @@ fn test_fixture_basic(#[values("pytest", "karva")] framework: &str) {
                 PASS [TIME] test::test_with_fixture(my_fixture=value)
 
         ────────────
-             Summary [TIME] 1 tests run: 1 passed, 0 skipped
+             Summary [TIME] 1 test run: 1 passed, 0 skipped
 
         ----- stderr -----
         ");
@@ -80,7 +80,7 @@ fn test_fixture_in_conftest(#[values("pytest", "karva")] framework: &str) {
                 PASS [TIME] test::test_with_number(number_fixture=42)
 
         ────────────
-             Summary [TIME] 1 tests run: 1 passed, 0 skipped
+             Summary [TIME] 1 test run: 1 passed, 0 skipped
 
         ----- stderr -----
         ");
@@ -267,7 +267,7 @@ fn test_fixture_with_multiple_fixtures(#[values("pytest", "karva")] framework: &
                 PASS [TIME] test::test_combination(letter=X, number=100)
 
         ────────────
-             Summary [TIME] 1 tests run: 1 passed, 0 skipped
+             Summary [TIME] 1 test run: 1 passed, 0 skipped
 
         ----- stderr -----
         ");
@@ -436,7 +436,7 @@ fn test_fixture_with_dependency(#[values("pytest", "karva")] framework: &str) {
                 PASS [TIME] test::test_dependent(dependent_fixture=1000)
 
         ────────────
-             Summary [TIME] 1 tests run: 1 passed, 0 skipped
+             Summary [TIME] 1 test run: 1 passed, 0 skipped
 
         ----- stderr -----
         ");

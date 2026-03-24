@@ -73,7 +73,7 @@ def test_main(): pass
             PASS [TIME] test_main::test_main
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -154,7 +154,7 @@ def test_other(): pass
             PASS [TIME] test_specific::test_specific
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -186,7 +186,7 @@ def test_example(): pass
             PASS [TIME] test::test_example
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -218,7 +218,7 @@ def test_example(): pass
             PASS [TIME] test::test_example
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -253,7 +253,7 @@ def test_with_print():
             PASS [TIME] test::test_with_print
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -289,7 +289,7 @@ def test_with_print():
             PASS [TIME] test::test_with_print
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -323,7 +323,7 @@ def test_should_not_run(): pass
             PASS [TIME] test::check_example
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -357,7 +357,7 @@ def check_should_not_run(): pass
             PASS [TIME] test::test_example
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -413,7 +413,7 @@ def test_second():
       |
 
     ────────────
-         Summary [TIME] 1 tests run: 0 passed, 1 failed, 0 skipped
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -541,7 +541,7 @@ def check_other(): pass
             PASS [TIME] tests.test::check_example
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -584,7 +584,7 @@ def verify_in_tests(): pass
             PASS [TIME] src.module::verify_in_src
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -669,7 +669,7 @@ def test_example():
             PASS [TIME] test::test_example
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -706,7 +706,7 @@ def test_should_not_run(): pass
             PASS [TIME] test::spec_example
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -807,7 +807,7 @@ def pyproject_test(): pass
             PASS [TIME] test::karva_test
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     WARN Ignoring the `tool.karva` section in `<temp_dir>/pyproject.toml` because `<temp_dir>/karva.toml` takes precedence.
@@ -835,7 +835,7 @@ def test_default(): pass
             PASS [TIME] test::test_default
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -868,7 +868,7 @@ def custom_test(): pass
             PASS [TIME] test::custom_test
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -902,7 +902,7 @@ def cli_should_run(): pass
             PASS [TIME] test::cli_should_run
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -935,7 +935,7 @@ def test_example(): pass
             PASS [TIME] test::test_example
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -971,7 +971,7 @@ def test_with_print():
             PASS [TIME] test::test_with_print
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -1064,7 +1064,7 @@ def test_second():
       |
 
     ────────────
-         Summary [TIME] 1 tests run: 0 passed, 1 failed, 0 skipped
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -1162,7 +1162,7 @@ def config_should_not_run(): pass
             PASS [TIME] custom_dir.ignored::custom_test
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     "
@@ -1214,7 +1214,7 @@ def cli_should_run():
             PASS [TIME] test::cli_should_run
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     "
@@ -1260,7 +1260,7 @@ def cli_should_run(): pass
             PASS [TIME] test::cli_should_run
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     WARN Ignoring the `tool.karva` section in `<temp_dir>/pyproject.toml` because `<temp_dir>/karva.toml` takes precedence.
@@ -1294,7 +1294,7 @@ def test_should_not_run(): pass
             PASS [TIME] test::check_from_config
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");

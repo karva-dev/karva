@@ -29,7 +29,7 @@ def test_with_use_fixture():
             PASS [TIME] test::test_with_use_fixture
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -66,7 +66,7 @@ def test_with_multiple_use_fixtures():
             PASS [TIME] test::test_with_multiple_use_fixtures
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -102,7 +102,7 @@ def test_combined_fixtures(param_fixture):
             PASS [TIME] test::test_combined_fixtures(param_fixture=param_value)
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -177,7 +177,7 @@ def test_multiple_use_fixtures_decorators():
             PASS [TIME] test::test_multiple_use_fixtures_decorators
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -204,7 +204,7 @@ def test_missing_fixture():
             PASS [TIME] test::test_missing_fixture
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -238,7 +238,7 @@ def test_use_fixtures_with_generator():
             PASS [TIME] test::test_use_fixtures_with_generator
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -319,7 +319,7 @@ def test_mixed_fixtures(shared_fixture):
             PASS [TIME] test::test_mixed_fixtures(shared_fixture=shared_value)
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -352,7 +352,7 @@ def test_with_pytest_use_fixture():
             PASS [TIME] test::test_with_pytest_use_fixture
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -389,7 +389,7 @@ def test_with_multiple_pytest_use_fixtures():
             PASS [TIME] test::test_with_multiple_pytest_use_fixtures
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");

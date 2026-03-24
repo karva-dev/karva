@@ -29,7 +29,7 @@ fn test_temp_directory_fixture(
         exit_code: 0
         ----- stdout -----
         ────────────
-             Summary [TIME] 1 tests run: 1 passed, 0 skipped
+             Summary [TIME] 1 test run: 1 passed, 0 skipped
 
         ----- stderr -----
         ");
@@ -418,7 +418,7 @@ def test_context_classmethod():
             PASS [TIME] test::test_context_classmethod
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -728,7 +728,7 @@ def test_setattr_non_absolute(monkeypatch):
             PASS [TIME] test::test_setattr_non_absolute(monkeypatch=<MockEnv object>)
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -755,7 +755,7 @@ def test_delattr_string_with_name(monkeypatch):
             PASS [TIME] test::test_delattr_string_with_name(monkeypatch=<MockEnv object>)
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -784,7 +784,7 @@ def test_delattr_no_name(monkeypatch):
             PASS [TIME] test::test_delattr_no_name(monkeypatch=<MockEnv object>)
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -812,7 +812,7 @@ def test_setattr_nonexistent(monkeypatch):
             PASS [TIME] test::test_setattr_nonexistent(monkeypatch=<MockEnv object>)
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -839,7 +839,7 @@ def test_setattr_missing_attr(monkeypatch):
             PASS [TIME] test::test_setattr_missing_attr(monkeypatch=<MockEnv object>)
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -864,7 +864,7 @@ def test_chdir(monkeypatch, tmp_path):
     exit_code: 0
     ----- stdout -----
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");

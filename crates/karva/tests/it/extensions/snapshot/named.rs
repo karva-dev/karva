@@ -22,7 +22,7 @@ def test_hello():
             PASS [TIME] test::test_hello
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -61,7 +61,7 @@ def test_hello():
             PASS [TIME] test::test_hello
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -127,7 +127,7 @@ def test_hello():
           ────────────┴───────────────────────────
 
     ────────────
-         Summary [TIME] 1 tests run: 0 passed, 1 failed, 0 skipped
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -154,7 +154,7 @@ def test_page():
             PASS [TIME] test::test_page
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -197,7 +197,7 @@ def test_mixed():
             PASS [TIME] test::test_mixed
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -259,7 +259,7 @@ def test_both():
     info: assert_snapshot() cannot use both 'inline' and 'name' arguments
 
     ────────────
-         Summary [TIME] 1 tests run: 0 passed, 1 failed, 0 skipped
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");

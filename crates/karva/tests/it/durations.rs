@@ -92,7 +92,7 @@ def test_a():
             PASS [TIME] test_durations::test_a
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");

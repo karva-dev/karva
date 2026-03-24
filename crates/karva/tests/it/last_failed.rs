@@ -39,7 +39,7 @@ fn last_failed_reruns_only_failures() {
       |
 
     ────────────
-         Summary [TIME] 1 tests run: 0 passed, 1 failed, 0 skipped
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -82,7 +82,7 @@ fn last_failed_lf_alias() {
       |
 
     ────────────
-         Summary [TIME] 1 tests run: 0 passed, 1 failed, 0 skipped
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -200,7 +200,7 @@ def test_fail(): assert True
             PASS [TIME] test_a::test_fail
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");

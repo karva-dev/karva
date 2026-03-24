@@ -269,7 +269,7 @@ def test_something():
     info: Failed to reset fixture: Teardown failed!
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     "#);
@@ -303,7 +303,7 @@ def test_something():
             PASS [TIME] test::test_something
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");

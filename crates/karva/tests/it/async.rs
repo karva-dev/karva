@@ -25,7 +25,7 @@ async def test_async_with_given(x):
             PASS [TIME] test::test_async_with_given
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -52,7 +52,7 @@ async def test_async_passes():
             PASS [TIME] test::test_async_passes
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -101,7 +101,7 @@ async def test_async_fails():
     info: async test failed
 
     ────────────
-         Summary [TIME] 1 tests run: 0 passed, 1 failed, 0 skipped
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -133,7 +133,7 @@ async def test_with_async_fixture(async_value):
             PASS [TIME] test::test_with_async_fixture(async_value=42)
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -209,7 +209,7 @@ async def test_async_with_sync(sync_value):
             PASS [TIME] test::test_async_with_sync(sync_value=10)
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -241,7 +241,7 @@ def test_sync_with_async(async_value):
             PASS [TIME] test::test_sync_with_async(async_value=99)
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");

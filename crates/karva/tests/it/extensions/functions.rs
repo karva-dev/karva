@@ -144,7 +144,7 @@ def test_conditional_fail():
     info: failing test
 
     ────────────
-         Summary [TIME] 1 tests run: 0 passed, 1 failed, 0 skipped
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -190,7 +190,7 @@ def test_raise_fail_error():
     info: Manually raised FailError
 
     ────────────
-         Summary [TIME] 1 tests run: 0 passed, 1 failed, 0 skipped
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -295,7 +295,7 @@ def test_raise_skip_error():
             SKIP [TIME] test::test_raise_skip_error: Manually raised SkipError
 
     ────────────
-         Summary [TIME] 1 tests run: 0 passed, 1 skipped
+         Summary [TIME] 1 test run: 0 passed, 1 skipped
 
     ----- stderr -----
     ");
@@ -322,7 +322,7 @@ def test_raises_value_error():
             PASS [TIME] test::test_raises_value_error
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -371,7 +371,7 @@ def test_raises_no_exception():
     info: DID NOT RAISE <class 'ValueError'>
 
     ────────────
-         Summary [TIME] 1 tests run: 0 passed, 1 failed, 0 skipped
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -398,7 +398,7 @@ def test_raises_match_passes():
             PASS [TIME] test::test_raises_match_passes
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -447,7 +447,7 @@ def test_raises_match_fails():
     info: Raised exception did not match pattern 'xyz'
 
     ────────────
-         Summary [TIME] 1 tests run: 0 passed, 1 failed, 0 skipped
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -496,7 +496,7 @@ def test_raises_wrong_type():
     info: wrong type
 
     ────────────
-         Summary [TIME] 1 tests run: 0 passed, 1 failed, 0 skipped
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -526,7 +526,7 @@ def test_raises_exc_info():
             PASS [TIME] test::test_raises_exc_info
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -556,7 +556,7 @@ def test_raises_subclass():
             PASS [TIME] test::test_raises_subclass
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");

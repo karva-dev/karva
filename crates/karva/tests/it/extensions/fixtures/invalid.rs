@@ -52,7 +52,7 @@ fn test_invalid_pytest_fixture_scope() {
     info: Missing fixtures: `some_fixture`
 
     ────────────
-         Summary [TIME] 1 tests run: 0 passed, 1 failed, 0 skipped
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     "#);
@@ -104,7 +104,7 @@ def test_all_scopes(some_fixture: int) -> None:
     info: Missing fixtures: `some_fixture`
 
     ────────────
-         Summary [TIME] 1 tests run: 0 passed, 1 failed, 0 skipped
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     "#);
@@ -142,7 +142,7 @@ fn test_missing_fixture() {
     info: Missing fixtures: `missing_fixture`
 
     ────────────
-         Summary [TIME] 1 tests run: 0 passed, 1 failed, 0 skipped
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -196,7 +196,7 @@ fn test_fixture_fails_to_run() {
     info: Fixture failed
 
     ────────────
-         Summary [TIME] 1 tests run: 0 passed, 1 failed, 0 skipped
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -240,7 +240,7 @@ fn test_fixture_missing_fixtures() {
     info: failing_fixture() missing 1 required positional argument: 'missing_fixture'
 
     ────────────
-         Summary [TIME] 1 tests run: 0 passed, 1 failed, 0 skipped
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -287,7 +287,7 @@ fn missing_arguments_in_nested_function() {
     info: test_failing_fixture.<locals>.inner() missing 1 required positional argument: 'missing_fixture'
 
     ────────────
-         Summary [TIME] 1 tests run: 0 passed, 1 failed, 0 skipped
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -342,7 +342,7 @@ fn test_failing_yield_fixture() {
     info: foo
 
     ────────────
-         Summary [TIME] 1 tests run: 0 passed, 1 failed, 0 skipped
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -386,7 +386,7 @@ fn test_fixture_generator_two_yields() {
     info: Fixture had more than one yield statement
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -430,7 +430,7 @@ fn test_fixture_generator_fail_in_teardown() {
     info: Failed to reset fixture: fixture-error
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     "#);
@@ -508,7 +508,7 @@ fn test_fixture_dependency_chain_failure() {
     info: config failed
 
     ────────────
-         Summary [TIME] 1 tests run: 0 passed, 1 failed, 0 skipped
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -560,7 +560,7 @@ def test_with_fixture(my_fixture):
     info: Missing fixtures: `my_fixture`
 
     ────────────
-         Summary [TIME] 1 tests run: 0 passed, 1 failed, 0 skipped
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");

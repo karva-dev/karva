@@ -281,9 +281,14 @@ impl std::fmt::Display for DisplayTestResultStats<'_> {
 
         writeln!(
             f,
-            " {} {} tests run: {}",
+            " {} {} {} run: {}",
             format_duration_bracketed(elapsed),
             self.stats.total(),
+            if self.stats.total() == 1 {
+                "test"
+            } else {
+                "tests"
+            },
             parts.join(", "),
         )
     }

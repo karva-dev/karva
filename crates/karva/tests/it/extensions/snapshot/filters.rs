@@ -25,7 +25,7 @@ def test_filtered():
             PASS [TIME] test::test_filtered
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -63,7 +63,7 @@ def test_multi_filter():
             PASS [TIME] test::test_multi_filter
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -100,7 +100,7 @@ def test_no_match():
             PASS [TIME] test::test_no_match
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -159,7 +159,7 @@ def test_bad_regex():
     info: Invalid regex pattern in snapshot filter: (unclosed
 
     ────────────
-         Summary [TIME] 1 tests run: 0 passed, 1 failed, 0 skipped
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     "#);
@@ -187,7 +187,7 @@ def test_nested():
             PASS [TIME] test::test_nested
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -222,7 +222,7 @@ def test_inline_filtered():
             PASS [TIME] test::test_inline_filtered
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -273,7 +273,7 @@ def test_update_filtered():
             PASS [TIME] test::test_update_filtered
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -300,7 +300,7 @@ def test_empty_filters():
             PASS [TIME] test::test_empty_filters
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");

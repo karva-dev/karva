@@ -44,7 +44,7 @@ def test_hello():
           Pending file: <temp_dir>/snapshots/test__test_hello.snap.new
 
     ────────────
-         Summary [TIME] 1 tests run: 0 passed, 1 failed, 0 skipped
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -78,7 +78,7 @@ def test_hello():
             PASS [TIME] test::test_hello
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -117,7 +117,7 @@ def test_hello():
             PASS [TIME] test::test_hello
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -183,7 +183,7 @@ def test_hello():
           ────────────┴───────────────────────────
 
     ────────────
-         Summary [TIME] 1 tests run: 0 passed, 1 failed, 0 skipped
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -212,7 +212,7 @@ def test_multi():
             PASS [TIME] test::test_multi
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -321,7 +321,7 @@ def test_overwrite():
             PASS [TIME] test::test_overwrite
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -431,7 +431,7 @@ def test_mixed():
             PASS [TIME] test::test_mixed
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -546,7 +546,7 @@ def test_multi():
     info: Multiple unnamed snapshots in one test. Use 'name=' for each, or wrap in 'karva.snapshot_settings(allow_duplicates=True)'
 
     ────────────
-         Summary [TIME] 1 tests run: 0 passed, 1 failed, 0 skipped
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -574,7 +574,7 @@ def test_multi():
             PASS [TIME] test::test_multi
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -617,7 +617,7 @@ def test_in_sub():
             PASS [TIME] sub.test_nested::test_in_sub
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
