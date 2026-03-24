@@ -22,7 +22,7 @@ def test_data():
             PASS [TIME] test::test_data
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -60,7 +60,7 @@ def test_nested():
             PASS [TIME] test::test_nested
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -106,7 +106,7 @@ def test_json():
             PASS [TIME] test::test_json
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -127,7 +127,7 @@ def test_json():
             PASS [TIME] test::test_json
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -153,7 +153,7 @@ def test_inline_json():
             PASS [TIME] test::test_inline_json
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -182,7 +182,7 @@ def test_json_filtered():
             PASS [TIME] test::test_json_filtered
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -219,7 +219,7 @@ def test_inline_json():
             PASS [TIME] test::test_inline_json
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -283,7 +283,7 @@ def test_fn():
             PASS [TIME] test::test_fn
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -435,7 +435,7 @@ def test_list():
             PASS [TIME] test::test_list
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");

@@ -142,7 +142,7 @@ def test_1():
             PASS [TIME] test::test_1
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -169,7 +169,7 @@ def test_1():
             PASS [TIME] test::test_1
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -196,7 +196,7 @@ def test_1():
             PASS [TIME] test::test_1
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -223,7 +223,7 @@ def test_1():
             PASS [TIME] test::test_1
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -252,7 +252,7 @@ def test_1():
             PASS [TIME] test::test_1
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -285,7 +285,7 @@ def test_runs():
             PASS [TIME] test::test_runs
 
     ────────────
-         Summary [TIME] 2 tests run: 1 passed, 0 failed, 1 skipped
+         Summary [TIME] 2 tests run: 1 passed, 1 skipped
 
     ----- stderr -----
     ");
@@ -316,7 +316,7 @@ def test_fast():
             SKIP [TIME] test::test_fast
 
     ────────────
-         Summary [TIME] 2 tests run: 1 passed, 0 failed, 1 skipped
+         Summary [TIME] 2 tests run: 1 passed, 1 skipped
 
     ----- stderr -----
     ");
@@ -347,7 +347,7 @@ def test_fast():
             PASS [TIME] test::test_fast
 
     ────────────
-         Summary [TIME] 2 tests run: 1 passed, 0 failed, 1 skipped
+         Summary [TIME] 2 tests run: 1 passed, 1 skipped
 
     ----- stderr -----
     ");
@@ -385,7 +385,7 @@ def test_integration_only():
             SKIP [TIME] test::test_integration_only
 
     ────────────
-         Summary [TIME] 3 tests run: 1 passed, 0 failed, 2 skipped
+         Summary [TIME] 3 tests run: 1 passed, 2 skipped
 
     ----- stderr -----
     ");
@@ -421,7 +421,7 @@ def test_untagged():
             SKIP [TIME] test::test_untagged
 
     ────────────
-         Summary [TIME] 3 tests run: 2 passed, 0 failed, 1 skipped
+         Summary [TIME] 3 tests run: 2 passed, 1 skipped
 
     ----- stderr -----
     ");
@@ -459,7 +459,7 @@ def test_integration_only():
             PASS [TIME] test::test_integration_only
 
     ────────────
-         Summary [TIME] 3 tests run: 3 passed, 0 failed, 0 skipped
+         Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -490,7 +490,7 @@ def test_fast():
             SKIP [TIME] test::test_fast
 
     ────────────
-         Summary [TIME] 2 tests run: 0 passed, 0 failed, 2 skipped
+         Summary [TIME] 2 tests run: 0 passed, 2 skipped
 
     ----- stderr -----
     ");
@@ -523,7 +523,7 @@ def test_untagged():
             SKIP [TIME] test::test_untagged
 
     ────────────
-         Summary [TIME] 3 tests run: 2 passed, 0 failed, 1 skipped
+         Summary [TIME] 3 tests run: 2 passed, 1 skipped
 
     ----- stderr -----
     ");
@@ -560,7 +560,7 @@ def test_untagged():
             SKIP [TIME] test::test_untagged
 
     ────────────
-         Summary [TIME] 3 tests run: 1 passed, 0 failed, 2 skipped
+         Summary [TIME] 3 tests run: 1 passed, 2 skipped
 
     ----- stderr -----
     ");
@@ -604,7 +604,7 @@ def test_linux_only():
             SKIP [TIME] test::test_linux_only
 
     ────────────
-         Summary [TIME] 4 tests run: 2 passed, 0 failed, 2 skipped
+         Summary [TIME] 4 tests run: 2 passed, 2 skipped
 
     ----- stderr -----
     ");
@@ -640,7 +640,7 @@ def test_untagged():
             SKIP [TIME] test::test_untagged
 
     ────────────
-         Summary [TIME] 3 tests run: 2 passed, 0 failed, 1 skipped
+         Summary [TIME] 3 tests run: 2 passed, 1 skipped
 
     ----- stderr -----
     ");
@@ -677,7 +677,7 @@ def test_untagged():
             SKIP [TIME] test::test_untagged
 
     ────────────
-         Summary [TIME] 3 tests run: 1 passed, 0 failed, 2 skipped
+         Summary [TIME] 3 tests run: 1 passed, 2 skipped
 
     ----- stderr -----
     ");

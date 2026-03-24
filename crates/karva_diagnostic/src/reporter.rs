@@ -66,7 +66,10 @@ impl Reporter for TestCaseReporter {
 
         let module = test_name.function_name().module_path().module_name().cyan();
         let fn_name = test_name.function_name().function_name().blue().bold();
-        let params = test_name.params().unwrap_or_default();
+        let params = test_name
+            .params()
+            .map(|p| p.purple().to_string())
+            .unwrap_or_default();
 
         let suffix = match &result_kind {
             IndividualTestResultKind::Skipped {

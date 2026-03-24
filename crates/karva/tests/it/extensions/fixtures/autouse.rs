@@ -49,7 +49,7 @@ def test_something_else():
                 PASS [TIME] test::test_something_else
 
         ────────────
-             Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
+             Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
         ----- stderr -----
         ");
@@ -95,7 +95,7 @@ def test_something_else():
                 PASS [TIME] test::test_something_else
 
         ────────────
-             Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
+             Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
         ----- stderr -----
         ");
@@ -143,7 +143,7 @@ fn test_auto_use_fixture(#[values("pytest", "karva")] framework: &str) {
                 PASS [TIME] test::test_string_and_int(first_entry=a, order=['a'])
 
         ────────────
-             Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
+             Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
         ----- stderr -----
         ");
@@ -189,7 +189,7 @@ fn test_auto_use_fixture_in_parent_module() {
             PASS [TIME] foo.inner.test_file2::test_function2
 
     ────────────
-         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -223,7 +223,7 @@ def test_something_else():
             PASS [TIME] test::test_something_else
 
     ────────────
-         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -269,7 +269,7 @@ def test_something():
     info: Failed to reset fixture: Teardown failed!
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     "#);
@@ -303,7 +303,7 @@ def test_something():
             PASS [TIME] test::test_something
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -359,7 +359,7 @@ def test_second():
     info: Scoped fixture failed!
 
     ────────────
-         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
     ----- stderr -----
     "#);

@@ -28,7 +28,7 @@ def test_fixture_generator(fixture_generator):
             PASS [TIME] test::test_fixture_generator(fixture_generator=1)
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -58,7 +58,7 @@ async def test_async_fixture(async_fixture):
             PASS [TIME] test::test_async_fixture(async_fixture=42)
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -96,7 +96,7 @@ async def test_after_cleanup(async_resource):
             PASS [TIME] test::test_after_cleanup(async_resource=resource)
 
     ────────────
-         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -139,7 +139,7 @@ async def test_bad(bad_fixture):
     info: Fixture had more than one yield statement
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -182,7 +182,7 @@ async def test_error(error_fixture):
     info: Failed to reset fixture: teardown failed
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     "#);
@@ -219,7 +219,7 @@ def test_fixture_generator(fixture_generator):
                 PASS [TIME] test::test_fixture_generator(fixture_generator=1)
 
         ────────────
-             Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+             Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
         ----- stderr -----
         ");

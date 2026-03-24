@@ -145,7 +145,7 @@ def test_third():
             PASS [TIME] test::test_third
 
     ────────────
-         Summary [TIME] 3 tests run: 3 passed, 0 failed, 0 skipped
+         Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
     ----- stderr -----
     ");

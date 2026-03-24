@@ -28,7 +28,7 @@ def test_4(): pass",
             PASS [TIME] test_file1::test_2
 
     ────────────
-         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -43,7 +43,7 @@ fn test_empty_file() {
     exit_code: 0
     ----- stdout -----
     ────────────
-         Summary [TIME] 0 tests run: 0 passed, 0 failed, 0 skipped
+         Summary [TIME] 0 tests run: 0 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -58,7 +58,7 @@ fn test_empty_directory() {
     exit_code: 0
     ----- stdout -----
     ────────────
-         Summary [TIME] 0 tests run: 0 passed, 0 failed, 0 skipped
+         Summary [TIME] 0 tests run: 0 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -81,7 +81,7 @@ fn test_single_function() {
             PASS [TIME] test::test_1
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -105,7 +105,7 @@ def test_2(): pass",
             PASS [TIME] test::test_2
 
     ────────────
-         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -129,7 +129,7 @@ def test_2(): pass",
             PASS [TIME] test::test_2
 
     ────────────
-         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -144,7 +144,7 @@ fn test_no_tests_found() {
     exit_code: 0
     ----- stdout -----
     ────────────
-         Summary [TIME] 0 tests run: 0 passed, 0 failed, 0 skipped
+         Summary [TIME] 0 tests run: 0 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -168,7 +168,7 @@ fn test_one_test_passes() {
             PASS [TIME] test_pass::test_pass
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -408,7 +408,7 @@ fn test_stdout() {
             PASS [TIME] test_std_out_redirected::test_std_out_redirected
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -422,7 +422,7 @@ fn test_stdout() {
             PASS [TIME] test_std_out_redirected::test_std_out_redirected
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -435,7 +435,7 @@ fn test_stdout() {
             PASS [TIME] test_std_out_redirected::test_std_out_redirected
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -487,7 +487,7 @@ fn test_text_file_in_directory() {
             PASS [TIME] test_sample::test_sample
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -525,7 +525,7 @@ fn test_quiet_output_passing() {
     exit_code: 0
     ----- stdout -----
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -605,7 +605,7 @@ fn test_fixture_generator_two_yields_passing_test() {
     info: Fixture had more than one yield statement
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -712,7 +712,7 @@ fn test_fixture_generator_fail_in_teardown() {
     info: Failed to reset fixture: fixture error
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     "#);
@@ -928,7 +928,7 @@ def tests_1(): ...
             PASS [TIME] test_fail::tests_1
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -955,7 +955,7 @@ def test_1():
             PASS [TIME] test_fail::test_1
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -987,7 +987,7 @@ def test_1():
             PASS [TIME] test_fail::test_1
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -1069,7 +1069,7 @@ def test_1():
             PASS [TIME] test::test_1
 
     ────────────
-         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -1091,7 +1091,7 @@ def test_1():
     ----- stdout -----
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -1133,7 +1133,7 @@ def test_2(y): pass
             PASS [TIME] test_file::test_2(y=1)
 
     ────────────
-         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -1229,7 +1229,7 @@ def test_1():
             PASS [TIME] test::test_1
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -1257,7 +1257,7 @@ def test_3(): pass",
             PASS [TIME] test_a::test_3
 
     ────────────
-         Summary [TIME] 3 tests run: 3 passed, 0 failed, 0 skipped
+         Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
     ----- stderr -----
     INFO Collected all tests in [TIME]
@@ -1401,7 +1401,7 @@ def test_pass():
     error[failed-to-import-module] Failed to import python module `test`: No module named 'nonexistent_module_xyz'
 
     ────────────
-         Summary [TIME] 0 tests run: 0 passed, 0 failed, 0 skipped
+         Summary [TIME] 0 tests run: 0 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -1524,7 +1524,7 @@ def test_with_print():
             PASS [TIME] test::test_with_print
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -1552,7 +1552,7 @@ def test_flaky():
             PASS [TIME] test::test_flaky
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -1577,7 +1577,7 @@ def test_2(): pass
             PASS [TIME] test::test_2
 
     ────────────
-         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
     ----- stderr -----
     [DATETIME] DEBUG Working directory cwd=<temp_dir>/
@@ -1613,7 +1613,7 @@ def test_1(): pass
             PASS [TIME] test::test_1
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     1   [TIME] DEBUG karva::commands::test Working directory, cwd=<temp_dir>/
@@ -1646,7 +1646,7 @@ def test_2(): pass
     exit_code: 0
     ----- stdout -----
     ────────────
-         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
     ----- stderr -----
     ");

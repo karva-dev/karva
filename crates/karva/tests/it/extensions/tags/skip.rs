@@ -46,7 +46,7 @@ def test_1():
                 SKIP [TIME] test::test_1: This test is skipped with decorator
 
         ────────────
-             Summary [TIME] 1 tests run: 0 passed, 0 failed, 1 skipped
+             Summary [TIME] 1 tests run: 0 passed, 1 skipped
 
         ----- stderr -----
         ");
@@ -78,7 +78,7 @@ def test_1():
                 SKIP [TIME] test::test_1: This test is skipped with decorator
 
         ────────────
-             Summary [TIME] 1 tests run: 0 passed, 0 failed, 1 skipped
+             Summary [TIME] 1 tests run: 0 passed, 1 skipped
 
         ----- stderr -----
         ");
@@ -110,7 +110,7 @@ def test_1():
                 SKIP [TIME] test::test_1
 
         ────────────
-             Summary [TIME] 1 tests run: 0 passed, 0 failed, 1 skipped
+             Summary [TIME] 1 tests run: 0 passed, 1 skipped
 
         ----- stderr -----
         ");
@@ -142,7 +142,7 @@ def test_1():
                 SKIP [TIME] test::test_1
 
         ────────────
-             Summary [TIME] 1 tests run: 0 passed, 0 failed, 1 skipped
+             Summary [TIME] 1 tests run: 0 passed, 1 skipped
 
         ----- stderr -----
         ");
@@ -175,7 +175,7 @@ def test_1():
                 SKIP [TIME] test::test_1: Condition is true
 
         ────────────
-             Summary [TIME] 1 tests run: 0 passed, 0 failed, 1 skipped
+             Summary [TIME] 1 tests run: 0 passed, 1 skipped
 
         ----- stderr -----
         ");
@@ -207,7 +207,7 @@ def test_1():
                 PASS [TIME] test::test_1
 
         ────────────
-             Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+             Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
         ----- stderr -----
         ");
@@ -240,7 +240,7 @@ def test_1():
                 SKIP [TIME] test::test_1: Python 3 or higher
 
         ────────────
-             Summary [TIME] 1 tests run: 0 passed, 0 failed, 1 skipped
+             Summary [TIME] 1 tests run: 0 passed, 1 skipped
 
         ----- stderr -----
         ");
@@ -272,7 +272,7 @@ def test_1():
                 SKIP [TIME] test::test_1: Multiple conditions with one true
 
         ────────────
-             Summary [TIME] 1 tests run: 0 passed, 0 failed, 1 skipped
+             Summary [TIME] 1 tests run: 0 passed, 1 skipped
 
         ----- stderr -----
         ");
@@ -304,7 +304,7 @@ def test_1():
                 SKIP [TIME] test::test_1
 
         ────────────
-             Summary [TIME] 1 tests run: 0 passed, 0 failed, 1 skipped
+             Summary [TIME] 1 tests run: 0 passed, 1 skipped
 
         ----- stderr -----
         ");
@@ -345,7 +345,7 @@ def test_normal():
                 PASS [TIME] test::test_normal
 
         ────────────
-             Summary [TIME] 3 tests run: 2 passed, 0 failed, 1 skipped
+             Summary [TIME] 3 tests run: 2 passed, 1 skipped
 
         ----- stderr -----
         ");
@@ -377,7 +377,7 @@ def test_1():
                 PASS [TIME] test::test_1
 
         ────────────
-             Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+             Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
         ----- stderr -----
         ");
@@ -405,7 +405,7 @@ def test_1():
             SKIP [TIME] test::test_1
 
     ────────────
-         Summary [TIME] 1 tests run: 0 passed, 0 failed, 1 skipped
+         Summary [TIME] 1 tests run: 0 passed, 1 skipped
 
     ----- stderr -----
     ");
@@ -432,7 +432,7 @@ def test_1():
             SKIP [TIME] test::test_1: This is the skip reason
 
     ────────────
-         Summary [TIME] 1 tests run: 0 passed, 0 failed, 1 skipped
+         Summary [TIME] 1 tests run: 0 passed, 1 skipped
 
     ----- stderr -----
     ");
@@ -461,7 +461,7 @@ def test_1():
     error[failed-to-import-module]: Failed to import python module `test`: Expected boolean values for conditions
 
     ────────────
-         Summary [TIME] 0 tests run: 0 passed, 0 failed, 0 skipped
+         Summary [TIME] 0 tests run: 0 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -490,7 +490,7 @@ def test_1():
     error[failed-to-import-module]: Failed to import python module `test`: Expected boolean values for conditions
 
     ────────────
-         Summary [TIME] 0 tests run: 0 passed, 0 failed, 0 skipped
+         Summary [TIME] 0 tests run: 0 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -523,7 +523,7 @@ def test_skip_with_true():
                 SKIP [TIME] test::test_skip_with_true
 
         ────────────
-             Summary [TIME] 1 tests run: 0 passed, 0 failed, 1 skipped
+             Summary [TIME] 1 tests run: 0 passed, 1 skipped
 
         ----- stderr -----
         ");

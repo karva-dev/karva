@@ -386,7 +386,7 @@ fn test_fixture_generator_two_yields() {
     info: Fixture had more than one yield statement
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -430,7 +430,7 @@ fn test_fixture_generator_fail_in_teardown() {
     info: Failed to reset fixture: fixture-error
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     "#);

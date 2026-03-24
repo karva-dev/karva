@@ -109,7 +109,7 @@ fn last_failed_with_no_previous_failures_runs_all() {
             PASS [TIME] test_a::test_two
 
     ────────────
-         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -134,7 +134,7 @@ fn last_failed_without_previous_run_runs_all() {
             PASS [TIME] test_a::test_two
 
     ────────────
-         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -200,7 +200,7 @@ def test_fail(): assert True
             PASS [TIME] test_a::test_fail
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");

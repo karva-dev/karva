@@ -29,7 +29,7 @@ fn test_temp_directory_fixture(
         exit_code: 0
         ----- stdout -----
         ────────────
-             Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+             Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
         ----- stderr -----
         ");
@@ -78,7 +78,7 @@ def test_setattr_undo(monkeypatch):
             PASS [TIME] test::test_setattr_undo(monkeypatch=<MockEnv object>)
 
     ────────────
-         Summary [TIME] 3 tests run: 3 passed, 0 failed, 0 skipped
+         Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -119,7 +119,7 @@ def test_setitem_undo(monkeypatch):
             PASS [TIME] test::test_setitem_undo(monkeypatch=<MockEnv object>)
 
     ────────────
-         Summary [TIME] 3 tests run: 3 passed, 0 failed, 0 skipped
+         Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -162,7 +162,7 @@ def test_delenv(monkeypatch):
             PASS [TIME] test::test_delenv(monkeypatch=<MockEnv object>)
 
     ────────────
-         Summary [TIME] 3 tests run: 3 passed, 0 failed, 0 skipped
+         Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -202,7 +202,7 @@ def test_syspath_prepend_multiple(monkeypatch):
             PASS [TIME] test::test_syspath_prepend_multiple(monkeypatch=<MockEnv object>)
 
     ────────────
-         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -240,7 +240,7 @@ def test_delattr_undo(monkeypatch):
             PASS [TIME] test::test_delattr_undo(monkeypatch=<MockEnv object>)
 
     ────────────
-         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -283,7 +283,7 @@ def test_context_manager_auto_undo():
             PASS [TIME] test::test_context_manager_auto_undo
 
     ────────────
-         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -314,7 +314,7 @@ def test_1():
             PASS [TIME] test::test_1
 
     ────────────
-         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -349,7 +349,7 @@ def test_setattr_dotted_path_undo(monkeypatch):
             PASS [TIME] test::test_setattr_dotted_path_undo(monkeypatch=<MockEnv object>)
 
     ────────────
-         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -384,7 +384,7 @@ def test_delattr_dotted_path_undo(monkeypatch):
             PASS [TIME] test::test_delattr_dotted_path_undo(monkeypatch=<MockEnv object>)
 
     ────────────
-         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -418,7 +418,7 @@ def test_context_classmethod():
             PASS [TIME] test::test_context_classmethod
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -451,7 +451,7 @@ def test_delitem_not_raising(monkeypatch):
             PASS [TIME] test::test_delitem_not_raising(monkeypatch=<MockEnv object>)
 
     ────────────
-         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -690,7 +690,7 @@ fn test_mock_env() {
         exit_code: 0
         ----- stdout -----
         ────────────
-             Summary [TIME] 16 tests run: 13 passed, 0 failed, 3 skipped
+             Summary [TIME] 16 tests run: 13 passed, 3 skipped
 
         ----- stderr -----
         ");
@@ -700,7 +700,7 @@ fn test_mock_env() {
         exit_code: 0
         ----- stdout -----
         ────────────
-             Summary [TIME] 16 tests run: 16 passed, 0 failed, 0 skipped
+             Summary [TIME] 16 tests run: 16 passed, 0 skipped
 
         ----- stderr -----
         ");
@@ -728,7 +728,7 @@ def test_setattr_non_absolute(monkeypatch):
             PASS [TIME] test::test_setattr_non_absolute(monkeypatch=<MockEnv object>)
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -755,7 +755,7 @@ def test_delattr_string_with_name(monkeypatch):
             PASS [TIME] test::test_delattr_string_with_name(monkeypatch=<MockEnv object>)
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -784,7 +784,7 @@ def test_delattr_no_name(monkeypatch):
             PASS [TIME] test::test_delattr_no_name(monkeypatch=<MockEnv object>)
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -812,7 +812,7 @@ def test_setattr_nonexistent(monkeypatch):
             PASS [TIME] test::test_setattr_nonexistent(monkeypatch=<MockEnv object>)
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -839,7 +839,7 @@ def test_setattr_missing_attr(monkeypatch):
             PASS [TIME] test::test_setattr_missing_attr(monkeypatch=<MockEnv object>)
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -864,7 +864,7 @@ def test_chdir(monkeypatch, tmp_path):
     exit_code: 0
     ----- stdout -----
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");

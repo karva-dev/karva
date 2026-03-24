@@ -258,15 +258,33 @@ impl std::fmt::Display for DisplayTestResultStats<'_> {
             write!(f, "{}", label.red().bold())?;
         }
 
-        let passed = format!("{} passed", self.stats.passed()).green().bold();
-        let failed = format!("{} failed", self.stats.failed()).red().bold();
-        let skipped = format!("{} skipped", self.stats.skipped()).yellow().bold();
+        let mut parts = vec![
+            format!("{} passed", self.stats.passed())
+                .green()
+                .bold()
+                .to_string(),
+        ];
+        if self.stats.failed() > 0 {
+            parts.push(
+                format!("{} failed", self.stats.failed())
+                    .red()
+                    .bold()
+                    .to_string(),
+            );
+        }
+        parts.push(
+            format!("{} skipped", self.stats.skipped())
+                .yellow()
+                .bold()
+                .to_string(),
+        );
 
         writeln!(
             f,
-            " {} {} tests run: {passed}, {failed}, {skipped}",
+            " {} {} tests run: {}",
             format_duration_bracketed(elapsed),
             self.stats.total(),
+            parts.join(", "),
         )
     }
 }

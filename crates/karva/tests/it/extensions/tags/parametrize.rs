@@ -39,7 +39,7 @@ def test_parametrize_with_fixture(a, fixture_value):
             PASS [TIME] test::test_parametrize_with_fixture(a=3, fixture_value=42)
 
     ────────────
-         Summary [TIME] 3 tests run: 3 passed, 0 failed, 0 skipped
+         Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -70,7 +70,7 @@ def test_parametrize_with_fixture(a):
             PASS [TIME] test::test_parametrize_with_fixture(a=3)
 
     ────────────
-         Summary [TIME] 3 tests run: 3 passed, 0 failed, 0 skipped
+         Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -100,7 +100,7 @@ def test_function(a: int, b: int):
             PASS [TIME] test::test_function(a=2, b=2)
 
     ────────────
-         Summary [TIME] 4 tests run: 4 passed, 0 failed, 0 skipped
+         Summary [TIME] 4 tests run: 4 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -136,7 +136,7 @@ def test_function(a: int, b: int, c: int):
             PASS [TIME] test::test_function(a=2, b=2, c=2)
 
     ────────────
-         Summary [TIME] 8 tests run: 8 passed, 0 failed, 0 skipped
+         Summary [TIME] 8 tests run: 8 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -172,7 +172,7 @@ fn test_parametrize_multiple_args_single_string(#[values("pytest", "karva")] fra
                 PASS [TIME] test::test_square(expected=9, input=3)
 
         ────────────
-             Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
+             Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
         ----- stderr -----
         ");
@@ -206,7 +206,7 @@ def test_single_arg(a):
             PASS [TIME] test::test_single_arg(a=3)
 
     ────────────
-         Summary [TIME] 3 tests run: 3 passed, 0 failed, 0 skipped
+         Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -239,7 +239,7 @@ def test_square(input, expected):
             PASS [TIME] test::test_square(expected=16, input=4)
 
     ────────────
-         Summary [TIME] 3 tests run: 3 passed, 0 failed, 0 skipped
+         Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -272,7 +272,7 @@ def test_square(input, expected):
             PASS [TIME] test::test_square(expected=16, input=4)
 
     ────────────
-         Summary [TIME] 3 tests run: 3 passed, 0 failed, 0 skipped
+         Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -305,7 +305,7 @@ def test_square(input, expected):
             PASS [TIME] test::test_square(expected=16, input=4)
 
     ────────────
-         Summary [TIME] 3 tests run: 3 passed, 0 failed, 0 skipped
+         Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -344,7 +344,7 @@ def test_markup_mode_bullets_single_newline(length: int | None, nums: list[int])
             PASS [TIME] test::test_markup_mode_bullets_single_newline(length=None, nums=[])
 
     ────────────
-         Summary [TIME] 3 tests run: 3 passed, 0 failed, 0 skipped
+         Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -377,7 +377,7 @@ def test_square(input, expected):
             PASS [TIME] test::test_square(expected=26, input=5)
 
     ────────────
-         Summary [TIME] 3 tests run: 2 passed, 0 failed, 1 skipped
+         Summary [TIME] 3 tests run: 2 passed, 1 skipped
 
     ----- stderr -----
     ");
@@ -410,7 +410,7 @@ def test_single_arg(a):
             PASS [TIME] test::test_single_arg(a=3)
 
     ────────────
-         Summary [TIME] 3 tests run: 3 passed, 0 failed, 0 skipped
+         Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -443,7 +443,7 @@ def test_square(input, expected):
             PASS [TIME] test::test_square(expected=16, input=4)
 
     ────────────
-         Summary [TIME] 3 tests run: 3 passed, 0 failed, 0 skipped
+         Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -476,7 +476,7 @@ def test_square(input, expected):
             PASS [TIME] test::test_square(expected=16, input=4)
 
     ────────────
-         Summary [TIME] 3 tests run: 3 passed, 0 failed, 0 skipped
+         Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -509,7 +509,7 @@ def test_square(input, expected):
             PASS [TIME] test::test_square(expected=16, input=4)
 
     ────────────
-         Summary [TIME] 3 tests run: 3 passed, 0 failed, 0 skipped
+         Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -548,7 +548,7 @@ def test_markup_mode_bullets_single_newline(length: int | None, nums: list[int])
             PASS [TIME] test::test_markup_mode_bullets_single_newline(length=None, nums=[])
 
     ────────────
-         Summary [TIME] 3 tests run: 3 passed, 0 failed, 0 skipped
+         Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -585,7 +585,7 @@ def test_square(input, expected):
             PASS [TIME] test::test_square(expected=50, input=7)
 
     ────────────
-         Summary [TIME] 5 tests run: 3 passed, 0 failed, 2 skipped
+         Summary [TIME] 5 tests run: 3 passed, 2 skipped
 
     ----- stderr -----
     ");
@@ -618,7 +618,7 @@ def test_marks_list(x):
             PASS [TIME] test::test_marks_list(x=3)
 
     ────────────
-         Summary [TIME] 3 tests run: 2 passed, 0 failed, 1 skipped
+         Summary [TIME] 3 tests run: 2 passed, 1 skipped
 
     ----- stderr -----
     ");
@@ -649,7 +649,7 @@ def test_with_skip_reason(x):
             SKIP [TIME] test::test_with_skip_reason: not ready
 
     ────────────
-         Summary [TIME] 2 tests run: 1 passed, 0 failed, 1 skipped
+         Summary [TIME] 2 tests run: 1 passed, 1 skipped
 
     ----- stderr -----
     ");
@@ -689,7 +689,7 @@ def test2(input, expected):
             PASS [TIME] test::test2(expected=16, input=4)
 
     ────────────
-         Summary [TIME] 4 tests run: 4 passed, 0 failed, 0 skipped
+         Summary [TIME] 4 tests run: 4 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -718,7 +718,7 @@ def test_invalid(x):
     error[failed-to-import-module]: Failed to import python module `test`: Expected a string or a list of strings for the arg_names, and a list of lists of objects for the arg_values
 
     ────────────
-         Summary [TIME] 0 tests run: 0 passed, 0 failed, 0 skipped
+         Summary [TIME] 0 tests run: 0 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -751,7 +751,7 @@ def test_with_custom_marks(x):
             PASS [TIME] test::test_with_custom_marks(x=3)
 
     ────────────
-         Summary [TIME] 3 tests run: 2 passed, 0 failed, 1 skipped
+         Summary [TIME] 3 tests run: 2 passed, 1 skipped
 
     ----- stderr -----
     ");

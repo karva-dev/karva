@@ -34,7 +34,7 @@ def test_slow():
       test_durations::test_medium ([TIME])
 
     ────────────
-         Summary [TIME] 3 tests run: 3 passed, 0 failed, 0 skipped
+         Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -68,7 +68,7 @@ def test_slow():
       test_durations::test_fast ([TIME])
 
     ────────────
-         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -92,7 +92,7 @@ def test_a():
             PASS [TIME] test_durations::test_a
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -127,7 +127,7 @@ def test_skipped():
       test_durations::test_skipped ([TIME])
 
     ────────────
-         Summary [TIME] 2 tests run: 1 passed, 0 failed, 1 skipped
+         Summary [TIME] 2 tests run: 1 passed, 1 skipped
 
     ----- stderr -----
     ");

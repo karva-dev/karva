@@ -37,7 +37,7 @@ def test_1():
                 PASS [TIME] test::test_1
 
         ────────────
-             Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+             Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
         ----- stderr -----
         ");
@@ -151,7 +151,7 @@ def test_1():
                 PASS [TIME] test::test_1
 
         ────────────
-             Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+             Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
         ----- stderr -----
         ");
@@ -183,7 +183,7 @@ def test_1():
                 PASS [TIME] test::test_1
 
         ────────────
-             Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+             Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
         ----- stderr -----
         ");
@@ -215,7 +215,7 @@ def test_1():
                 PASS [TIME] test::test_1
 
         ────────────
-             Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+             Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
         ----- stderr -----
         ");
@@ -247,7 +247,7 @@ def test_1():
                 PASS [TIME] test::test_1
 
         ────────────
-             Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+             Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
         ----- stderr -----
         ");
@@ -280,7 +280,7 @@ def test_1():
                 PASS [TIME] test::test_1
 
         ────────────
-             Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+             Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
         ----- stderr -----
         ");
@@ -312,7 +312,7 @@ def test_1():
                 PASS [TIME] test::test_1
 
         ────────────
-             Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+             Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
         ----- stderr -----
         ");
@@ -344,7 +344,7 @@ def test_1():
                 PASS [TIME] test::test_1
 
         ────────────
-             Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+             Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
         ----- stderr -----
         ");
@@ -372,7 +372,7 @@ def test_1():
             PASS [TIME] test::test_1
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -399,7 +399,7 @@ def test_1():
             PASS [TIME] test::test_1
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -524,7 +524,7 @@ def test_1():
             PASS [TIME] test::test_1
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -551,7 +551,7 @@ def test_1():
             PASS [TIME] test::test_1
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -580,7 +580,7 @@ def test_1():
             SKIP [TIME] test::test_1: Skipping this test
 
     ────────────
-         Summary [TIME] 1 tests run: 0 passed, 0 failed, 1 skipped
+         Summary [TIME] 1 tests run: 0 passed, 1 skipped
 
     ----- stderr -----
     ");
@@ -658,7 +658,7 @@ def test_param(x):
                 PASS [TIME] test::test_param(x=3)
 
         ────────────
-             Summary [TIME] 3 tests run: 3 passed, 0 failed, 0 skipped
+             Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
         ----- stderr -----
         ");

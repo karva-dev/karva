@@ -22,7 +22,7 @@ fn name_filter_substring_match() {
             SKIP [TIME] test::test_beta
 
     ────────────
-         Summary [TIME] 2 tests run: 1 passed, 0 failed, 1 skipped
+         Summary [TIME] 2 tests run: 1 passed, 1 skipped
 
     ----- stderr -----
     ");
@@ -40,7 +40,7 @@ fn name_filter_anchored_regex() {
             PASS [TIME] test::test_beta
 
     ────────────
-         Summary [TIME] 2 tests run: 1 passed, 0 failed, 1 skipped
+         Summary [TIME] 2 tests run: 1 passed, 1 skipped
 
     ----- stderr -----
     ");
@@ -58,7 +58,7 @@ fn name_filter_multiple_flags_or_semantics() {
             PASS [TIME] test::test_beta
 
     ────────────
-         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -76,7 +76,7 @@ fn name_filter_no_matches() {
             SKIP [TIME] test::test_beta
 
     ────────────
-         Summary [TIME] 2 tests run: 0 passed, 0 failed, 2 skipped
+         Summary [TIME] 2 tests run: 0 passed, 2 skipped
 
     ----- stderr -----
     ");
@@ -126,7 +126,7 @@ def test_other():
             SKIP [TIME] test::test_other
 
     ────────────
-         Summary [TIME] 4 tests run: 3 passed, 0 failed, 1 skipped
+         Summary [TIME] 4 tests run: 3 passed, 1 skipped
 
     ----- stderr -----
     ");
@@ -145,7 +145,7 @@ fn name_filter_match_all() {
             PASS [TIME] test::test_beta
 
     ────────────
-         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -177,7 +177,7 @@ def test_signup():
             PASS [TIME] test::test_signup
 
     ────────────
-         Summary [TIME] 3 tests run: 2 passed, 0 failed, 1 skipped
+         Summary [TIME] 3 tests run: 2 passed, 1 skipped
 
     ----- stderr -----
     ");
@@ -209,7 +209,7 @@ def test_v10():
             SKIP [TIME] test::test_v10
 
     ────────────
-         Summary [TIME] 3 tests run: 2 passed, 0 failed, 1 skipped
+         Summary [TIME] 3 tests run: 2 passed, 1 skipped
 
     ----- stderr -----
     ");
@@ -241,7 +241,7 @@ def test_abb():
             PASS [TIME] test::test_abb
 
     ────────────
-         Summary [TIME] 3 tests run: 2 passed, 0 failed, 1 skipped
+         Summary [TIME] 3 tests run: 2 passed, 1 skipped
 
     ----- stderr -----
     ");
@@ -273,7 +273,7 @@ def test_signup():
             SKIP [TIME] test::test_signup
 
     ────────────
-         Summary [TIME] 3 tests run: 2 passed, 0 failed, 1 skipped
+         Summary [TIME] 3 tests run: 2 passed, 1 skipped
 
     ----- stderr -----
     ");
@@ -309,7 +309,7 @@ def test_fast_alpha():
             SKIP [TIME] test::test_fast_alpha
 
     ────────────
-         Summary [TIME] 3 tests run: 1 passed, 0 failed, 2 skipped
+         Summary [TIME] 3 tests run: 1 passed, 2 skipped
 
     ----- stderr -----
     ");
@@ -337,7 +337,7 @@ def test_alpha():
             SKIP [TIME] test::test_alpha
 
     ────────────
-         Summary [TIME] 2 tests run: 1 passed, 0 failed, 1 skipped
+         Summary [TIME] 2 tests run: 1 passed, 1 skipped
 
     ----- stderr -----
     ");
@@ -365,7 +365,7 @@ def test_alpha():
             PASS [TIME] test::test_alpha
 
     ────────────
-         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -397,7 +397,7 @@ def test_ab():
             SKIP [TIME] test::test_ab
 
     ────────────
-         Summary [TIME] 3 tests run: 2 passed, 0 failed, 1 skipped
+         Summary [TIME] 3 tests run: 2 passed, 1 skipped
 
     ----- stderr -----
     ");

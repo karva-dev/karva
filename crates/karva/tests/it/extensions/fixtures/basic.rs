@@ -44,7 +44,7 @@ def z(x, y):
             PASS [TIME] test::test_1(z=1)
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -73,7 +73,7 @@ def x():
             PASS [TIME] test::test_1(x=1)
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -102,7 +102,7 @@ def test_fixture_with_name_parameter(fixture_name):
             PASS [TIME] test::test_fixture_with_name_parameter(fixture_name=1)
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -141,7 +141,7 @@ def test_fixture_2(fixture):
             PASS [TIME] test::test_fixture_2(fixture=<test.Testcontext object at...)
 
     ────────────
-         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -171,7 +171,7 @@ def x():
             PASS [TIME] tests.test::test_1(x=1)
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -200,7 +200,7 @@ def x():
             PASS [TIME] tests.test::test_1(x=1)
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -245,7 +245,7 @@ def test_2(x):
             PASS [TIME] tests.test::test_2(x=1)
 
     ────────────
-         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -290,7 +290,7 @@ def test_2(x):
             PASS [TIME] tests.test::test_2(x=1)
 
     ────────────
-         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -320,7 +320,7 @@ def x():
             PASS [TIME] tests.test::test_1(x=1)
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -364,7 +364,7 @@ def test_2(x_session):
                 PASS [TIME] test::test_2(x_session=[1])
 
         ────────────
-             Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
+             Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
         ----- stderr -----
         ")
@@ -409,7 +409,7 @@ def test_2(x_function):
                 PASS [TIME] test::test_2(x_function=[])
 
         ────────────
-             Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
+             Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
         ----- stderr -----
         ");
@@ -462,7 +462,7 @@ def test_username(username):
     exit_code: 0
     ----- stdout -----
     ────────────
-         Summary [TIME] 2 tests run: 2 passed, 0 failed, 0 skipped
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -525,7 +525,7 @@ fn test_fixture_initialization_order(#[values("pytest", "karva")] framework: &st
                 PASS [TIME] test::test_all_scopes(function_fixture=4, module_fixture=2, package_fixture=3, session_fixture=1)
 
         ────────────
-             Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+             Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
         ----- stderr -----
         ");
@@ -566,7 +566,7 @@ fn test_nested_generator_fixture(#[values("pytest", "karva")] framework: &str) {
                 PASS [TIME] test::test_calculator(calculator=<test.Calculator object at ...)
 
         ────────────
-             Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+             Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
         ----- stderr -----
         ");
@@ -607,7 +607,7 @@ fn test_fixture_order_respects_scope(#[values("pytest", "karva")] framework: &st
                 PASS [TIME] test::test_value(clean_data=None)
 
         ────────────
-             Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+             Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
         ----- stderr -----
         ");
@@ -645,7 +645,7 @@ def test_z(y):
             PASS [TIME] test_file::test_z(y=0)
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -675,7 +675,7 @@ def test_named_fixture(custom_name):
             PASS [TIME] test::test_named_fixture(custom_name=42)
 
     ────────────
-         Summary [TIME] 1 tests run: 1 passed, 0 failed, 0 skipped
+         Summary [TIME] 1 tests run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
