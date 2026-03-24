@@ -87,7 +87,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest]
 
     steps:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
@@ -125,6 +125,101 @@ jobs:
           KARVA_MAX_PARALLELISM: 2
         run: |
           cargo nextest run
+
+  build-windows-tests:
+    name: "build tests archive | windows"
+
+    needs: determine_changes
+    if: ${{ (needs.determine_changes.outputs.code == 'true' || github.ref == 'refs/heads/main') }}
+
+    runs-on: windows-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          persist-credentials: false
+
+      - uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2.8.2
+
+      - name: "Install Rust toolchain"
+        run: rustup show
+
+      - name: "Install cargo nextest"
+        uses: taiki-e/install-action@a416ddeedbd372e614cc1386e8b642692f66865e # v2.57.1
+        with:
+          tool: cargo-nextest
+
+      - name: Build wheels
+        uses: PyO3/maturin-action@86b9d133d34bc1b40018696f782949dac11bd380 # v1.49.4
+        with:
+          command: build
+
+      - name: "Archive tests"
+        run: cargo nextest archive --workspace --archive-file nextest-archive.tar.zst
+
+      - name: "Upload test archive"
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: windows-nextest-archive
+          path: nextest-archive.tar.zst
+
+      - name: "Upload wheel"
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: windows-karva-wheel
+          path: target/wheels/*.whl
+
+  cargo-test-windows:
+    name: "cargo test (windows ${{ matrix.partition }}/3)"
+
+    needs: build-windows-tests
+
+    runs-on: windows-latest
+    timeout-minutes: 15
+
+    strategy:
+      fail-fast: false
+      matrix:
+        partition: [1, 2, 3]
+
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          persist-credentials: false
+
+      - name: "Install cargo nextest"
+        uses: taiki-e/install-action@a416ddeedbd372e614cc1386e8b642692f66865e # v2.57.1
+        with:
+          tool: cargo-nextest
+
+      - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
+        with:
+          python-version: "3.10"
+
+      - name: Setup Python
+        uses: actions/setup-python@7f4fc3e22c37d6ff65e88745f38bd3157c663f7c # v4.9.1
+        id: setup-python
+        with:
+          python-version: "3.10"
+
+      - name: "Download test archive"
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: windows-nextest-archive
+
+      - name: "Download wheel"
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: windows-karva-wheel
+          path: target/wheels
+
+      - name: Run tests
+        env:
+          PYO3_PYTHON: ${{ steps.setup-python.outputs.python-path }}
+          KARVA_MAX_PARALLELISM: 2
+        run: |
+          cargo nextest run --archive-file nextest-archive.tar.zst --partition hash:${{ matrix.partition }}/3
 
   coverage:
     name: "coverage"
