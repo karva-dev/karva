@@ -695,11 +695,12 @@ fn test_mock_env() {
         ----- stderr -----
         ");
     } else {
-        assert_cmd_snapshot!(context.command().arg("-q"), @r"
+        assert_cmd_snapshot!(context.command().arg("-q"), @"
         success: true
         exit_code: 0
         ----- stdout -----
-        test result: ok. 16 passed; 0 failed; 0 skipped; finished in [TIME]
+        ────────────
+             Summary [TIME] 16 tests run: 16 passed, 0 failed, 0 skipped
 
         ----- stderr -----
         ");

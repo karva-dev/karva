@@ -268,9 +268,11 @@ pub fn run_parallel_tests(
         } else {
             "workers"
         };
+        let total_tests_bold = total_tests.to_string().bold();
+        let num_workers_bold = num_workers.to_string().bold();
         writeln!(
             stdout,
-            "{label} {total_tests} {test_label} across {num_workers} {worker_label}"
+            "{label} {total_tests_bold} {test_label} across {num_workers_bold} {worker_label}"
         )
         .ok();
     }

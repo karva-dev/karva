@@ -258,14 +258,15 @@ impl std::fmt::Display for DisplayTestResultStats<'_> {
             write!(f, "{}", label.red().bold())?;
         }
 
+        let passed = format!("{} passed", self.stats.passed()).green().bold();
+        let failed = format!("{} failed", self.stats.failed()).red().bold();
+        let skipped = format!("{} skipped", self.stats.skipped()).yellow().bold();
+
         writeln!(
             f,
-            " {} {} tests run: {} passed, {} failed, {} skipped",
+            " {} {} tests run: {passed}, {failed}, {skipped}",
             format_duration_bracketed(elapsed),
             self.stats.total(),
-            self.stats.passed(),
-            self.stats.failed(),
-            self.stats.skipped(),
         )
     }
 }

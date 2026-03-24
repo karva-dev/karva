@@ -17,11 +17,12 @@ def test_function(a: int):
 Then running `uv run karva test` will provide the following output:
 
 ```text
-test test::test_function(a=1) ... ok
-test test::test_function(a=2) ... ok
-test test::test_function(a=3) ... ok
-
-test result: ok. 3 passed; 0 failed; 0 skipped; finished in 0s
+    Starting 3 tests across 1 worker
+        PASS [   0.001s] test::test_function(a=1)
+        PASS [   0.001s] test::test_function(a=2)
+        PASS [   0.001s] test::test_function(a=3)
+────────────
+     Summary [   0.005s] 3 tests run: 3 passed, 0 failed, 0 skipped
 ```
 
 ## Multiple Variables
@@ -39,11 +40,12 @@ def test_function(a: int, b: int):
 Then running `uv run karva test` will provide the following output:
 
 ```text
-test test::test_function(a=1, b=4) ... ok
-test test::test_function(a=2, b=5) ... ok
-test test::test_function(a=3, b=6) ... ok
-
-test result: ok. 3 passed; 0 failed; 0 skipped; finished in 0s
+    Starting 3 tests across 1 worker
+        PASS [   0.001s] test::test_function(a=1, b=4)
+        PASS [   0.001s] test::test_function(a=2, b=5)
+        PASS [   0.001s] test::test_function(a=3, b=6)
+────────────
+     Summary [   0.005s] 3 tests run: 3 passed, 0 failed, 0 skipped
 ```
 
 Like pytest, we can put the arguments in a single string, separated by ",".
@@ -59,11 +61,12 @@ def test_function(a: int, b: int):
 Then running `uv run karva test` will provide the following output:
 
 ```text
-test test::test_function(a=1, b=4) ... ok
-test test::test_function(a=2, b=5) ... ok
-test test::test_function(a=3, b=6) ... ok
-
-test result: ok. 3 passed; 0 failed; 0 skipped; finished in 0s
+    Starting 3 tests across 1 worker
+        PASS [   0.001s] test::test_function(a=1, b=4)
+        PASS [   0.001s] test::test_function(a=2, b=5)
+        PASS [   0.001s] test::test_function(a=3, b=6)
+────────────
+     Summary [   0.005s] 3 tests run: 3 passed, 0 failed, 0 skipped
 ```
 
 ## Parametrize with Fixtures
@@ -85,10 +88,11 @@ def test_function(a: int, b: int):
 Then running `uv run karva test -v` will provide the following output:
 
 ```text
-test test::test_function(a=1, b=1) ... ok
-test test::test_function(a=2, b=1) ... ok
-
-test result: ok. 2 passed; 0 failed; 0 skipped; finished in 0s
+    Starting 2 tests across 1 worker
+        PASS [   0.001s] test::test_function(a=1, b=1)
+        PASS [   0.001s] test::test_function(a=2, b=1)
+────────────
+     Summary [   0.005s] 2 tests run: 2 passed, 0 failed, 0 skipped
 ```
 
 ## Multiple Parametrize Tags
@@ -109,12 +113,13 @@ def test_function(a: int, b: int):
 Then running `uv run karva test -v` will provide the following output:
 
 ```text
-test test::test_function(a=1, b=1) ... ok
-test test::test_function(a=2, b=1) ... ok
-test test::test_function(a=1, b=2) ... ok
-test test::test_function(a=2, b=2) ... ok
-
-test result: ok. 4 passed; 0 failed; 0 skipped; finished in 0s
+    Starting 4 tests across 1 worker
+        PASS [   0.001s] test::test_function(a=1, b=1)
+        PASS [   0.001s] test::test_function(a=2, b=1)
+        PASS [   0.001s] test::test_function(a=1, b=2)
+        PASS [   0.001s] test::test_function(a=2, b=2)
+────────────
+     Summary [   0.005s] 4 tests run: 4 passed, 0 failed, 0 skipped
 ```
 
 ## Params
@@ -138,13 +143,14 @@ def test_square(input, expected):
 Then running `uv run karva test -v` will provide the following output:
 
 ```text
-test tests.test_add::test_square(expected=4, input=2) ... ok
-test tests.test_add::test_square ... skipped
-test tests.test_add::test_square(expected=26, input=5) ... ok
-test tests.test_add::test_square ... skipped
-test tests.test_add::test_square(expected=50, input=7) ... ok
-
-test result: ok. 3 passed; 0 failed; 2 skipped; finished in 0ms
+    Starting 5 tests across 1 worker
+        PASS [   0.001s] tests.test_add::test_square(expected=4, input=2)
+        SKIP [   0.001s] tests.test_add::test_square
+        PASS [   0.001s] tests.test_add::test_square(expected=26, input=5)
+        SKIP [   0.001s] tests.test_add::test_square
+        PASS [   0.001s] tests.test_add::test_square(expected=50, input=7)
+────────────
+     Summary [   0.005s] 5 tests run: 3 passed, 0 failed, 2 skipped
 ```
 
 ## Pytest
@@ -162,8 +168,9 @@ def test_function(a: int):
 Then running `uv run karva test -v` will provide the following output:
 
 ```text
-test test::test_function(a=1) ... ok
-test test::test_function(a=2) ... ok
-
-test result: ok. 2 passed; 0 failed; 0 skipped; finished in 0s
+    Starting 2 tests across 1 worker
+        PASS [   0.001s] test::test_function(a=1)
+        PASS [   0.001s] test::test_function(a=2)
+────────────
+     Summary [   0.005s] 2 tests run: 2 passed, 0 failed, 0 skipped
 ```

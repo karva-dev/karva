@@ -81,8 +81,9 @@ uv run karva test tests/
 Provides the following output:
 
 ```text
-test tests.test::test_pass ... ok
-test tests.test::test_fail ... FAILED
+    Starting 2 tests across 1 worker
+        PASS [   0.003s] tests.test::test_pass
+        FAIL [   0.001s] tests.test::test_fail
 
 diagnostics:
 
@@ -102,7 +103,8 @@ info: Test failed here
   |
 info: Error message: This test should fail
 
-test result: FAILED. 1 passed; 1 failed; 0 skipped; finished in 8ms
+────────────
+     Summary [   0.008s] 2 tests run: 1 passed, 1 failed, 0 skipped
 ```
 
 ## Contributing

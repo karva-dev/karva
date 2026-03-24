@@ -64,6 +64,10 @@ impl Reporter for TestCaseReporter {
         let padding = " ".repeat(12usize.saturating_sub(label.len()));
         let duration_str = format_duration_bracketed(duration);
 
+        let module = test_name.function_name().module_path().module_name().cyan();
+        let fn_name = test_name.function_name().function_name().blue().bold();
+        let params = test_name.params().unwrap_or_default();
+
         let suffix = match &result_kind {
             IndividualTestResultKind::Skipped {
                 reason: Some(reason),
@@ -73,7 +77,7 @@ impl Reporter for TestCaseReporter {
 
         writeln!(
             stdout,
-            "{padding}{colored_label} {duration_str} {test_name}{suffix}"
+            "{padding}{colored_label} {duration_str} {module}::{fn_name}{params}{suffix}"
         )
         .ok();
     }
