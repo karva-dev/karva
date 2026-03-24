@@ -1,7 +1,5 @@
-use std::str::FromStr;
-
 use camino::Utf8PathBuf;
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde::{Serialize, Serializer};
 
 use crate::module_name;
 
@@ -52,31 +50,6 @@ impl Serialize for QualifiedFunctionName {
     }
 }
 
-impl<'de> Deserialize<'de> for QualifiedFunctionName {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        s.parse().map_err(serde::de::Error::custom)
-    }
-}
-
-impl FromStr for QualifiedFunctionName {
-    type Err = String;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        // Split on the last "::" to separate module_path from function_name
-        let (module_str, function_name) = s
-            .rsplit_once("::")
-            .ok_or_else(|| "Invalid qualified function name format".to_string())?;
-
-        let module_path = module_str.parse()?;
-
-        Ok(Self::new(function_name.to_string(), module_path))
-    }
-}
-
 /// Represents a fully qualified test name, optionally including a parametrized variant.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct QualifiedTestName {
@@ -96,11 +69,6 @@ impl QualifiedTestName {
     /// Return the underlying qualified function name.
     pub fn function_name(&self) -> &QualifiedFunctionName {
         &self.function_name
-    }
-
-    /// Return the full parametrized name, if any (e.g., `"test_add[1-2]"`).
-    pub fn full_name(&self) -> Option<&str> {
-        self.full_name.as_deref()
     }
 }
 
@@ -137,116 +105,5 @@ impl ModulePath {
     /// Return the filesystem path of this module.
     pub fn path(&self) -> &Utf8PathBuf {
         &self.path
-    }
-}
-
-impl Serialize for ModulePath {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_str(&self.module_name)
-    }
-}
-
-impl<'de> Deserialize<'de> for ModulePath {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        s.parse().map_err(serde::de::Error::custom)
-    }
-}
-
-impl FromStr for ModulePath {
-    type Err = String;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        // Convert module name to path (e.g., "foo.bar.baz" -> "foo/bar/baz.py")
-        let path = s.replace('.', "/") + ".py";
-
-        Ok(Self {
-            path: path.into(),
-            module_name: s.to_string(),
-        })
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_module_path_from_str() {
-        let path: ModulePath = "foo.bar.baz".parse().expect("valid module path");
-        assert_eq!(path.module_name(), "foo.bar.baz");
-        assert_eq!(path.path().as_str(), "foo/bar/baz.py");
-    }
-
-    #[test]
-    fn test_qualified_function_name_from_str() {
-        let name: QualifiedFunctionName =
-            "foo.bar::test_add".parse().expect("valid qualified name");
-        assert_eq!(name.function_name(), "test_add");
-        assert_eq!(name.module_path().module_name(), "foo.bar");
-    }
-
-    #[test]
-    fn test_qualified_function_name_from_str_invalid() {
-        let result: Result<QualifiedFunctionName, _> = "foo.bar.test_add".parse();
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_qualified_function_name_display() {
-        let name: QualifiedFunctionName =
-            "foo.bar::test_add".parse().expect("valid qualified name");
-        assert_eq!(name.to_string(), "foo.bar::test_add");
-    }
-
-    #[test]
-    fn test_qualified_test_name_display_with_full_name() {
-        let func_name: QualifiedFunctionName =
-            "foo.bar::test_add".parse().expect("valid qualified name");
-        let test_name = QualifiedTestName::new(func_name, Some("test_add[1-2]".to_string()));
-        assert_eq!(test_name.to_string(), "test_add[1-2]");
-    }
-
-    #[test]
-    fn test_qualified_test_name_display_without_full_name() {
-        let func_name: QualifiedFunctionName =
-            "foo.bar::test_add".parse().expect("valid qualified name");
-        let test_name = QualifiedTestName::new(func_name, None);
-        assert_eq!(test_name.to_string(), "foo.bar::test_add");
-    }
-
-    #[test]
-    fn test_qualified_function_name_serde_roundtrip() {
-        let name: QualifiedFunctionName =
-            "foo.bar::test_add".parse().expect("valid qualified name");
-        let json = serde_json::to_string(&name).expect("serialize");
-        let deserialized: QualifiedFunctionName = serde_json::from_str(&json).expect("deserialize");
-        assert_eq!(name, deserialized);
-    }
-
-    #[test]
-    fn test_module_path_serde_roundtrip() {
-        let path: ModulePath = "foo.bar.baz".parse().expect("valid module path");
-        let json = serde_json::to_string(&path).expect("serialize");
-        assert_eq!(json, r#""foo.bar.baz""#);
-        let deserialized: ModulePath = serde_json::from_str(&json).expect("deserialize");
-        assert_eq!(path, deserialized);
-    }
-
-    #[test]
-    fn test_qualified_test_name_full_name_accessor() {
-        let func_name: QualifiedFunctionName =
-            "mod::test_fn".parse().expect("valid qualified name");
-        let with_full = QualifiedTestName::new(func_name.clone(), Some("test_fn[1]".to_string()));
-        assert_eq!(with_full.full_name(), Some("test_fn[1]"));
-
-        let without_full = QualifiedTestName::new(func_name, None);
-        assert_eq!(without_full.full_name(), None);
     }
 }

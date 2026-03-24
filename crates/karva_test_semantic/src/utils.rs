@@ -172,8 +172,10 @@ where
 /// All of this is a no-op unless `__KARVA_COVERAGE` is set.
 mod coverage {
     use camino::{Utf8Path, Utf8PathBuf};
-    use pyo3::prelude::*;
-    use pyo3::types::PyAnyMethods;
+    use pyo3::{
+        Python,
+        types::{PyAnyMethods, PyModule},
+    };
 
     pub(super) fn activate_venv_if_coverage(py: Python<'_>) {
         if std::env::var(karva_static::EnvVars::KARVA_COVERAGE_INTERNAL).is_err() {

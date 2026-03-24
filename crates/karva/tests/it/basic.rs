@@ -1485,3 +1485,92 @@ def test_flaky():
     ----- stderr -----
     ");
 }
+
+#[test]
+fn test_extra_verbose_output() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+def test_1(): pass
+def test_2(): pass
+",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-vv"), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    test test::test_1 ... ok
+    test test::test_2 ... ok
+
+    test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+
+    ----- stderr -----
+    [DATETIME] DEBUG Working directory cwd=<temp_dir>/
+    [DATETIME] DEBUG Searching for a project in '<temp_dir>/'
+    [DATETIME] DEBUG The ancestor directories contain no `pyproject.toml`. Falling back to a virtual project.
+    [DATETIME] DEBUG Found test paths path_count=1
+    [DATETIME] INFO Collected all tests in [TIME]
+    [DATETIME] DEBUG Partitioning tests num_workers=1
+    [DATETIME] INFO Spawning 1 workers
+    [DATETIME] INFO Worker 0 spawned with 2 tests
+    [DATETIME] INFO Waiting for 1 workers to complete (Ctrl+C to cancel)
+    [DATETIME] DEBUG Running test `test::test_1`
+    [DATETIME] DEBUG Running test `test::test_2`
+    [DATETIME] INFO Worker 0 completed successfully in [TIME]
+    [DATETIME] INFO All workers completed
+    ");
+}
+
+#[test]
+fn test_trace_verbose_output() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+def test_1(): pass
+",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-vvv"), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    test test::test_1 ... ok
+
+    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+
+    ----- stderr -----
+    1   [TIME] DEBUG karva::commands::test Working directory, cwd=<temp_dir>/
+    1   [TIME] DEBUG karva_metadata Searching for a project in '<temp_dir>/'
+    1   [TIME] DEBUG karva_metadata The ancestor directories contain no `pyproject.toml`. Falling back to a virtual project.
+    1   [TIME] DEBUG karva_runner::orchestration Found test paths, path_count=1
+    1   [TIME] INFO karva_runner::orchestration Collected all tests in [TIME]
+    1   [TIME] DEBUG karva_runner::orchestration Partitioning tests, num_workers=1
+    1   [TIME] INFO karva_runner::orchestration Spawning 1 workers
+    1   [TIME] INFO karva_runner::orchestration Worker 0 spawned with 1 tests
+    1   [TIME] INFO karva_runner::orchestration Waiting for 1 workers to complete (Ctrl+C to cancel)
+    1   [TIME] DEBUG karva_test_semantic::runner::package_runner Running test `test::test_1`
+    1   [TIME] INFO karva_runner::orchestration Worker 0 completed successfully in [TIME]
+    1   [TIME] INFO karva_runner::orchestration All workers completed
+    ");
+}
+
+#[test]
+fn test_quiet_output() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+def test_1(): pass
+def test_2(): pass
+",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-q"), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+
+    ----- stderr -----
+    ");
+}

@@ -38,17 +38,6 @@ impl TryFrom<String> for FixtureScope {
     }
 }
 
-impl std::fmt::Display for FixtureScope {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Module => write!(f, "module"),
-            Self::Session => write!(f, "session"),
-            Self::Package => write!(f, "package"),
-            Self::Function => write!(f, "function"),
-        }
-    }
-}
-
 /// Resolve a dynamic scope function to a concrete `FixtureScope`
 pub fn resolve_dynamic_scope(
     py: Python<'_>,

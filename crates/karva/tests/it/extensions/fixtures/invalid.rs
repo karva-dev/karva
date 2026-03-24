@@ -493,3 +493,53 @@ fn test_fixture_dependency_chain_failure() {
     ----- stderr -----
     ");
 }
+
+#[test]
+fn test_fixture_scope_non_string_non_callable() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"import karva
+
+@karva.fixture(scope=123)
+def my_fixture():
+    return 42
+
+def test_with_fixture(my_fixture):
+    assert my_fixture == 42
+",
+    );
+
+    assert_cmd_snapshot!(context.command(), @r#"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+    test test::test_with_fixture ... FAILED
+
+    diagnostics:
+
+    error[invalid-fixture]: Discovered an invalid fixture `my_fixture`
+     --> test.py:4:5
+      |
+    3 | @karva.fixture(scope=123)
+    4 | def my_fixture():
+      |     ^^^^^^^^^^
+    5 |     return 42
+      |
+    info: Scope must be either a string or a callable
+
+    error[missing-fixtures]: Test `test_with_fixture` has missing fixtures
+     --> test.py:7:5
+      |
+    5 |     return 42
+    6 |
+    7 | def test_with_fixture(my_fixture):
+      |     ^^^^^^^^^^^^^^^^^
+    8 |     assert my_fixture == 42
+      |
+    info: Missing fixtures: `my_fixture`
+
+    test result: FAILED. 0 passed; 1 failed; 0 skipped; finished in [TIME]
+
+    ----- stderr -----
+    "#);
+}

@@ -24,5 +24,8 @@ ruff_source_file = { workspace = true }
 ruff_text_size = { workspace = true }
 serde = { workspace = true }
 
+[dev-dependencies]
+serde_json = { workspace = true }
+
 [lints]
 workspace = true
