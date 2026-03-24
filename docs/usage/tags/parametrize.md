@@ -14,16 +14,7 @@ def test_function(a: int):
     assert a > 0
 ```
 
-Then running `uv run karva test` will provide the following output:
-
-```text
-    Starting 3 tests across 1 worker
-        PASS [   0.001s] test::test_function(a=1)
-        PASS [   0.001s] test::test_function(a=2)
-        PASS [   0.001s] test::test_function(a=3)
-────────────
-     Summary [   0.005s] 3 tests run: 3 passed, 0 failed, 0 skipped
-```
+Running `uv run karva test` will run `test_function` three times, once for each value of `a`.
 
 ## Multiple Variables
 
@@ -37,18 +28,7 @@ def test_function(a: int, b: int):
     assert a > 0 and b > 0
 ```
 
-Then running `uv run karva test` will provide the following output:
-
-```text
-    Starting 3 tests across 1 worker
-        PASS [   0.001s] test::test_function(a=1, b=4)
-        PASS [   0.001s] test::test_function(a=2, b=5)
-        PASS [   0.001s] test::test_function(a=3, b=6)
-────────────
-     Summary [   0.005s] 3 tests run: 3 passed, 0 failed, 0 skipped
-```
-
-Like pytest, we can put the arguments in a single string, separated by ",".
+Like pytest, we can put the arguments in a single string, separated by ",":
 
 ```python title="test.py"
 import karva
@@ -56,17 +36,6 @@ import karva
 @karva.tags.parametrize("a,b", [(1, 4), (2, 5), (3, 6)])
 def test_function(a: int, b: int):
     assert a > 0 and b > 0
-```
-
-Then running `uv run karva test` will provide the following output:
-
-```text
-    Starting 3 tests across 1 worker
-        PASS [   0.001s] test::test_function(a=1, b=4)
-        PASS [   0.001s] test::test_function(a=2, b=5)
-        PASS [   0.001s] test::test_function(a=3, b=6)
-────────────
-     Summary [   0.005s] 3 tests run: 3 passed, 0 failed, 0 skipped
 ```
 
 ## Parametrize with Fixtures
@@ -85,20 +54,11 @@ def test_function(a: int, b: int):
     assert a > 0 and b > 0
 ```
 
-Then running `uv run karva test -v` will provide the following output:
-
-```text
-    Starting 2 tests across 1 worker
-        PASS [   0.001s] test::test_function(a=1, b=1)
-        PASS [   0.001s] test::test_function(a=2, b=1)
-────────────
-     Summary [   0.005s] 2 tests run: 2 passed, 0 failed, 0 skipped
-```
+Each parametrized variant receives the fixture value alongside the parametrized arguments.
 
 ## Multiple Parametrize Tags
 
 We can also use multiple decorators, allowing us to test more scenarios.
-
 This will result in a cartesian product of the parametrize values.
 
 ```python title="test.py"
@@ -110,21 +70,11 @@ def test_function(a: int, b: int):
     assert a > 0 and b > 0
 ```
 
-Then running `uv run karva test -v` will provide the following output:
-
-```text
-    Starting 4 tests across 1 worker
-        PASS [   0.001s] test::test_function(a=1, b=1)
-        PASS [   0.001s] test::test_function(a=2, b=1)
-        PASS [   0.001s] test::test_function(a=1, b=2)
-        PASS [   0.001s] test::test_function(a=2, b=2)
-────────────
-     Summary [   0.005s] 4 tests run: 4 passed, 0 failed, 0 skipped
-```
+This runs `test_function` four times with all combinations of `a` and `b`.
 
 ## Params
 
-You can use `karva.param` (similar to `pytest.param`) for parameters.
+You can use `karva.param` (similar to `pytest.param`) to attach tags to individual parameter sets:
 
 ```python title="test.py"
 import karva
@@ -140,22 +90,9 @@ def test_square(input, expected):
     assert input ** 2 == expected
 ```
 
-Then running `uv run karva test -v` will provide the following output:
-
-```text
-    Starting 5 tests across 1 worker
-        PASS [   0.001s] tests.test_add::test_square(expected=4, input=2)
-        SKIP [   0.001s] tests.test_add::test_square
-        PASS [   0.001s] tests.test_add::test_square(expected=26, input=5)
-        SKIP [   0.001s] tests.test_add::test_square
-        PASS [   0.001s] tests.test_add::test_square(expected=50, input=7)
-────────────
-     Summary [   0.005s] 5 tests run: 3 passed, 0 failed, 2 skipped
-```
-
 ## Pytest
 
-You can also still use `@pytest.mark.parametrize`.
+You can also still use `@pytest.mark.parametrize`:
 
 ```python title="test.py"
 import pytest
@@ -163,14 +100,4 @@ import pytest
 @pytest.mark.parametrize("a", [1, 2])
 def test_function(a: int):
     assert a > 0
-```
-
-Then running `uv run karva test -v` will provide the following output:
-
-```text
-    Starting 2 tests across 1 worker
-        PASS [   0.001s] test::test_function(a=1)
-        PASS [   0.001s] test::test_function(a=2)
-────────────
-     Summary [   0.005s] 2 tests run: 2 passed, 0 failed, 0 skipped
 ```
