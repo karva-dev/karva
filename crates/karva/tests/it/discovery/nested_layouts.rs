@@ -22,11 +22,12 @@ def test_root(): pass",
         ),
     ]);
 
-    assert_cmd_snapshot!(context.command().arg("-q"), @r"
+    assert_cmd_snapshot!(context.command().arg("-q"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test result: ok. 3 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -57,11 +58,12 @@ def test_direct(): pass",
         ),
     ]);
 
-    assert_cmd_snapshot!(context.command().arg("-q"), @r"
+    assert_cmd_snapshot!(context.command().arg("-q"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test result: ok. 4 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 4 tests run: 4 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -87,11 +89,12 @@ def test_versioned(): pass",
         ),
     ]);
 
-    assert_cmd_snapshot!(context.command().arg("-q"), @r"
+    assert_cmd_snapshot!(context.command().arg("-q"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test result: ok. 3 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -117,11 +120,12 @@ def test_path_3(): pass",
         ),
     ]);
 
-    assert_cmd_snapshot!(context.command().arg("-q"), @r"
+    assert_cmd_snapshot!(context.command().arg("-q"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test result: ok. 3 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
     ----- stderr -----
     ");

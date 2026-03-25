@@ -7,3 +7,8 @@ pub fn format_duration(duration: Duration) -> String {
         format!("{:.2}s", duration.as_secs_f64())
     }
 }
+
+/// Format a duration in nextest-style bracketed format: `[   0.015s]`.
+pub fn format_duration_bracketed(duration: Duration) -> String {
+    format!("[{:>8.3}s]", duration.as_secs_f64())
+}

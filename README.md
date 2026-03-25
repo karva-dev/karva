@@ -59,52 +59,6 @@ karva test tests/
 karva test tests/test_example.py
 ```
 
-#### Example
-
-Here is a small example of using karva, as you can see it works just like pytest.
-
-```py title="tests/test.py"
-def test_pass():
-    assert True
-
-
-def test_fail():
-    assert False, "This test should fail"
-```
-
-Running karva:
-
-```bash
-uv run karva test tests/
-```
-
-Provides the following output:
-
-```text
-test tests.test::test_pass ... ok
-test tests.test::test_fail ... FAILED
-
-diagnostics:
-
-error[test-failure]: Test `test_fail` failed
- --> tests/test.py:5:5
-  |
-5 | def test_fail():
-  |     ^^^^^^^^^
-6 |     assert False, "This test should fail"
-  |
-info: Test failed here
- --> tests/test.py:6:5
-  |
-5 | def test_fail():
-6 |     assert False, "This test should fail"
-  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  |
-info: Error message: This test should fail
-
-test result: FAILED. 1 passed; 1 failed; 0 skipped; finished in 8ms
-```
-
 ## Contributing
 
 Contributions are welcome! See [CONTRIBUTING.md](https://github.com/karva-dev/karva/blob/main/CONTRIBUTING.md) for more information.

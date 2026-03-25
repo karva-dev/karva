@@ -3,7 +3,7 @@ use std::time::Instant;
 use std::{collections::HashMap, fmt};
 
 use colored::Colorize;
-use karva_logging::time::format_duration;
+use karva_logging::time::format_duration_bracketed;
 use karva_python_semantic::{QualifiedFunctionName, QualifiedTestName};
 use ruff_db::diagnostic::Diagnostic;
 use serde::de::{self, MapAccess};
@@ -68,7 +68,7 @@ impl TestRunResult {
         }
 
         if let Some(reporter) = reporter {
-            reporter.report_test_case_result(test_case_name, result);
+            reporter.report_test_case_result(test_case_name, result, duration);
         }
 
         self.durations
@@ -247,24 +247,49 @@ impl<'a> DisplayTestResultStats<'a> {
 impl std::fmt::Display for DisplayTestResultStats<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let success = self.stats.is_success();
+        let elapsed = self.start_time.elapsed();
 
-        write!(f, "test result: ")?;
+        writeln!(f, "{}", "─".repeat(12))?;
 
+        let label = format!("{:>12}", "Summary");
         if success {
-            write!(f, "{}", "ok".green())?;
+            write!(f, "{}", label.green().bold())?;
         } else {
-            write!(f, "{}", "FAILED".red())?;
+            write!(f, "{}", label.red().bold())?;
         }
 
-        let elapsed = self.start_time.elapsed();
+        let mut parts = vec![
+            format!("{} passed", self.stats.passed())
+                .green()
+                .bold()
+                .to_string(),
+        ];
+        if self.stats.failed() > 0 {
+            parts.push(
+                format!("{} failed", self.stats.failed())
+                    .red()
+                    .bold()
+                    .to_string(),
+            );
+        }
+        parts.push(
+            format!("{} skipped", self.stats.skipped())
+                .yellow()
+                .bold()
+                .to_string(),
+        );
 
         writeln!(
             f,
-            ". {} passed; {} failed; {} skipped; finished in {}",
-            self.stats.passed(),
-            self.stats.failed(),
-            self.stats.skipped(),
-            format_duration(elapsed)
+            " {} {} {} run: {}",
+            format_duration_bracketed(elapsed),
+            self.stats.total(),
+            if self.stats.total() == 1 {
+                "test"
+            } else {
+                "tests"
+            },
+            parts.join(", "),
         )
     }
 }

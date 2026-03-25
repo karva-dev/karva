@@ -16,13 +16,15 @@ def test_echo():
         "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_echo ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_echo
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -54,11 +56,12 @@ def test_echo():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: false
     exit_code: 1
     ----- stdout -----
-    test test::test_echo ... FAILED
+        Starting 1 test across 1 worker
+            FAIL [TIME] test::test_echo
 
     diagnostics:
 
@@ -84,7 +87,8 @@ def test_echo():
           Run `karva snapshot accept` to accept, or re-run with `--snapshot-update`.
           Pending file: <temp_dir>/snapshots/test__test_echo.snap.new
 
-    test result: FAILED. 0 passed; 1 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -116,13 +120,15 @@ def test_failing_cmd():
         "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_failing_cmd ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_failing_cmd
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -154,13 +160,15 @@ def test_stderr():
         "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_stderr ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_stderr
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -193,13 +201,15 @@ def test_named_cmd():
         "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_named_cmd ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_named_cmd
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -235,13 +245,15 @@ def test_stdin():
         "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_stdin ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_stdin
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -279,13 +291,15 @@ def test_cwd():
         "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_cwd ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_cwd
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -320,13 +334,15 @@ def test_filtered():
         "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_filtered ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_filtered
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -362,13 +378,15 @@ def test_env():
         "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_env ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_env
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -405,13 +423,15 @@ def test_inline():
         "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_inline ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_inline
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -434,13 +454,15 @@ def test_inline_empty():
         "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_inline_empty ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_inline_empty
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -484,7 +506,8 @@ def test_inline_wrong():
     success: false
     exit_code: 1
     ----- stdout -----
-    test test::test_inline_wrong ... FAILED
+        Starting 1 test across 1 worker
+            FAIL [TIME] test::test_inline_wrong
 
     diagnostics:
 
@@ -516,7 +539,8 @@ def test_inline_wrong():
                     5 │ +----- stderr -----
           ────────────┴───────────────────────────
 
-    test result: FAILED. 0 passed; 1 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     "#);
@@ -569,7 +593,8 @@ def test_change():
     success: false
     exit_code: 1
     ----- stdout -----
-    test test::test_change ... FAILED
+        Starting 1 test across 1 worker
+            FAIL [TIME] test::test_change
 
     diagnostics:
 
@@ -602,7 +627,8 @@ def test_change():
               5     5 │  ----- stderr -----
           ────────────┴───────────────────────────
 
-    test result: FAILED. 0 passed; 1 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     "#);
@@ -625,7 +651,8 @@ def test_bad_cmd():
     success: false
     exit_code: 1
     ----- stdout -----
-    test test::test_bad_cmd ... FAILED
+        Starting 1 test across 1 worker
+            FAIL [TIME] test::test_bad_cmd
 
     diagnostics:
 
@@ -649,7 +676,8 @@ def test_bad_cmd():
       |
     info: Failed to run command
 
-    test result: FAILED. 0 passed; 1 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -672,13 +700,15 @@ def test_multi():
         "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_multi ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_multi
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -726,13 +756,15 @@ def test_envs():
         "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_envs ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_envs
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -765,13 +797,15 @@ def test_multiline():
         "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_multiline ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_multiline
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -805,13 +839,15 @@ def test_exit42():
         "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_exit42 ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_exit42
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -847,13 +883,15 @@ def test_chained():
         "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_chained ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_chained
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -885,13 +923,15 @@ def test_both():
         "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_both ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_both
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -924,13 +964,15 @@ def test_silent():
         "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_silent ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_silent
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -966,13 +1008,15 @@ def test_stable():
         .arg("--snapshot-update")
         .output();
 
-    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_stable ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_stable
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -996,7 +1040,8 @@ def test_both_args():
     success: false
     exit_code: 1
     ----- stdout -----
-    test test::test_both_args ... FAILED
+        Starting 1 test across 1 worker
+            FAIL [TIME] test::test_both_args
 
     diagnostics:
 
@@ -1020,7 +1065,8 @@ def test_both_args():
       |
     info: assert_snapshot() cannot use both 'inline' and 'name' arguments
 
-    test result: FAILED. 0 passed; 1 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     "#);
@@ -1044,13 +1090,15 @@ def test_multi_filter():
         "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_multi_filter ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_multi_filter
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -1088,13 +1136,15 @@ def test_nested():
         "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_nested ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_nested
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -1132,13 +1182,15 @@ def test_filter_stderr():
         "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_filter_stderr ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_filter_stderr
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -1174,13 +1226,15 @@ def test_filter_named():
         "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_filter_named ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_filter_named
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -1218,13 +1272,15 @@ def test_dup_filtered():
         "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_dup_filtered ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_dup_filtered
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");

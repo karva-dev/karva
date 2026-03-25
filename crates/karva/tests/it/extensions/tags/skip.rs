@@ -38,13 +38,15 @@ def test_1():
     );
 
     allow_duplicates! {
-        assert_cmd_snapshot!(context.command(), @r"
+        assert_cmd_snapshot!(context.command(), @"
         success: true
         exit_code: 0
         ----- stdout -----
-        test test::test_1 ... skipped: This test is skipped with decorator
+            Starting 1 test across 1 worker
+                SKIP [TIME] test::test_1: This test is skipped with decorator
 
-        test result: ok. 0 passed; 0 failed; 1 skipped; finished in [TIME]
+        ────────────
+             Summary [TIME] 1 test run: 0 passed, 1 skipped
 
         ----- stderr -----
         ");
@@ -68,13 +70,15 @@ def test_1():
     );
 
     allow_duplicates! {
-        assert_cmd_snapshot!(context.command(), @r"
+        assert_cmd_snapshot!(context.command(), @"
         success: true
         exit_code: 0
         ----- stdout -----
-        test test::test_1 ... skipped: This test is skipped with decorator
+            Starting 1 test across 1 worker
+                SKIP [TIME] test::test_1: This test is skipped with decorator
 
-        test result: ok. 0 passed; 0 failed; 1 skipped; finished in [TIME]
+        ────────────
+             Summary [TIME] 1 test run: 0 passed, 1 skipped
 
         ----- stderr -----
         ");
@@ -98,13 +102,15 @@ def test_1():
     );
 
     allow_duplicates! {
-        assert_cmd_snapshot!(context.command(), @r"
+        assert_cmd_snapshot!(context.command(), @"
         success: true
         exit_code: 0
         ----- stdout -----
-        test test::test_1 ... skipped
+            Starting 1 test across 1 worker
+                SKIP [TIME] test::test_1
 
-        test result: ok. 0 passed; 0 failed; 1 skipped; finished in [TIME]
+        ────────────
+             Summary [TIME] 1 test run: 0 passed, 1 skipped
 
         ----- stderr -----
         ");
@@ -128,13 +134,15 @@ def test_1():
     );
 
     allow_duplicates! {
-        assert_cmd_snapshot!(context.command(), @r"
+        assert_cmd_snapshot!(context.command(), @"
         success: true
         exit_code: 0
         ----- stdout -----
-        test test::test_1 ... skipped
+            Starting 1 test across 1 worker
+                SKIP [TIME] test::test_1
 
-        test result: ok. 0 passed; 0 failed; 1 skipped; finished in [TIME]
+        ────────────
+             Summary [TIME] 1 test run: 0 passed, 1 skipped
 
         ----- stderr -----
         ");
@@ -159,13 +167,15 @@ def test_1():
     );
 
     allow_duplicates! {
-        assert_cmd_snapshot!(context.command(), @r"
+        assert_cmd_snapshot!(context.command(), @"
         success: true
         exit_code: 0
         ----- stdout -----
-        test test::test_1 ... skipped: Condition is true
+            Starting 1 test across 1 worker
+                SKIP [TIME] test::test_1: Condition is true
 
-        test result: ok. 0 passed; 0 failed; 1 skipped; finished in [TIME]
+        ────────────
+             Summary [TIME] 1 test run: 0 passed, 1 skipped
 
         ----- stderr -----
         ");
@@ -189,13 +199,15 @@ def test_1():
     );
 
     allow_duplicates! {
-        assert_cmd_snapshot!(context.command(), @r"
+        assert_cmd_snapshot!(context.command(), @"
         success: true
         exit_code: 0
         ----- stdout -----
-        test test::test_1 ... ok
+            Starting 1 test across 1 worker
+                PASS [TIME] test::test_1
 
-        test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+        ────────────
+             Summary [TIME] 1 test run: 1 passed, 0 skipped
 
         ----- stderr -----
         ");
@@ -220,13 +232,15 @@ def test_1():
     );
 
     allow_duplicates! {
-        assert_cmd_snapshot!(context.command(), @r"
+        assert_cmd_snapshot!(context.command(), @"
         success: true
         exit_code: 0
         ----- stdout -----
-        test test::test_1 ... skipped: Python 3 or higher
+            Starting 1 test across 1 worker
+                SKIP [TIME] test::test_1: Python 3 or higher
 
-        test result: ok. 0 passed; 0 failed; 1 skipped; finished in [TIME]
+        ────────────
+             Summary [TIME] 1 test run: 0 passed, 1 skipped
 
         ----- stderr -----
         ");
@@ -250,13 +264,15 @@ def test_1():
     );
 
     allow_duplicates! {
-        assert_cmd_snapshot!(context.command(), @r"
+        assert_cmd_snapshot!(context.command(), @"
         success: true
         exit_code: 0
         ----- stdout -----
-        test test::test_1 ... skipped: Multiple conditions with one true
+            Starting 1 test across 1 worker
+                SKIP [TIME] test::test_1: Multiple conditions with one true
 
-        test result: ok. 0 passed; 0 failed; 1 skipped; finished in [TIME]
+        ────────────
+             Summary [TIME] 1 test run: 0 passed, 1 skipped
 
         ----- stderr -----
         ");
@@ -280,13 +296,15 @@ def test_1():
     );
 
     allow_duplicates! {
-        assert_cmd_snapshot!(context.command(), @r"
+        assert_cmd_snapshot!(context.command(), @"
         success: true
         exit_code: 0
         ----- stdout -----
-        test test::test_1 ... skipped
+            Starting 1 test across 1 worker
+                SKIP [TIME] test::test_1
 
-        test result: ok. 0 passed; 0 failed; 1 skipped; finished in [TIME]
+        ────────────
+             Summary [TIME] 1 test run: 0 passed, 1 skipped
 
         ----- stderr -----
         ");
@@ -317,15 +335,17 @@ def test_normal():
     );
 
     allow_duplicates! {
-        assert_cmd_snapshot!(context.command_no_parallel(), @r"
+        assert_cmd_snapshot!(context.command_no_parallel(), @"
         success: true
         exit_code: 0
         ----- stdout -----
-        test test::test_skip_this ... skipped: Should skip
-        test test::test_run_this ... ok
-        test test::test_normal ... ok
+            Starting 3 tests across 1 worker
+                SKIP [TIME] test::test_skip_this: Should skip
+                PASS [TIME] test::test_run_this
+                PASS [TIME] test::test_normal
 
-        test result: ok. 2 passed; 0 failed; 1 skipped; finished in [TIME]
+        ────────────
+             Summary [TIME] 3 tests run: 2 passed, 1 skipped
 
         ----- stderr -----
         ");
@@ -349,13 +369,15 @@ def test_1():
     );
 
     allow_duplicates! {
-        assert_cmd_snapshot!(context.command(), @r"
+        assert_cmd_snapshot!(context.command(), @"
         success: true
         exit_code: 0
         ----- stdout -----
-        test test::test_1 ... ok
+            Starting 1 test across 1 worker
+                PASS [TIME] test::test_1
 
-        test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+        ────────────
+             Summary [TIME] 1 test run: 1 passed, 0 skipped
 
         ----- stderr -----
         ");
@@ -375,13 +397,15 @@ def test_1():
         ",
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_1 ... skipped
+        Starting 1 test across 1 worker
+            SKIP [TIME] test::test_1
 
-    test result: ok. 0 passed; 0 failed; 1 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 0 passed, 1 skipped
 
     ----- stderr -----
     ");
@@ -400,13 +424,15 @@ def test_1():
         ",
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_1 ... skipped: This is the skip reason
+        Starting 1 test across 1 worker
+            SKIP [TIME] test::test_1: This is the skip reason
 
-    test result: ok. 0 passed; 0 failed; 1 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 0 passed, 1 skipped
 
     ----- stderr -----
     ");
@@ -425,15 +451,17 @@ def test_1():
         ",
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: false
     exit_code: 1
     ----- stdout -----
+        Starting 1 test across 1 worker
     discovery diagnostics:
 
     error[failed-to-import-module]: Failed to import python module `test`: Expected boolean values for conditions
 
-    test result: ok. 0 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 0 tests run: 0 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -452,15 +480,17 @@ def test_1():
         ",
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: false
     exit_code: 1
     ----- stdout -----
+        Starting 1 test across 1 worker
     discovery diagnostics:
 
     error[failed-to-import-module]: Failed to import python module `test`: Expected boolean values for conditions
 
-    test result: ok. 0 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 0 tests run: 0 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -485,13 +515,15 @@ def test_skip_with_true():
     );
 
     allow_duplicates! {
-        assert_cmd_snapshot!(context.command(), @r"
+        assert_cmd_snapshot!(context.command(), @"
         success: true
         exit_code: 0
         ----- stdout -----
-        test test::test_skip_with_true ... skipped
+            Starting 1 test across 1 worker
+                SKIP [TIME] test::test_skip_with_true
 
-        test result: ok. 0 passed; 0 failed; 1 skipped; finished in [TIME]
+        ────────────
+             Summary [TIME] 1 test run: 0 passed, 1 skipped
 
         ----- stderr -----
         ");

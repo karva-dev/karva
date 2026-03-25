@@ -40,14 +40,16 @@ def test_something_else():
     );
 
     allow_duplicates! {
-        assert_cmd_snapshot!(context.command_no_parallel(), @r"
+        assert_cmd_snapshot!(context.command_no_parallel(), @"
         success: true
         exit_code: 0
         ----- stdout -----
-        test test::test_something ... ok
-        test test::test_something_else ... ok
+            Starting 2 tests across 1 worker
+                PASS [TIME] test::test_something
+                PASS [TIME] test::test_something_else
 
-        test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+        ────────────
+             Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
         ----- stderr -----
         ");
@@ -84,14 +86,16 @@ def test_something_else():
     );
 
     allow_duplicates! {
-        assert_cmd_snapshot!(context.command_no_parallel(), @r"
+        assert_cmd_snapshot!(context.command_no_parallel(), @"
         success: true
         exit_code: 0
         ----- stdout -----
-        test test::test_something ... ok
-        test test::test_something_else ... ok
+            Starting 2 tests across 1 worker
+                PASS [TIME] test::test_something
+                PASS [TIME] test::test_something_else
 
-        test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+        ────────────
+             Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
         ----- stderr -----
         ");
@@ -130,14 +134,16 @@ fn test_auto_use_fixture(#[values("pytest", "karva")] framework: &str) {
     );
 
     allow_duplicates! {
-        assert_cmd_snapshot!(context.command_no_parallel(), @r"
+        assert_cmd_snapshot!(context.command_no_parallel(), @"
         success: true
         exit_code: 0
         ----- stdout -----
-        test test::test_string_only(first_entry=a, order=['a']) ... ok
-        test test::test_string_and_int(first_entry=a, order=['a']) ... ok
+            Starting 2 tests across 1 worker
+                PASS [TIME] test::test_string_only(first_entry=a, order=['a'])
+                PASS [TIME] test::test_string_and_int(first_entry=a, order=['a'])
 
-        test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+        ────────────
+             Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
         ----- stderr -----
         ");
@@ -174,14 +180,16 @@ fn test_auto_use_fixture_in_parent_module() {
         ),
     ]);
 
-    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test foo.inner.test_file2::test_function1 ... ok
-    test foo.inner.test_file2::test_function2 ... ok
+        Starting 2 tests across 1 worker
+            PASS [TIME] foo.inner.test_file2::test_function1
+            PASS [TIME] foo.inner.test_file2::test_function2
 
-    test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -206,14 +214,16 @@ def test_something_else():
 "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_something ... ok
-    test test::test_something_else ... ok
+        Starting 2 tests across 1 worker
+            PASS [TIME] test::test_something
+            PASS [TIME] test::test_something_else
 
-    test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -242,7 +252,8 @@ def test_something():
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_something ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_something
 
     diagnostics:
 
@@ -257,7 +268,8 @@ def test_something():
       |
     info: Failed to reset fixture: Teardown failed!
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     "#);
@@ -283,13 +295,15 @@ def test_something():
 "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_something ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_something
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -318,8 +332,9 @@ def test_second():
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_first ... ok
-    test test::test_second ... ok
+        Starting 2 tests across 1 worker
+            PASS [TIME] test::test_first
+            PASS [TIME] test::test_second
 
     diagnostics:
 
@@ -343,7 +358,8 @@ def test_second():
       |
     info: Scoped fixture failed!
 
-    test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
     ----- stderr -----
     "#);

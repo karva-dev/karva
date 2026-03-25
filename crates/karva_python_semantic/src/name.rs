@@ -70,6 +70,13 @@ impl QualifiedTestName {
     pub fn function_name(&self) -> &QualifiedFunctionName {
         &self.function_name
     }
+
+    /// Return the parameter portion of the test name (e.g., `"(a=1, b=2)"`), if any.
+    pub fn params(&self) -> Option<&str> {
+        let full_name = self.full_name.as_deref()?;
+        let base = self.function_name.to_string();
+        full_name.strip_prefix(&base)
+    }
 }
 
 impl std::fmt::Display for QualifiedTestName {

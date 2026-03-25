@@ -21,6 +21,7 @@ karva_static = { workspace = true }
 
 anyhow = { workspace = true }
 camino = { workspace = true }
+colored = { workspace = true }
 crossbeam-channel = { workspace = true }
 ctrlc = { workspace = true }
 fastrand = { workspace = true }

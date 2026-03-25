@@ -17,6 +17,7 @@ camino = { workspace = true }
 codspeed-criterion-compat = { workspace = true }
 divan = { workspace = true }
 karva_cli = { workspace = true }
+karva_logging = { workspace = true }
 karva_metadata = { workspace = true }
 karva_project = { workspace = true }
 karva_runner = { workspace = true }

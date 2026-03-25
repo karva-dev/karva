@@ -23,13 +23,14 @@ def test_with_fail_with_keyword_reason():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: false
     exit_code: 1
     ----- stdout -----
-    test test::test_with_fail_with_reason ... FAILED
-    test test::test_with_fail_with_no_reason ... FAILED
-    test test::test_with_fail_with_keyword_reason ... FAILED
+        Starting 3 tests across 1 worker
+            FAIL [TIME] test::test_with_fail_with_reason
+            FAIL [TIME] test::test_with_fail_with_no_reason
+            FAIL [TIME] test::test_with_fail_with_keyword_reason
 
     diagnostics:
 
@@ -90,7 +91,8 @@ def test_with_fail_with_keyword_reason():
        |
     info: This is a custom failure message
 
-    test result: FAILED. 0 passed; 3 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 3 tests run: 0 passed, 3 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -111,11 +113,12 @@ def test_conditional_fail():
         ",
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: false
     exit_code: 1
     ----- stdout -----
-    test test::test_conditional_fail ... FAILED
+        Starting 1 test across 1 worker
+            FAIL [TIME] test::test_conditional_fail
 
     diagnostics:
 
@@ -140,7 +143,8 @@ def test_conditional_fail():
       |
     info: failing test
 
-    test result: FAILED. 0 passed; 1 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -158,11 +162,12 @@ def test_raise_fail_error():
         ",
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: false
     exit_code: 1
     ----- stdout -----
-    test test::test_raise_fail_error ... FAILED
+        Starting 1 test across 1 worker
+            FAIL [TIME] test::test_raise_fail_error
 
     diagnostics:
 
@@ -184,7 +189,8 @@ def test_raise_fail_error():
       |
     info: Manually raised FailError
 
-    test result: FAILED. 0 passed; 1 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -216,15 +222,17 @@ def test_conditional_skip():
     );
 
     allow_duplicates! {
-        assert_cmd_snapshot!(context.command_no_parallel(), @r"
+        assert_cmd_snapshot!(context.command_no_parallel(), @"
         success: true
         exit_code: 0
         ----- stdout -----
-        test test::test_skip_with_reason ... skipped: This test is skipped at runtime
-        test test::test_skip_without_reason ... skipped
-        test test::test_conditional_skip ... skipped: Condition was true
+            Starting 3 tests across 1 worker
+                SKIP [TIME] test::test_skip_with_reason: This test is skipped at runtime
+                SKIP [TIME] test::test_skip_without_reason
+                SKIP [TIME] test::test_conditional_skip: Condition was true
 
-        test result: ok. 0 passed; 0 failed; 3 skipped; finished in [TIME]
+        ────────────
+             Summary [TIME] 3 tests run: 0 passed, 3 skipped
 
         ----- stderr -----
         ");
@@ -250,15 +258,17 @@ def test_another_pass():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_pass ... ok
-    test test::test_skip ... skipped: Skipped test
-    test test::test_another_pass ... ok
+        Starting 3 tests across 1 worker
+            PASS [TIME] test::test_pass
+            SKIP [TIME] test::test_skip: Skipped test
+            PASS [TIME] test::test_another_pass
 
-    test result: ok. 2 passed; 0 failed; 1 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 3 tests run: 2 passed, 1 skipped
 
     ----- stderr -----
     ");
@@ -277,13 +287,15 @@ def test_raise_skip_error():
         ",
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_raise_skip_error ... skipped: Manually raised SkipError
+        Starting 1 test across 1 worker
+            SKIP [TIME] test::test_raise_skip_error: Manually raised SkipError
 
-    test result: ok. 0 passed; 0 failed; 1 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 0 passed, 1 skipped
 
     ----- stderr -----
     ");
@@ -302,13 +314,15 @@ def test_raises_value_error():
         ",
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_raises_value_error ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_raises_value_error
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -327,11 +341,12 @@ def test_raises_no_exception():
         ",
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: false
     exit_code: 1
     ----- stdout -----
-    test test::test_raises_no_exception ... FAILED
+        Starting 1 test across 1 worker
+            FAIL [TIME] test::test_raises_no_exception
 
     diagnostics:
 
@@ -355,7 +370,8 @@ def test_raises_no_exception():
       |
     info: DID NOT RAISE <class 'ValueError'>
 
-    test result: FAILED. 0 passed; 1 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -374,13 +390,15 @@ def test_raises_match_passes():
         ",
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_raises_match_passes ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_raises_match_passes
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -399,11 +417,12 @@ def test_raises_match_fails():
         ",
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: false
     exit_code: 1
     ----- stdout -----
-    test test::test_raises_match_fails ... FAILED
+        Starting 1 test across 1 worker
+            FAIL [TIME] test::test_raises_match_fails
 
     diagnostics:
 
@@ -427,7 +446,8 @@ def test_raises_match_fails():
       |
     info: Raised exception did not match pattern 'xyz'
 
-    test result: FAILED. 0 passed; 1 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -446,11 +466,12 @@ def test_raises_wrong_type():
         ",
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: false
     exit_code: 1
     ----- stdout -----
-    test test::test_raises_wrong_type ... FAILED
+        Starting 1 test across 1 worker
+            FAIL [TIME] test::test_raises_wrong_type
 
     diagnostics:
 
@@ -474,7 +495,8 @@ def test_raises_wrong_type():
       |
     info: wrong type
 
-    test result: FAILED. 0 passed; 1 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -496,13 +518,15 @@ def test_raises_exc_info():
         ",
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_raises_exc_info ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_raises_exc_info
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -524,13 +548,15 @@ def test_raises_subclass():
         ",
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_raises_subclass ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_raises_subclass
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");

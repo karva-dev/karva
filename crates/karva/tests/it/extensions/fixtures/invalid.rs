@@ -24,7 +24,8 @@ fn test_invalid_pytest_fixture_scope() {
     success: false
     exit_code: 1
     ----- stdout -----
-    test test::test_all_scopes ... FAILED
+        Starting 1 test across 1 worker
+            FAIL [TIME] test::test_all_scopes
 
     diagnostics:
 
@@ -50,7 +51,8 @@ fn test_invalid_pytest_fixture_scope() {
        |
     info: Missing fixtures: `some_fixture`
 
-    test result: FAILED. 0 passed; 1 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     "#);
@@ -75,7 +77,8 @@ def test_all_scopes(some_fixture: int) -> None:
     success: false
     exit_code: 1
     ----- stdout -----
-    test test::test_all_scopes ... FAILED
+        Starting 1 test across 1 worker
+            FAIL [TIME] test::test_all_scopes
 
     diagnostics:
 
@@ -100,7 +103,8 @@ def test_all_scopes(some_fixture: int) -> None:
       |
     info: Missing fixtures: `some_fixture`
 
-    test result: FAILED. 0 passed; 1 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     "#);
@@ -118,11 +122,12 @@ fn test_missing_fixture() {
                 ",
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: false
     exit_code: 1
     ----- stdout -----
-    test test::test_all_scopes ... FAILED
+        Starting 1 test across 1 worker
+            FAIL [TIME] test::test_all_scopes
 
     diagnostics:
 
@@ -136,7 +141,8 @@ fn test_missing_fixture() {
       |
     info: Missing fixtures: `missing_fixture`
 
-    test result: FAILED. 0 passed; 1 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -158,11 +164,12 @@ fn test_fixture_fails_to_run() {
                 ",
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: false
     exit_code: 1
     ----- stdout -----
-    test test::test_failing_fixture ... FAILED
+        Starting 1 test across 1 worker
+            FAIL [TIME] test::test_failing_fixture
 
     diagnostics:
 
@@ -188,7 +195,8 @@ fn test_fixture_fails_to_run() {
       |
     info: Fixture failed
 
-    test result: FAILED. 0 passed; 1 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -210,11 +218,12 @@ fn test_fixture_missing_fixtures() {
                 ",
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: false
     exit_code: 1
     ----- stdout -----
-    test test::test_failing_fixture ... FAILED
+        Starting 1 test across 1 worker
+            FAIL [TIME] test::test_failing_fixture
 
     diagnostics:
 
@@ -230,7 +239,8 @@ fn test_fixture_missing_fixtures() {
     info: Missing fixtures: `failing_fixture`
     info: failing_fixture() missing 1 required positional argument: 'missing_fixture'
 
-    test result: FAILED. 0 passed; 1 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -249,11 +259,12 @@ fn missing_arguments_in_nested_function() {
                    ",
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: false
     exit_code: 1
     ----- stdout -----
-    test test::test_failing_fixture ... FAILED
+        Starting 1 test across 1 worker
+            FAIL [TIME] test::test_failing_fixture
 
     diagnostics:
 
@@ -275,7 +286,8 @@ fn missing_arguments_in_nested_function() {
       |
     info: test_failing_fixture.<locals>.inner() missing 1 required positional argument: 'missing_fixture'
 
-    test result: FAILED. 0 passed; 1 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -299,11 +311,12 @@ fn test_failing_yield_fixture() {
                    ",
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: false
     exit_code: 1
     ----- stdout -----
-    test test::test_failing_fixture ... FAILED
+        Starting 1 test across 1 worker
+            FAIL [TIME] test::test_failing_fixture
 
     diagnostics:
 
@@ -328,7 +341,8 @@ fn test_failing_yield_fixture() {
       |
     info: foo
 
-    test result: FAILED. 0 passed; 1 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -351,11 +365,12 @@ fn test_fixture_generator_two_yields() {
                 ",
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_fixture_generator(fixture_generator=1) ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_fixture_generator(fixture_generator=1)
 
     diagnostics:
 
@@ -370,7 +385,8 @@ fn test_fixture_generator_two_yields() {
       |
     info: Fixture had more than one yield statement
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -397,7 +413,8 @@ fn test_fixture_generator_fail_in_teardown() {
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_fixture_generator(fixture_generator=1) ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_fixture_generator(fixture_generator=1)
 
     diagnostics:
 
@@ -412,7 +429,8 @@ fn test_fixture_generator_fail_in_teardown() {
       |
     info: Failed to reset fixture: fixture-error
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     "#);
@@ -442,11 +460,12 @@ fn test_fixture_dependency_chain_failure() {
                 ",
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: false
     exit_code: 1
     ----- stdout -----
-    test test::test_with_db ... FAILED
+        Starting 1 test across 1 worker
+            FAIL [TIME] test::test_with_db
 
     diagnostics:
 
@@ -488,7 +507,8 @@ fn test_fixture_dependency_chain_failure() {
       |
     info: config failed
 
-    test result: FAILED. 0 passed; 1 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -509,11 +529,12 @@ def test_with_fixture(my_fixture):
 ",
     );
 
-    assert_cmd_snapshot!(context.command(), @r#"
+    assert_cmd_snapshot!(context.command(), @"
     success: false
     exit_code: 1
     ----- stdout -----
-    test test::test_with_fixture ... FAILED
+        Starting 1 test across 1 worker
+            FAIL [TIME] test::test_with_fixture
 
     diagnostics:
 
@@ -538,8 +559,9 @@ def test_with_fixture(my_fixture):
       |
     info: Missing fixtures: `my_fixture`
 
-    test result: FAILED. 0 passed; 1 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
-    "#);
+    ");
 }

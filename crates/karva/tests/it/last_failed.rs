@@ -14,11 +14,12 @@ fn last_failed_reruns_only_failures() {
 
     context.command_no_parallel().output().unwrap();
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--last-failed"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--last-failed"), @"
     success: false
     exit_code: 1
     ----- stdout -----
-    test test_a::test_fail ... FAILED
+        Starting 2 tests across 1 worker
+            FAIL [TIME] test_a::test_fail
 
     diagnostics:
 
@@ -37,7 +38,8 @@ fn last_failed_reruns_only_failures() {
       | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
       |
 
-    test result: FAILED. 0 passed; 1 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -55,11 +57,12 @@ fn last_failed_lf_alias() {
 
     context.command_no_parallel().output().unwrap();
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--lf"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--lf"), @"
     success: false
     exit_code: 1
     ----- stdout -----
-    test test_a::test_fail ... FAILED
+        Starting 2 tests across 1 worker
+            FAIL [TIME] test_a::test_fail
 
     diagnostics:
 
@@ -78,7 +81,8 @@ fn last_failed_lf_alias() {
       | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
       |
 
-    test result: FAILED. 0 passed; 1 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -96,14 +100,16 @@ fn last_failed_with_no_previous_failures_runs_all() {
 
     context.command_no_parallel().output().unwrap();
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--last-failed"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--last-failed"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test_a::test_one ... ok
-    test test_a::test_two ... ok
+        Starting 2 tests across 1 worker
+            PASS [TIME] test_a::test_one
+            PASS [TIME] test_a::test_two
 
-    test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -119,14 +125,16 @@ fn last_failed_without_previous_run_runs_all() {
             ",
     )]);
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--last-failed"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--last-failed"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test_a::test_one ... ok
-    test test_a::test_two ... ok
+        Starting 2 tests across 1 worker
+            PASS [TIME] test_a::test_one
+            PASS [TIME] test_a::test_two
 
-    test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -153,11 +161,12 @@ def test_fail_b(): assert False
 
     context.command_no_parallel().output().unwrap();
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--last-failed").arg("-q"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--last-failed").arg("-q"), @"
     success: false
     exit_code: 1
     ----- stdout -----
-    test result: FAILED. 0 passed; 2 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 0 passed, 2 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -183,13 +192,15 @@ def test_fail(): assert True
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--last-failed"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--last-failed"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test_a::test_fail ... ok
+        Starting 2 tests across 1 worker
+            PASS [TIME] test_a::test_fail
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");

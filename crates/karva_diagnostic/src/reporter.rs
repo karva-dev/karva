@@ -1,7 +1,9 @@
 use std::fmt::Write;
+use std::time::Duration;
 
 use colored::Colorize;
 use karva_logging::Printer;
+use karva_logging::time::format_duration_bracketed;
 use karva_python_semantic::QualifiedTestName;
 
 use crate::result::IndividualTestResultKind;
@@ -13,6 +15,7 @@ pub trait Reporter: Send + Sync {
         &self,
         test_name: &QualifiedTestName,
         result_kind: IndividualTestResultKind,
+        duration: Duration,
     );
 }
 
@@ -25,6 +28,7 @@ impl Reporter for DummyReporter {
         &self,
         _test_name: &QualifiedTestName,
         _result_kind: IndividualTestResultKind,
+        _duration: Duration,
     ) {
     }
 }
@@ -45,24 +49,39 @@ impl Reporter for TestCaseReporter {
         &self,
         test_name: &QualifiedTestName,
         result_kind: IndividualTestResultKind,
+        duration: Duration,
     ) {
         let mut stdout = self.printer.stream_for_test_result().lock();
 
-        let log_start = format!("test {test_name} ...");
-
-        let rest = match result_kind {
-            IndividualTestResultKind::Passed => "ok".green().to_string(),
-            IndividualTestResultKind::Failed => "FAILED".red().to_string(),
-            IndividualTestResultKind::Skipped { reason } => {
-                let skipped_string = "skipped".yellow().to_string();
-                if let Some(reason) = reason {
-                    format!("{skipped_string}: {reason}")
-                } else {
-                    skipped_string
-                }
+        let (label, colored_label) = match &result_kind {
+            IndividualTestResultKind::Passed => ("PASS", "PASS".green().bold().to_string()),
+            IndividualTestResultKind::Failed => ("FAIL", "FAIL".red().bold().to_string()),
+            IndividualTestResultKind::Skipped { .. } => {
+                ("SKIP", "SKIP".yellow().bold().to_string())
             }
         };
 
-        writeln!(stdout, "{log_start} {rest}").ok();
+        let padding = " ".repeat(12usize.saturating_sub(label.len()));
+        let duration_str = format_duration_bracketed(duration);
+
+        let module = test_name.function_name().module_path().module_name().cyan();
+        let fn_name = test_name.function_name().function_name().blue().bold();
+        let params = test_name
+            .params()
+            .map(|p| p.blue().bold().to_string())
+            .unwrap_or_default();
+
+        let suffix = match &result_kind {
+            IndividualTestResultKind::Skipped {
+                reason: Some(reason),
+            } => format!(": {reason}"),
+            _ => String::new(),
+        };
+
+        writeln!(
+            stdout,
+            "{padding}{colored_label} {duration_str} {module}::{fn_name}{params}{suffix}"
+        )
+        .ok();
     }
 }

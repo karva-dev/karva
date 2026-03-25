@@ -1,9 +1,11 @@
 use std::collections::HashSet;
+use std::fmt::Write;
 use std::process::{Child, Command, Stdio};
 use std::time::{Duration, Instant};
 
 use anyhow::{Context, Result};
 use camino::Utf8PathBuf;
+use colored::Colorize;
 use crossbeam_channel::{Receiver, TryRecvError};
 
 use crate::shutdown::shutdown_receiver;
@@ -13,6 +15,7 @@ use karva_cache::{
 };
 use karva_cli::SubTestCommand;
 use karva_collector::{CollectedPackage, CollectionSettings};
+use karva_logging::Printer;
 use karva_logging::time::format_duration;
 use karva_metadata::ProjectSettings;
 use karva_project::Project;
@@ -239,6 +242,7 @@ pub fn run_parallel_tests(
     project: &Project,
     config: &ParallelTestConfig,
     args: &SubTestCommand,
+    printer: Printer,
 ) -> Result<AggregatedResults> {
     let collected = collect_tests(project)?;
 
@@ -253,6 +257,24 @@ pub fn run_parallel_tests(
             capped_workers = num_workers,
             "Capped worker count to avoid underutilized workers"
         );
+    }
+
+    if total_tests > 0 {
+        let mut stdout = printer.stream_for_test_result().lock();
+        let label = format!("{:>12}", "Starting").green().bold();
+        let test_label = if total_tests == 1 { "test" } else { "tests" };
+        let worker_label = if num_workers == 1 {
+            "worker"
+        } else {
+            "workers"
+        };
+        let total_tests_bold = total_tests.to_string().bold();
+        let num_workers_bold = num_workers.to_string().bold();
+        writeln!(
+            stdout,
+            "{label} {total_tests_bold} {test_label} across {num_workers_bold} {worker_label}"
+        )
+        .ok();
     }
 
     tracing::debug!(num_workers, "Partitioning tests");

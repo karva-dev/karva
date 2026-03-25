@@ -135,15 +135,17 @@ def test_third():
     ----- stderr -----
     ");
 
-    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_first ... ok
-    test test::test_second ... ok
-    test test::test_third ... ok
+        Starting 3 tests across 1 worker
+            PASS [TIME] test::test_first
+            PASS [TIME] test::test_second
+            PASS [TIME] test::test_third
 
-    test result: ok. 3 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
     ----- stderr -----
     ");

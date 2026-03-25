@@ -14,11 +14,12 @@ def test_hello():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: false
     exit_code: 1
     ----- stdout -----
-    test test::test_hello ... FAILED
+        Starting 1 test across 1 worker
+            FAIL [TIME] test::test_hello
 
     diagnostics:
 
@@ -42,7 +43,8 @@ def test_hello():
           Run `karva snapshot accept` to accept, or re-run with `--snapshot-update`.
           Pending file: <temp_dir>/snapshots/test__test_hello.snap.new
 
-    test result: FAILED. 0 passed; 1 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -68,13 +70,15 @@ def test_hello():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_hello ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_hello
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -105,13 +109,15 @@ def test_hello():
         .arg("--snapshot-update")
         .output();
 
-    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_hello ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_hello
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -148,7 +154,8 @@ def test_hello():
     success: false
     exit_code: 1
     ----- stdout -----
-    test test::test_hello ... FAILED
+        Starting 1 test across 1 worker
+            FAIL [TIME] test::test_hello
 
     diagnostics:
 
@@ -175,7 +182,8 @@ def test_hello():
                     1 │ +goodbye world
           ────────────┴───────────────────────────
 
-    test result: FAILED. 0 passed; 1 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -196,13 +204,15 @@ def test_multi():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_multi ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_multi
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -245,14 +255,16 @@ def test_param(x):
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_param(x=1) ... ok
-    test test::test_param(x=2) ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_param(x=1)
+            PASS [TIME] test::test_param(x=2)
 
-    test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -301,13 +313,15 @@ def test_overwrite():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_overwrite ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_overwrite
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -358,8 +372,9 @@ def test_two():
     success: false
     exit_code: 1
     ----- stdout -----
-    test test::test_one ... ok
-    test test::test_two ... FAILED
+        Starting 2 tests across 1 worker
+            PASS [TIME] test::test_one
+            FAIL [TIME] test::test_two
 
     diagnostics:
 
@@ -386,7 +401,8 @@ def test_two():
                     1 │ +changed
           ────────────┴───────────────────────────
 
-    test result: FAILED. 1 passed; 1 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 1 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -407,13 +423,15 @@ def test_mixed():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_mixed ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_mixed
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -498,11 +516,12 @@ def test_multi():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @"
     success: false
     exit_code: 1
     ----- stdout -----
-    test test::test_multi ... FAILED
+        Starting 1 test across 1 worker
+            FAIL [TIME] test::test_multi
 
     diagnostics:
 
@@ -526,7 +545,8 @@ def test_multi():
       |
     info: Multiple unnamed snapshots in one test. Use 'name=' for each, or wrap in 'karva.snapshot_settings(allow_duplicates=True)'
 
-    test result: FAILED. 0 passed; 1 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -546,13 +566,15 @@ def test_multi():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_multi ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_multi
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -587,13 +609,15 @@ def test_in_sub():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update").arg("sub/test_nested.py"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--snapshot-update").arg("sub/test_nested.py"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test sub.test_nested::test_in_sub ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] sub.test_nested::test_in_sub
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");

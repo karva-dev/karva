@@ -90,7 +90,7 @@ pub fn test(args: TestCommand) -> Result<ExitStatus> {
 
     let start_time = Instant::now();
 
-    let result = karva_runner::run_parallel_tests(&project, &config, &sub_command)?;
+    let result = karva_runner::run_parallel_tests(&project, &config, &sub_command, printer)?;
 
     print_test_output(
         printer,

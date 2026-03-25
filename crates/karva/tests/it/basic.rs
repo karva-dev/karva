@@ -19,14 +19,16 @@ def test_4(): pass",
         ),
     ]);
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("test_file1.py"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("test_file1.py"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test_file1::test_1 ... ok
-    test test_file1::test_2 ... ok
+        Starting 2 tests across 1 worker
+            PASS [TIME] test_file1::test_1
+            PASS [TIME] test_file1::test_2
 
-    test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -36,11 +38,12 @@ def test_4(): pass",
 fn test_empty_file() {
     let context = TestContext::with_file("test.py", "");
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test result: ok. 0 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 0 tests run: 0 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -50,11 +53,12 @@ fn test_empty_file() {
 fn test_empty_directory() {
     let context = TestContext::new();
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test result: ok. 0 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 0 tests run: 0 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -69,13 +73,15 @@ fn test_single_function() {
             def test_2(): pass",
     );
 
-    assert_cmd_snapshot!(context.command().arg("test.py::test_1"), @r"
+    assert_cmd_snapshot!(context.command().arg("test.py::test_1"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_1 ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_1
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -90,14 +96,16 @@ def test_1(): pass
 def test_2(): pass",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().args(["test.py::test_1", "test.py"]), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().args(["test.py::test_1", "test.py"]), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_1 ... ok
-    test test::test_2 ... ok
+        Starting 2 tests across 1 worker
+            PASS [TIME] test::test_1
+            PASS [TIME] test::test_2
 
-    test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -112,14 +120,16 @@ def test_1(): pass
 def test_2(): pass",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().args(["test.py::test_1", "."]), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().args(["test.py::test_1", "."]), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_1 ... ok
-    test test::test_2 ... ok
+        Starting 2 tests across 1 worker
+            PASS [TIME] test::test_1
+            PASS [TIME] test::test_2
 
-    test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -129,11 +139,12 @@ def test_2(): pass",
 fn test_no_tests_found() {
     let context = TestContext::with_file("test_no_tests.py", r"");
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test result: ok. 0 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 0 tests run: 0 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -149,13 +160,15 @@ fn test_one_test_passes() {
         ",
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test_pass::test_pass ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test_pass::test_pass
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -171,11 +184,12 @@ fn test_one_test_fail() {
     ",
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: false
     exit_code: 1
     ----- stdout -----
-    test test_fail::test_fail ... FAILED
+        Starting 1 test across 1 worker
+            FAIL [TIME] test_fail::test_fail
 
     diagnostics:
 
@@ -194,7 +208,8 @@ fn test_one_test_fail() {
       |     ^^^^^^^^^^^^
       |
 
-    test result: FAILED. 0 passed; 1 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -227,13 +242,14 @@ fn test_fail_concise_output() {
     ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--output-format").arg("concise"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--output-format").arg("concise"), @"
     success: false
     exit_code: 1
     ----- stdout -----
-    test test_fail::test_1(fixture_1=1) ... FAILED
-    test test_fail::test_2 ... FAILED
-    test test_fail::test_3 ... FAILED
+        Starting 3 tests across 1 worker
+            FAIL [TIME] test_fail::test_1(fixture_1=1)
+            FAIL [TIME] test_fail::test_2
+            FAIL [TIME] test_fail::test_3
 
     diagnostics:
 
@@ -242,7 +258,8 @@ fn test_fail_concise_output() {
     test_fail.py:16:5: error[missing-fixtures] Test `test_2` has missing fixtures: `fixture_2`
     test_fail.py:19:5: error[test-failure] Test `test_3` failed
 
-    test result: FAILED. 0 passed; 3 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 3 tests run: 0 passed, 3 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -261,12 +278,13 @@ fn test_two_test_fails() {
     ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: false
     exit_code: 1
     ----- stdout -----
-    test tests.test_fail::test_fail ... FAILED
-    test tests.test_fail::test_fail2 ... FAILED
+        Starting 2 tests across 1 worker
+            FAIL [TIME] tests.test_fail::test_fail
+            FAIL [TIME] tests.test_fail::test_fail2
 
     diagnostics:
 
@@ -305,7 +323,8 @@ fn test_two_test_fails() {
       |
     info: Test failed
 
-    test result: FAILED. 0 passed; 2 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 0 passed, 2 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -334,11 +353,12 @@ fn test_file_importing_another_file() {
         ),
     ]);
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: false
     exit_code: 1
     ----- stdout -----
-    test test_cross_file::test_with_helper ... FAILED
+        Starting 1 test across 1 worker
+            FAIL [TIME] test_cross_file::test_with_helper
 
     diagnostics:
 
@@ -362,7 +382,8 @@ fn test_file_importing_another_file() {
       |
     info: Data validation failed
 
-    test result: FAILED. 0 passed; 1 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -378,37 +399,43 @@ fn test_stdout() {
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("-s"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-s"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+        Starting 1 test across 1 worker
     Hello, world!
-    test test_std_out_redirected::test_std_out_redirected ... ok
+            PASS [TIME] test_std_out_redirected::test_std_out_redirected
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
 
-    assert_cmd_snapshot!(context.command().arg("-s"), @r"
+    assert_cmd_snapshot!(context.command().arg("-s"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+        Starting 1 test across 1 worker
     Hello, world!
-    test test_std_out_redirected::test_std_out_redirected ... ok
+            PASS [TIME] test_std_out_redirected::test_std_out_redirected
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test_std_out_redirected::test_std_out_redirected ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test_std_out_redirected::test_std_out_redirected
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -421,11 +448,12 @@ fn test_multiple_fixtures_not_found() {
         "def test_multiple_fixtures_not_found(a, b, c): ...",
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: false
     exit_code: 1
     ----- stdout -----
-    test test_multiple_fixtures_not_found::test_multiple_fixtures_not_found ... FAILED
+        Starting 1 test across 1 worker
+            FAIL [TIME] test_multiple_fixtures_not_found::test_multiple_fixtures_not_found
 
     diagnostics:
 
@@ -437,7 +465,8 @@ fn test_multiple_fixtures_not_found() {
       |
     info: Missing fixtures: `a`, `b`, `c`
 
-    test result: FAILED. 0 passed; 1 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -450,13 +479,15 @@ fn test_text_file_in_directory() {
         ("random.txt", "pass"),
     ]);
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test_sample::test_sample ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test_sample::test_sample
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -489,11 +520,12 @@ fn test_quiet_output_passing() {
         ",
     );
 
-    assert_cmd_snapshot!(context.command().args(["-q"]), @r"
+    assert_cmd_snapshot!(context.command().args(["-q"]), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -509,11 +541,12 @@ fn test_quiet_output_failing() {
         ",
     );
 
-    assert_cmd_snapshot!(context.command().args(["-q"]), @r"
+    assert_cmd_snapshot!(context.command().args(["-q"]), @"
     success: false
     exit_code: 1
     ----- stdout -----
-    test result: FAILED. 0 passed; 1 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -551,11 +584,12 @@ fn test_fixture_generator_two_yields_passing_test() {
 ",
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_fixture_generator(fixture_generator=1) ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_fixture_generator(fixture_generator=1)
 
     diagnostics:
 
@@ -570,7 +604,8 @@ fn test_fixture_generator_two_yields_passing_test() {
       |
     info: Fixture had more than one yield statement
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -593,11 +628,12 @@ fn test_fixture_generator_two_yields_failing_test() {
 ",
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: false
     exit_code: 1
     ----- stdout -----
-    test test::test_fixture_generator(fixture_generator=1) ... FAILED
+        Starting 1 test across 1 worker
+            FAIL [TIME] test::test_fixture_generator(fixture_generator=1)
 
     diagnostics:
 
@@ -631,7 +667,8 @@ fn test_fixture_generator_two_yields_failing_test() {
        |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
        |
 
-    test result: FAILED. 0 passed; 1 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -658,7 +695,8 @@ fn test_fixture_generator_fail_in_teardown() {
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_fixture_generator(fixture_generator=1) ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_fixture_generator(fixture_generator=1)
 
     diagnostics:
 
@@ -673,7 +711,8 @@ fn test_fixture_generator_fail_in_teardown() {
       |
     info: Failed to reset fixture: fixture error
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     "#);
@@ -699,7 +738,8 @@ fn test_invalid_fixture() {
     success: false
     exit_code: 1
     ----- stdout -----
-    test test::test_fixture_generator ... FAILED
+        Starting 1 test across 1 worker
+            FAIL [TIME] test::test_fixture_generator
 
     diagnostics:
 
@@ -724,7 +764,8 @@ fn test_invalid_fixture() {
       |
     info: Missing fixtures: `fixture_generator`
 
-    test result: FAILED. 0 passed; 1 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     "#);
@@ -743,11 +784,12 @@ fn test_failfast() {
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().args(["--fail-fast"]), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().args(["--fail-fast"]), @"
     success: false
     exit_code: 1
     ----- stdout -----
-    test test_failfast::test_first_fail ... FAILED
+        Starting 2 tests across 1 worker
+            FAIL [TIME] test_failfast::test_first_fail
 
     diagnostics:
 
@@ -769,7 +811,8 @@ fn test_failfast() {
       |
     info: First test fails
 
-    test result: FAILED. 0 passed; 1 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -823,11 +866,12 @@ def test_9():
     ",
     );
 
-    assert_cmd_snapshot!(context.command().arg("--fail-fast").arg("--num-workers").arg("2").arg("-v"), @r"
+    assert_cmd_snapshot!(context.command().arg("--fail-fast").arg("--num-workers").arg("2").arg("-v"), @"
     success: false
     exit_code: 1
     ----- stdout -----
-    test test_a::test_fail ... FAILED
+        Starting 10 tests across 2 workers
+            FAIL [TIME] test_a::test_fail
 
     diagnostics:
 
@@ -850,7 +894,8 @@ def test_9():
     7 | def test_1():
       |
 
-    test result: FAILED. 0 passed; 1 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     INFO Collected all tests in [TIME]
@@ -875,13 +920,15 @@ def tests_1(): ...
         ",
     );
 
-    assert_cmd_snapshot!(context.command().arg("--test-prefix").arg("tests_"), @r"
+    assert_cmd_snapshot!(context.command().arg("--test-prefix").arg("tests_"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test_fail::tests_1 ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test_fail::tests_1
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -900,13 +947,15 @@ def test_1():
 
     context.write_file("foo.py", "print('hello world')");
 
-    assert_cmd_snapshot!(context.command().arg("-s"), @r"
+    assert_cmd_snapshot!(context.command().arg("-s"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test_fail::test_1 ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test_fail::test_1
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -930,13 +979,15 @@ def test_1():
     sys.exit(1)",
     );
 
-    assert_cmd_snapshot!(context.command().arg("-s"), @r"
+    assert_cmd_snapshot!(context.command().arg("-s"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test_fail::test_1 ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test_fail::test_1
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -958,11 +1009,12 @@ def test_1(fixture_very_very_very_very_very_long_name):
         ",
     );
 
-    assert_cmd_snapshot!(context.command(), @r"
+    assert_cmd_snapshot!(context.command(), @"
     success: false
     exit_code: 1
     ----- stdout -----
-    test test_file::test_1(fixture_very_very_very_very...=fixture_very_very_very_very...) ... FAILED
+        Starting 1 test across 1 worker
+            FAIL [TIME] test_file::test_1(fixture_very_very_very_very...=fixture_very_very_very_very...)
 
     diagnostics:
 
@@ -985,7 +1037,8 @@ def test_1(fixture_very_very_very_very_very_long_name):
       |     ^^^^^^^^^^^^
       |
 
-    test result: FAILED. 0 passed; 1 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -1007,14 +1060,16 @@ def test_1():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("-s"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-s"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_setenv(monkeypatch=<MockEnv object>) ... ok
-    test test::test_1 ... ok
+        Starting 2 tests across 1 worker
+            PASS [TIME] test::test_setenv(monkeypatch=<MockEnv object>)
+            PASS [TIME] test::test_1
 
-    test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -1030,12 +1085,13 @@ def test_1():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--no-progress"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--no-progress"), @"
     success: true
     exit_code: 0
     ----- stdout -----
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -1068,14 +1124,16 @@ def test_2(y): pass
         ),
     ]);
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--try-import-fixtures"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--try-import-fixtures"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test_file::test_1(x=1) ... ok
-    test test_file::test_2(y=1) ... ok
+        Starting 2 tests across 1 worker
+            PASS [TIME] test_file::test_1(x=1)
+            PASS [TIME] test_file::test_2(y=1)
 
-    test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -1108,12 +1166,13 @@ def test_2(y): pass
         ),
     ]);
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--try-import-fixtures"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--try-import-fixtures"), @"
     success: false
     exit_code: 1
     ----- stdout -----
-    test test_file::test_1 ... FAILED
-    test test_file::test_2(y=1) ... ok
+        Starting 2 tests across 1 worker
+            FAIL [TIME] test_file::test_1
+            PASS [TIME] test_file::test_2(y=1)
 
     diagnostics:
 
@@ -1138,7 +1197,8 @@ def test_2(y): pass
       |
     info: Invalid fixture
 
-    test result: FAILED. 1 passed; 1 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 1 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -1161,13 +1221,15 @@ def test_1():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--retry").arg("5"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--retry").arg("5"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_1 ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_1
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -1185,15 +1247,17 @@ def test_3(): pass",
 
     // With 3 tests and 8 requested workers, worker capping reduces to 1 worker
     // (ceil(3/5) = 1). The -v flag shows info logs confirming "Spawning 1 workers".
-    assert_cmd_snapshot!(context.command().args(["-v", "--num-workers", "8"]), @r"
+    assert_cmd_snapshot!(context.command().args(["-v", "--num-workers", "8"]), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test_a::test_1 ... ok
-    test test_a::test_2 ... ok
-    test test_a::test_3 ... ok
+        Starting 3 tests across 1 worker
+            PASS [TIME] test_a::test_1
+            PASS [TIME] test_a::test_2
+            PASS [TIME] test_a::test_3
 
-    test result: ok. 3 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
     ----- stderr -----
     INFO Collected all tests in [TIME]
@@ -1296,18 +1360,20 @@ def test_fail():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--output-format=concise"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--output-format=concise"), @"
     success: false
     exit_code: 1
     ----- stdout -----
-    test test::test_pass ... ok
-    test test::test_fail ... FAILED
+        Starting 2 tests across 1 worker
+            PASS [TIME] test::test_pass
+            FAIL [TIME] test::test_fail
 
     diagnostics:
 
     test.py:5:5: error[test-failure] Test `test_fail` failed
 
-    test result: FAILED. 1 passed; 1 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 1 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -1325,15 +1391,17 @@ def test_pass():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--output-format=concise"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--output-format=concise"), @"
     success: false
     exit_code: 1
     ----- stdout -----
+        Starting 1 test across 1 worker
     discovery diagnostics:
 
     error[failed-to-import-module] Failed to import python module `test`: No module named 'nonexistent_module_xyz'
 
-    test result: ok. 0 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 0 tests run: 0 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -1363,15 +1431,15 @@ def test_3():
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(!output.status.success());
     assert!(
-        stdout.contains("test test::test_1 ... ok"),
+        stdout.contains("PASS") && stdout.contains("test::test_1"),
         "first test should pass"
     );
     assert!(
-        stdout.contains("test test::test_2 ... FAILED"),
+        stdout.contains("FAIL") && stdout.contains("test::test_2"),
         "second test should fail"
     );
     assert!(
-        !stdout.contains("test test::test_3"),
+        !stdout.contains("test::test_3"),
         "third test should not run due to --fail-fast"
     );
 }
@@ -1403,7 +1471,7 @@ def test_b_pass():
         .expect("failed to run");
     assert!(!output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("FAILED"), "should report failure");
+    assert!(stdout.contains("failed"), "should report failure");
 }
 
 #[test]
@@ -1447,14 +1515,16 @@ def test_with_print():
         "#,
     );
 
-    assert_cmd_snapshot!(context.command().arg("-s"), @r"
+    assert_cmd_snapshot!(context.command().arg("-s"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+        Starting 1 test across 1 worker
     hello from test
-    test test::test_with_print ... ok
+            PASS [TIME] test::test_with_print
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -1474,13 +1544,15 @@ def test_flaky():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--retry=2"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--retry=2"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_flaky ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_flaky
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -1496,14 +1568,16 @@ def test_2(): pass
 ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("-vv"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-vv"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_1 ... ok
-    test test::test_2 ... ok
+        Starting 2 tests across 1 worker
+            PASS [TIME] test::test_1
+            PASS [TIME] test::test_2
 
-    test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
     ----- stderr -----
     [DATETIME] DEBUG Working directory cwd=<temp_dir>/
@@ -1531,13 +1605,15 @@ def test_1(): pass
 ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("-vvv"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-vvv"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test test::test_1 ... ok
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_1
 
-    test result: ok. 1 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     1   [TIME] DEBUG karva::commands::test Working directory, cwd=<temp_dir>/
@@ -1565,11 +1641,12 @@ def test_2(): pass
 ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("-q"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-q"), @"
     success: true
     exit_code: 0
     ----- stdout -----
-    test result: ok. 2 passed; 0 failed; 0 skipped; finished in [TIME]
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
     ----- stderr -----
     ");

@@ -63,7 +63,8 @@ fn test_project(project: &Project) {
         ..SubTestCommand::default()
     };
 
-    let result = karva_runner::run_parallel_tests(project, &config, &args).unwrap();
+    let printer = karva_logging::Printer::new(karva_logging::VerbosityLevel::Silent, true);
+    let result = karva_runner::run_parallel_tests(project, &config, &args, printer).unwrap();
 
     assert!(result.stats.total() > 0);
 }
