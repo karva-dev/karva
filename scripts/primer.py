@@ -29,7 +29,7 @@ import subprocess
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Annotated, NamedTuple, Optional
+from typing import Annotated, NamedTuple
 
 import typer
 from rich import box
@@ -482,7 +482,7 @@ def clone_or_update(project: Project, project_dir: Path) -> None:
     if result.returncode != 0:
         # Checkout failed — the commit may be absent from a stale partial clone.
         # Delete the directory and do a fresh full clone.
-        console.print(f"  [dim]\\[git] stale clone, recloning...[/dim]")
+        console.print("  [dim]\\[git] stale clone, recloning...[/dim]")
         shutil.rmtree(project_dir)
         _clone(project, project_dir)
         subprocess.run(
@@ -497,7 +497,7 @@ def uv_sync(project: Project, project_dir: Path) -> None:
     if project.pip_only:
         # uv sync can't resolve when requires-python is wider than some groups support.
         # Fall back to creating a bare venv and installing the project via pip.
-        console.print(f"  [dim]\\[uv] creating venv (pip-only mode)...[/dim]")
+        console.print("  [dim]\\[uv] creating venv (pip-only mode)...[/dim]")
         venv = project_dir / ".venv"
         r = subprocess.run(
             ["uv", "venv", str(venv), "--python", "3.13", "--clear"],
@@ -541,7 +541,8 @@ def install_wheel(project_dir: Path, wheel: Path, extra_deps: list[str]) -> None
     console.print(f"  [dim]\\[uv] installing karva + pytest into {venv.relative_to(ROOT)}...[/dim]")
     # Always install pytest so test files that `import pytest` can be imported,
     # even when the project declares it only in a hatch env (not a standard dep group).
-    packages = [str(wheel), "pytest", *extra_deps]
+    # Resolve to absolute path — uv pip install runs with cwd=project_dir.
+    packages = [str(wheel.resolve()), "pytest", *extra_deps]
     result = subprocess.run(
         ["uv", "pip", "install", "--python", str(venv), *packages],
         cwd=project_dir,
@@ -652,7 +653,7 @@ def main(
         typer.Option("--setup-only", help="Clone and install only; skip running karva."),
     ] = False,
     project: Annotated[
-        Optional[str],
+        str | None,
         typer.Option("--project", metavar="NAME", help="Run only the named project."),
     ] = None,
     verbose: Annotated[
@@ -660,18 +661,18 @@ def main(
         typer.Option("--verbose", "-v", count=True, help="Stream full karva output (-v or -vvvv)."),
     ] = 0,
     wheel: Annotated[
-        Optional[Path],
+        Path | None,
         typer.Option("--wheel", help="Pre-built wheel to install (skips maturin build)."),
     ] = None,
     baseline_wheel: Annotated[
-        Optional[Path],
+        Path | None,
         typer.Option(
             "--baseline-wheel",
             help="Baseline wheel to diff against; runs all projects twice.",
         ),
     ] = None,
     markdown_output: Annotated[
-        Optional[Path],
+        Path | None,
         typer.Option("--markdown-output", help="Write PR-comment markdown to this path."),
     ] = None,
 ) -> None:
