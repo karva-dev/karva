@@ -104,6 +104,19 @@ Or simply, with just, run:
 just test
 ```
 
+### Primer (real-world compatibility testing)
+
+The primer builds a fresh karva wheel, clones a curated list of popular Python
+projects, installs their dependencies, and runs karva against each one to
+validate end-to-end compatibility.
+
+```bash
+uv run --script scripts/primer.py            # build wheel + run all projects
+uv run --script scripts/primer.py -v         # stream full karva output
+uv run --script scripts/primer.py -p httpx   # run a single project
+uv run --script scripts/primer.py --help     # show all options
+```
+
 ### Documentation
 
 We use zensical to build the documentation.

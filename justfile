@@ -2,7 +2,7 @@
 
 test *args:
     rm -rf target/wheels
-    maturin build
+    uvx maturin build
     @if command -v cargo-nextest > /dev/null 2>&1; then \
         cargo nextest run {{args}}; \
     else \
@@ -28,7 +28,7 @@ coverage *args:
     export LLVM_COV LLVM_PROFDATA
 
     rm -rf target/wheels
-    maturin build
+    uvx maturin build
     find target/llvm-cov-target -name '*.profraw' -delete 2>/dev/null || true
     RUSTFLAGS="-C instrument-coverage -C llvm-args=--instrprof-atomic-counter-update-all" cargo build --target-dir target/llvm-cov-target -p karva_worker
     __KARVA_COVERAGE=1 cargo llvm-cov nextest --no-report {{args}}
