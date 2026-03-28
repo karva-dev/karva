@@ -343,7 +343,9 @@ def show_diff_table(diffs: list[ProjectDiff]) -> None:
     count_changes = len(diffs) - regressions - fixes
     parts: list[str] = []
     if regressions:
-        parts.append(f"[red]{regressions} regression{'s' if regressions > 1 else ''}[/red]")
+        parts.append(
+            f"[red]{regressions} regression{'s' if regressions > 1 else ''}[/red]"
+        )
     if fixes:
         parts.append(f"[green]{fixes} fix{'es' if fixes > 1 else ''}[/green]")
     if count_changes:
@@ -371,7 +373,9 @@ def write_markdown_comment(
         "|---------|--------|--------|--------|---------|-----------|",
     ]
     for r in current:
-        icon = "✅" if _is_ok(r) else ("❌" if r.status in ("FAIL", "SETUP_FAIL") else "⏱️")
+        icon = (
+            "✅" if _is_ok(r) else ("❌" if r.status in ("FAIL", "SETUP_FAIL") else "⏱️")
+        )
         passed = str(r.test_stats.passed) if r.test_stats else ""
         failed = str(r.test_stats.failed) if r.test_stats else ""
         skipped = str(r.test_stats.skipped) if r.test_stats else ""
@@ -395,13 +399,17 @@ def write_markdown_comment(
                     f"{len(regressions)} regression{'s' if len(regressions) > 1 else ''}"
                 )
             if fixes:
-                heading_parts.append(f"{len(fixes)} fix{'es' if len(fixes) > 1 else ''}")
+                heading_parts.append(
+                    f"{len(fixes)} fix{'es' if len(fixes) > 1 else ''}"
+                )
             if count_changes:
                 heading_parts.append(
                     f"{len(count_changes)} count change{'s' if len(count_changes) > 1 else ''}"
                 )
             icon = "⚠️" if regressions else "ℹ️"
-            lines.append(f"### {icon} Changes from baseline: {', '.join(heading_parts)}\n")
+            lines.append(
+                f"### {icon} Changes from baseline: {', '.join(heading_parts)}\n"
+            )
             lines += [
                 "| Project | Baseline | Current | Change |",
                 "|---------|---------|---------|--------|",
@@ -454,7 +462,14 @@ def _clone(project: Project, project_dir: Path) -> None:
     project_dir.parent.mkdir(parents=True, exist_ok=True)
     # --filter=blob:none creates a partial clone (no blob data until checkout).
     subprocess.run(
-        ["git", "clone", "--filter=blob:none", "--no-checkout", project.repo, str(project_dir)],
+        [
+            "git",
+            "clone",
+            "--filter=blob:none",
+            "--no-checkout",
+            project.repo,
+            str(project_dir),
+        ],
         check=True,
         capture_output=True,
     )
@@ -529,16 +544,22 @@ def uv_sync(project: Project, project_dir: Path) -> None:
     result = subprocess.run(cmd, cwd=project_dir, capture_output=True, env=clean_env())
     if result.returncode != 0 and has_lock:
         # Lockfile may be stale at this commit; retry without --frozen.
-        console.print("  [dim]\\[uv] frozen sync failed, retrying without --frozen...[/dim]")
+        console.print(
+            "  [dim]\\[uv] frozen sync failed, retrying without --frozen...[/dim]"
+        )
         cmd.remove("--frozen")
-        result = subprocess.run(cmd, cwd=project_dir, capture_output=True, env=clean_env())
+        result = subprocess.run(
+            cmd, cwd=project_dir, capture_output=True, env=clean_env()
+        )
     if result.returncode != 0:
         raise RuntimeError(f"uv sync failed:\n{result.stderr.decode()}")
 
 
 def install_wheel(project_dir: Path, wheel: Path, extra_deps: list[str]) -> None:
     venv = project_dir / ".venv"
-    console.print(f"  [dim]\\[uv] installing karva + pytest into {venv.relative_to(ROOT)}...[/dim]")
+    console.print(
+        f"  [dim]\\[uv] installing karva + pytest into {venv.relative_to(ROOT)}...[/dim]"
+    )
     # Always install pytest so test files that `import pytest` can be imported,
     # even when the project declares it only in a hatch env (not a standard dep group).
     # Resolve to absolute path — uv pip install runs with cwd=project_dir.
@@ -650,7 +671,9 @@ app = typer.Typer(
 def main(
     setup_only: Annotated[
         bool,
-        typer.Option("--setup-only", help="Clone and install only; skip running karva."),
+        typer.Option(
+            "--setup-only", help="Clone and install only; skip running karva."
+        ),
     ] = False,
     project: Annotated[
         str | None,
@@ -658,11 +681,18 @@ def main(
     ] = None,
     verbose: Annotated[
         int,
-        typer.Option("--verbose", "-v", count=True, help="Stream full karva output (-v or -vvvv)."),
+        typer.Option(
+            "--verbose",
+            "-v",
+            count=True,
+            help="Stream full karva output (-v or -vvvv).",
+        ),
     ] = 0,
     wheel: Annotated[
         Path | None,
-        typer.Option("--wheel", help="Pre-built wheel to install (skips maturin build)."),
+        typer.Option(
+            "--wheel", help="Pre-built wheel to install (skips maturin build)."
+        ),
     ] = None,
     baseline_wheel: Annotated[
         Path | None,
@@ -673,7 +703,9 @@ def main(
     ] = None,
     markdown_output: Annotated[
         Path | None,
-        typer.Option("--markdown-output", help="Write PR-comment markdown to this path."),
+        typer.Option(
+            "--markdown-output", help="Write PR-comment markdown to this path."
+        ),
     ] = None,
 ) -> None:
     verbosity = Verbosity.from_int(verbose)
@@ -689,7 +721,8 @@ def main(
         if not projects_to_run:
             names = [p.name for p in PROJECTS]
             raise typer.BadParameter(
-                f"Unknown project {project!r}. Available: {names}", param_hint="'--project'"
+                f"Unknown project {project!r}. Available: {names}",
+                param_hint="'--project'",
             )
 
     PRIMER_DIR.mkdir(parents=True, exist_ok=True)
@@ -700,13 +733,17 @@ def main(
     if baseline_wheel is not None:
         console.rule("[dim]Baseline pass[/dim]")
         baseline_results = [
-            run_project(proj, baseline_wheel, setup_only=False, verbosity=verbosity, silent=True)
+            run_project(
+                proj, baseline_wheel, setup_only=False, verbosity=verbosity, silent=True
+            )
             for proj in projects_to_run
         ]
 
     # Main pass — skip clone/sync for projects that set up cleanly in the
     # baseline pass (they're already cloned and synced; we just swap the wheel).
-    baseline_map = {r.project: r for r in baseline_results} if baseline_results is not None else {}
+    baseline_map = (
+        {r.project: r for r in baseline_results} if baseline_results is not None else {}
+    )
     results: list[ProjectResult] = []
     for proj in projects_to_run:
         baseline_r = baseline_map.get(proj.name)
@@ -766,7 +803,12 @@ def main(
     if markdown_output is not None:
         write_markdown_comment(results, diffs, markdown_output)
 
-    if any(r.status in ("FAIL", "TIMEOUT", "SETUP_FAIL") for r in results):
+    if diffs is not None:
+        # In diff mode: only fail on regressions (a project that was OK is now broken).
+        # Pre-existing failures and minor count fluctuations are not actionable here.
+        if any(d.is_regression for d in diffs):
+            raise typer.Exit(1)
+    elif any(r.status in ("FAIL", "TIMEOUT", "SETUP_FAIL") for r in results):
         raise typer.Exit(1)
 
 
