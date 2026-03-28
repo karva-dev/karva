@@ -406,7 +406,7 @@ def write_markdown_comment(
                 heading_parts.append(
                     f"{len(count_changes)} count change{'s' if len(count_changes) > 1 else ''}"
                 )
-            icon = "⚠️" if regressions else "ℹ️"
+            icon = "⚠️" if regressions else "💡"
             lines.append(
                 f"### {icon} Changes from baseline: {', '.join(heading_parts)}\n"
             )
@@ -446,6 +446,7 @@ def build_wheel(verbosity: Verbosity) -> Path:
         ["uvx", "maturin", "build"],
         cwd=ROOT,
         capture_output=capture,
+        check=False,
     )
     if result.returncode != 0:
         if capture:
@@ -493,6 +494,7 @@ def clone_or_update(project: Project, project_dir: Path) -> None:
         ["git", "checkout", project.commit],
         cwd=project_dir,
         capture_output=True,
+        check=False,
     )
     if result.returncode != 0:
         # Checkout failed — the commit may be absent from a stale partial clone.
@@ -519,6 +521,7 @@ def uv_sync(project: Project, project_dir: Path) -> None:
             cwd=project_dir,
             capture_output=True,
             env=clean_env(),
+            check=False,
         )
         if r.returncode != 0:
             raise RuntimeError(f"uv venv failed:\n{r.stderr.decode()}")
@@ -527,6 +530,7 @@ def uv_sync(project: Project, project_dir: Path) -> None:
             cwd=project_dir,
             capture_output=True,
             env=clean_env(),
+            check=False,
         )
         if r.returncode != 0:
             raise RuntimeError(f"uv pip install failed:\n{r.stderr.decode()}")
@@ -541,7 +545,9 @@ def uv_sync(project: Project, project_dir: Path) -> None:
     if has_lock:
         cmd.append("--frozen")
     console.print(f"  [dim]\\[uv] syncing{'  (frozen)' if has_lock else ''}...[/dim]")
-    result = subprocess.run(cmd, cwd=project_dir, capture_output=True, env=clean_env())
+    result = subprocess.run(
+        cmd, cwd=project_dir, capture_output=True, env=clean_env(), check=False
+    )
     if result.returncode != 0 and has_lock:
         # Lockfile may be stale at this commit; retry without --frozen.
         console.print(
@@ -549,7 +555,7 @@ def uv_sync(project: Project, project_dir: Path) -> None:
         )
         cmd.remove("--frozen")
         result = subprocess.run(
-            cmd, cwd=project_dir, capture_output=True, env=clean_env()
+            cmd, cwd=project_dir, capture_output=True, env=clean_env(), check=False
         )
     if result.returncode != 0:
         raise RuntimeError(f"uv sync failed:\n{result.stderr.decode()}")
@@ -569,6 +575,7 @@ def install_wheel(project_dir: Path, wheel: Path, extra_deps: list[str]) -> None
         cwd=project_dir,
         capture_output=True,
         env=clean_env(),
+        check=False,
     )
     if result.returncode != 0:
         raise RuntimeError(f"wheel install failed:\n{result.stderr.decode()}")
@@ -592,6 +599,7 @@ def run_karva(project: Project, project_dir: Path, verbosity: Verbosity) -> Karv
             timeout=KARVA_TIMEOUT,
             capture_output=True,
             text=True,
+            check=False,
         )
         if not verbosity.is_normal():
             if result.stdout:
