@@ -44,7 +44,7 @@ ROOT = Path(__file__).parent.parent
 PRIMER_DIR = ROOT / "target" / "primer_projects"
 
 # Per-project karva run timeout in seconds.
-KARVA_TIMEOUT = 120
+KARVA_TIMEOUT = 240
 
 # Number of times karva retries a failed test to reduce flakiness noise.
 KARVA_RETRY = 10
