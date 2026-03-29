@@ -2,7 +2,7 @@ pub use mock_env::MockEnv;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyIterator};
 
-use crate::extensions::fixtures::NormalizedFixture;
+use crate::extensions::fixtures::{FixtureScope, NormalizedFixture};
 
 mod caplog;
 mod capsys;
@@ -35,17 +35,19 @@ pub fn get_builtin_fixture(py: Python<'_>, fixture_name: &str) -> Option<Normali
         }
         _ if temp_path::is_tmp_path_factory_fixture_name(fixture_name) => {
             if let Some(factory) = temp_path::create_tmp_path_factory_fixture(py) {
-                return Some(NormalizedFixture::built_in(
+                return Some(NormalizedFixture::built_in_with_scope(
                     fixture_name.to_string(),
                     factory,
+                    FixtureScope::Session,
                 ));
             }
         }
         _ if temp_path::is_tmpdir_factory_fixture_name(fixture_name) => {
             if let Some(factory) = temp_path::create_tmpdir_factory_fixture(py) {
-                return Some(NormalizedFixture::built_in(
+                return Some(NormalizedFixture::built_in_with_scope(
                     fixture_name.to_string(),
                     factory,
+                    FixtureScope::Session,
                 ));
             }
         }
