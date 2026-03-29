@@ -111,12 +111,6 @@ PROJECTS: list[Project] = [
         test_paths=["tests/"],
     ),
     Project(
-        name="aiohttp",
-        repo="https://github.com/aio-libs/aiohttp",
-        commit="5ed2e129ce41214adb76976e7ec43b8e639846ef",
-        test_paths=["tests/"],
-    ),
-    Project(
         name="requests",
         repo="https://github.com/psf/requests",
         commit="bc04dfd6dad4cb02cd92f5daa81eb562d280a761",
@@ -168,12 +162,6 @@ PROJECTS: list[Project] = [
         name="prompt-toolkit",
         repo="https://github.com/prompt-toolkit/python-prompt-toolkit",
         commit="940af53fa443073d9fdca26d5da6cfe6780f6ac9",
-        test_paths=["tests/"],
-    ),
-    Project(
-        name="pydantic",
-        repo="https://github.com/pydantic/pydantic",
-        commit="ac249284616890d91c746dc890fb0f6407df2843",
         test_paths=["tests/"],
     ),
     Project(
@@ -229,6 +217,7 @@ PROJECTS: list[Project] = [
         repo="https://github.com/pypa/virtualenv",
         commit="1bbeb9045b7075ba55684f9f601f64d8844fbf12",
         test_paths=["tests/"],
+        pip_only=True,
     ),
     Project(
         name="flit",
@@ -247,6 +236,7 @@ PROJECTS: list[Project] = [
         repo="https://github.com/tox-dev/tox",
         commit="0eda3a2840460521e8a0aeb45199fa890b7bba20",
         test_paths=["tests/"],
+        pip_only=True,
     ),
     Project(
         name="cibuildwheel",
@@ -279,6 +269,7 @@ PROJECTS: list[Project] = [
         repo="https://github.com/PyCQA/pyflakes",
         commit="59ec4593efd4c69ce00fdb13c40fcf5f3212ab10",
         test_paths=["pyflakes/test/"],
+        pip_only=True,
     ),
     Project(
         name="isort",
@@ -291,12 +282,14 @@ PROJECTS: list[Project] = [
         repo="https://github.com/pylint-dev/pylint",
         commit="e039e7ba1c1ac1eed30e9067f434f30ac58189c8",
         test_paths=["tests/"],
+        pip_only=True,
     ),
     Project(
         name="anyio",
         repo="https://github.com/agronholm/anyio",
         commit="96f0cf3cb9cd40c04b8effb2c4e14f67ff49a62c",
         test_paths=["tests/"],
+        pip_only=True,
     ),
     Project(
         name="jinja",
@@ -309,6 +302,7 @@ PROJECTS: list[Project] = [
         repo="https://github.com/marshmallow-code/marshmallow",
         commit="5d78e243f04d9cc07149e6ecdb9b987718ad480b",
         test_paths=["tests/"],
+        pip_only=True,
     ),
     Project(
         name="pyyaml",
@@ -333,6 +327,7 @@ PROJECTS: list[Project] = [
         repo="https://github.com/sqlalchemy/sqlalchemy",
         commit="d3a8d4950e7f1c1cfcabc819e4b85f0bba61e26d",
         test_paths=["test/"],
+        pip_only=True,
     ),
     Project(
         name="peewee",
@@ -418,6 +413,7 @@ PROJECTS: list[Project] = [
         repo="https://github.com/joke2k/faker",
         commit="db42f6477ea15d754889a9e030b3c3d29872d947",
         test_paths=["tests/"],
+        pip_only=True,
     ),
     Project(
         name="tenacity",
@@ -436,6 +432,7 @@ PROJECTS: list[Project] = [
         repo="https://github.com/tqdm/tqdm",
         commit="75bdb6c379bcfc6c592b6342dc791a092b5d6ae0",
         test_paths=["tests/"],
+        pip_only=True,
     ),
     Project(
         name="tabulate",
@@ -465,12 +462,6 @@ PROJECTS: list[Project] = [
         name="click-extra",
         repo="https://github.com/kdeldycke/click-extra",
         commit="98e204a6d5391e23f15b247668bea58340be5e84",
-        test_paths=["tests/"],
-    ),
-    Project(
-        name="pendulum",
-        repo="https://github.com/sdispater/pendulum",
-        commit="ae4c4052dc1aaf2614aa68d7ab8a3ca4396ec6aa",
         test_paths=["tests/"],
     ),
 ]
