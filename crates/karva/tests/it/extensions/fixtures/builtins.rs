@@ -5,9 +5,7 @@ use rstest::rstest;
 use crate::common::TestContext;
 
 #[rstest]
-fn test_temp_directory_fixture(
-    #[values("tmp_path", "temp_path", "temp_dir", "tmpdir")] fixture_name: &str,
-) {
+fn test_temp_directory_fixture(#[values("tmp_path", "temp_path", "temp_dir")] fixture_name: &str) {
     let test_context = TestContext::with_file(
         "test.py",
         &format!(
@@ -34,6 +32,32 @@ fn test_temp_directory_fixture(
         ----- stderr -----
         ");
     }
+}
+
+#[test]
+fn test_tmpdir_fixture_is_py_path_local() {
+    let test_context = TestContext::with_file(
+        "test.py",
+        r"
+def test_tmpdir(tmpdir):
+    # tmpdir must be a py.path.local object (has .join() and .strpath)
+    assert hasattr(tmpdir, 'join'), 'tmpdir must be py.path.local, not pathlib.Path'
+    f = tmpdir.join('hello.txt')
+    f.write('world')
+    assert f.read() == 'world'
+    assert tmpdir.strpath
+        ",
+    );
+
+    assert_cmd_snapshot!(test_context.command().arg("-q"), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    ");
 }
 
 #[test]
