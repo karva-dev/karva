@@ -10,7 +10,7 @@ pub fn is_mock_env_fixture_name(fixture_name: &str) -> bool {
 }
 
 pub fn create_mock_env_fixture(py: Python<'_>) -> Option<(Py<PyAny>, Py<PyAny>)> {
-    let mock = Py::new(py, MockEnv::new(py)).ok()?;
+    let mock = Py::new(py, MockEnv::new()).ok()?;
     let undo_method = mock.getattr(py, "undo").ok()?;
 
     // Return both the mock instance and its undo method as the finalizer
@@ -22,14 +22,18 @@ type SetItemEntry = (Py<PyAny>, Py<PyAny>, Py<PyAny>);
 type SetAttr = Arc<Mutex<Vec<SetAttrEntry>>>;
 type SetItem = Arc<Mutex<Vec<SetItemEntry>>>;
 
-/// A sentinel object stored in place of an original attribute/item value to
-/// indicate that the attribute/item did not exist before patching. Using a
-/// dedicated sentinel avoids the ambiguity of `None`, which is a legitimate
-/// Python value that an attribute or dict entry might actually hold.
-fn make_missing_sentinel(py: Python<'_>) -> Py<PyAny> {
-    py.eval(pyo3::ffi::c_str!("object()"), None, None)
-        .expect("object() is always available")
-        .unbind()
+/// Sentinel type used to represent "value was absent before patching". Using a
+/// dedicated Rust-backed type avoids the ambiguity of `None`, which is a
+/// legitimate Python value an attribute or dict entry might actually hold.
+#[pyclass]
+struct Missing;
+
+fn make_missing(py: Python<'_>) -> PyResult<Py<PyAny>> {
+    Ok(Py::new(py, Missing)?.into_any())
+}
+
+fn is_missing(value: &Bound<'_, PyAny>) -> bool {
+    value.is_instance_of::<Missing>()
 }
 
 /// Helper to conveniently monkeypatch attributes/items/environment variables/syspath.
@@ -39,8 +43,6 @@ pub struct MockEnv {
     setitem: SetItem,
     cwd: Arc<Mutex<Option<String>>>,
     savesyspath: Arc<Mutex<Option<Vec<String>>>>,
-    /// Sentinel used to represent "value was absent before patching".
-    missing: Py<PyAny>,
 }
 
 impl MockEnv {
@@ -72,7 +74,7 @@ impl MockEnv {
     fn undo_setattr(&self, py: Python<'_>) -> PyResult<()> {
         let mut setattr_list = self.lock_setattr()?;
         for (obj, name, value) in setattr_list.drain(..).rev() {
-            if value.bind(py).is(self.missing.bind(py)) {
+            if is_missing(value.bind(py)) {
                 let _ = obj.bind(py).delattr(&name);
             } else {
                 obj.bind(py).setattr(&name, value)?;
@@ -87,7 +89,7 @@ impl MockEnv {
         for (dictionary, key, value) in setitem_list.drain(..).rev() {
             let bound_dict = dictionary.bind(py);
 
-            if value.bind(py).is(self.missing.bind(py)) {
+            if is_missing(value.bind(py)) {
                 let _ = bound_dict.del_item(&key);
             } else {
                 bound_dict.set_item(&key, value)?;
@@ -127,13 +129,12 @@ impl MockEnv {
 #[pymethods]
 impl MockEnv {
     #[new]
-    fn new(py: Python<'_>) -> Self {
+    fn new() -> Self {
         Self {
             setattr: Arc::new(Mutex::new(Vec::new())),
             setitem: Arc::new(Mutex::new(Vec::new())),
             cwd: Arc::new(Mutex::new(None)),
             savesyspath: Arc::new(Mutex::new(None)),
-            missing: make_missing_sentinel(py),
         }
     }
 
@@ -146,9 +147,9 @@ impl MockEnv {
     /// Context manager that returns a new Mock object which undoes any patching
     /// done inside the with block upon exit.
     #[classmethod]
-    fn context(_cls: &Bound<'_, PyType>, py: Python<'_>) -> MockEnvContext {
+    fn context(_cls: &Bound<'_, PyType>) -> MockEnvContext {
         MockEnvContext {
-            mock_env: Self::new(py),
+            mock_env: Self::new(),
         }
     }
 
@@ -194,7 +195,7 @@ impl MockEnv {
                     "{actual_target:?} has no attribute {actual_name:?}"
                 )));
             }
-            self.missing.clone_ref(py)
+            make_missing(py)?
         };
 
         // Handle class descriptors
@@ -202,12 +203,15 @@ impl MockEnv {
             .bind(py)
             .is_instance_of::<pyo3::types::PyType>()
         {
-            actual_target
+            match actual_target
                 .bind(py)
                 .getattr("__dict__")?
                 .get_item(&actual_name)
                 .ok()
-                .map_or_else(|| self.missing.clone_ref(py), std::convert::Into::into)
+            {
+                Some(v) => v.into(),
+                None => make_missing(py)?,
+            }
         } else {
             oldval
         };
@@ -270,17 +274,20 @@ impl MockEnv {
                 .bind(py)
                 .is_instance_of::<pyo3::types::PyType>()
             {
-                actual_target
+                match actual_target
                     .bind(py)
                     .getattr("__dict__")?
                     .get_item(&actual_name)
                     .ok()
-                    .map_or_else(|| self.missing.clone_ref(py), std::convert::Into::into)
+                {
+                    Some(v) => v.into(),
+                    None => make_missing(py)?,
+                }
             } else {
                 val.into()
             }
         } else {
-            self.missing.clone_ref(py)
+            make_missing(py)?
         };
 
         // Store for undo
@@ -305,10 +312,10 @@ impl MockEnv {
         let bound_dic = dic.bind(py);
 
         // Get old value if it exists
-        let oldval = bound_dic
-            .get_item(&name)
-            .ok()
-            .map_or_else(|| self.missing.clone_ref(py), std::convert::Into::into);
+        let oldval = match bound_dic.get_item(&name).ok() {
+            Some(v) => v.into(),
+            None => make_missing(py)?,
+        };
 
         // Store for undo
         self.lock_setitem()?
@@ -378,9 +385,10 @@ impl MockEnv {
         let name_key = name.into_pyobject(py)?.into_any().unbind();
         let value_obj = final_value.into_pyobject(py)?.into_any().unbind();
 
-        let oldval = environ
-            .get_item(&name_key)
-            .map_or_else(|_| self.missing.clone_ref(py), Into::into);
+        let oldval = match environ.get_item(&name_key).ok() {
+            Some(v) => v.into(),
+            None => make_missing(py)?,
+        };
 
         self.lock_setitem()?
             .push((environ.clone().unbind(), name_key.clone_ref(py), oldval));
@@ -491,7 +499,7 @@ impl MockEnvContext {
     #[expect(clippy::needless_pass_by_value)]
     fn __enter__(slf: PyRef<'_, Self>) -> PyResult<Py<MockEnv>> {
         let py = slf.py();
-        Py::new(py, MockEnv::new(py))
+        Py::new(py, MockEnv::new())
     }
 
     fn __exit__(
