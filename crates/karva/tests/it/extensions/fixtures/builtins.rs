@@ -1004,6 +1004,34 @@ def test_capsys_stdout(capsys):
 }
 
 #[test]
+fn test_recwarn_captures_warning() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+import warnings
+
+def test_recwarn_captures(recwarn):
+    warnings.warn('deprecated', DeprecationWarning)
+    assert len(recwarn) == 1
+    assert recwarn.list[0].category is DeprecationWarning
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_recwarn_captures(recwarn=<WarningsChecker object>)
+
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
 fn test_caplog_text() {
     let context = TestContext::with_file(
         "test.py",
@@ -1049,6 +1077,38 @@ def test_capsys_stderr(capsys):
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_capsys_stderr(capsys=<CapsysFixture object>)
+
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_recwarn_pop() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+import warnings
+
+def test_recwarn_pop(recwarn):
+    warnings.warn('deprecated', DeprecationWarning)
+    warnings.warn('runtime issue', RuntimeWarning)
+    assert len(recwarn) == 2
+    w = recwarn.pop(DeprecationWarning)
+    assert issubclass(w.category, DeprecationWarning)
+    assert 'deprecated' in str(w.message)
+    assert len(recwarn) == 1
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_recwarn_pop(recwarn=<WarningsChecker object>)
 
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
@@ -1105,6 +1165,36 @@ def test_capsys_reset(capsys):
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_capsys_reset(capsys=<CapsysFixture object>)
+
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_recwarn_clear() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+import warnings
+
+def test_recwarn_clear(recwarn):
+    warnings.warn('first', UserWarning)
+    warnings.warn('second', UserWarning)
+    assert len(recwarn) == 2
+    recwarn.clear()
+    assert len(recwarn) == 0
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_recwarn_clear(recwarn=<WarningsChecker object>)
 
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
@@ -1204,6 +1294,37 @@ def test_capsys_isinstance(capsys):
 }
 
 #[test]
+fn test_recwarn_pop_no_match_raises() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+import warnings
+
+def test_recwarn_pop_no_match(recwarn):
+    warnings.warn('something', UserWarning)
+    try:
+        recwarn.pop(DeprecationWarning)
+        assert False, 'Expected AssertionError'
+    except AssertionError as e:
+        assert 'DeprecationWarning' in str(e)
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_recwarn_pop_no_match(recwarn=<WarningsChecker object>)
+
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
 fn test_caplog_clear() {
     let context = TestContext::with_file(
         "test.py",
@@ -1223,6 +1344,36 @@ def test_caplog_clear(caplog):
     success: true
     exit_code: 0
     ----- stdout -----
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_recwarn_getitem() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+import warnings
+
+def test_recwarn_getitem(recwarn):
+    warnings.warn('first', UserWarning)
+    warnings.warn('second', DeprecationWarning)
+    assert recwarn[0].category is UserWarning
+    assert recwarn[1].category is DeprecationWarning
+    assert recwarn[-1].category is DeprecationWarning
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_recwarn_getitem(recwarn=<WarningsChecker object>)
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -1251,6 +1402,35 @@ def test_caplog_set_level(caplog):
     success: true
     exit_code: 0
     ----- stdout -----
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_recwarn_iter() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+import warnings
+
+def test_recwarn_iter(recwarn):
+    warnings.warn('first', UserWarning)
+    warnings.warn('second', DeprecationWarning)
+    categories = [w.category for w in recwarn]
+    assert categories == [UserWarning, DeprecationWarning]
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_recwarn_iter(recwarn=<WarningsChecker object>)
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
