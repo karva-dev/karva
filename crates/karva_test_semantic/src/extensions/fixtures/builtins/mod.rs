@@ -66,7 +66,11 @@ def _builtin_finalizer(value, finalizer):
 
     let locals = PyDict::new(py);
 
-    py.run(&std::ffi::CString::new(code).unwrap(), None, Some(&locals))?;
+    py.run(
+        &std::ffi::CString::new(code).expect("fixture code contains null byte"),
+        None,
+        Some(&locals),
+    )?;
 
     let generator_function = locals
         .get_item("_builtin_finalizer")?

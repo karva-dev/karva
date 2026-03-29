@@ -1171,6 +1171,38 @@ def test_capsys_disabled(capsys):
     ");
 }
 
+/// Regression test: `CaptureResult` namedtuple class must be created once so that consecutive
+/// instances pass `isinstance` checks against each other.
+#[test]
+fn test_capsys_readouterr_isinstance() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+def test_capsys_isinstance(capsys):
+    print('first')
+    first = capsys.readouterr()
+    print('second')
+    second = capsys.readouterr()
+    assert isinstance(second, type(first)), (
+        f'Expected same CaptureResult type, got {type(first)} vs {type(second)}'
+    )
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_capsys_isinstance(capsys=<CapsysFixture object>)
+
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
 #[test]
 fn test_caplog_clear() {
     let context = TestContext::with_file(

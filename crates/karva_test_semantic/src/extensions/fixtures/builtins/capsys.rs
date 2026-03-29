@@ -24,6 +24,9 @@ pub struct CapsysFixture {
     capture_stdout: Py<PyAny>,
     /// The `io.StringIO` buffer currently installed as `sys.stderr`.
     capture_stderr: Py<PyAny>,
+    /// The `CaptureResult` namedtuple class, created once and reused across `readouterr()` calls
+    /// so that consecutive instances satisfy `isinstance` checks against each other.
+    capture_result_class: Py<PyAny>,
 }
 
 impl CapsysFixture {
@@ -40,11 +43,17 @@ impl CapsysFixture {
         sys.setattr("stdout", &capture_stdout)?;
         sys.setattr("stderr", &capture_stderr)?;
 
+        let capture_result_class = py
+            .import("collections")?
+            .call_method1("namedtuple", ("CaptureResult", ["out", "err"]))?
+            .unbind();
+
         Ok(Self {
             real_stdout,
             real_stderr,
             capture_stdout,
             capture_stderr,
+            capture_result_class,
         })
     }
 
@@ -86,11 +95,11 @@ impl CapsysFixture {
         self.capture_stdout = new_stdout;
         self.capture_stderr = new_stderr;
 
-        // Build a CaptureResult namedtuple.
-        let collections = py.import("collections")?;
-        let capture_result_class =
-            collections.call_method1("namedtuple", ("CaptureResult", ["out", "err"]))?;
-        Ok(capture_result_class.call1((out, err))?.unbind())
+        Ok(self
+            .capture_result_class
+            .bind(py)
+            .call1((out, err))?
+            .unbind())
     }
 
     /// Return a context manager that temporarily disables capture (restores real stdout/stderr).
