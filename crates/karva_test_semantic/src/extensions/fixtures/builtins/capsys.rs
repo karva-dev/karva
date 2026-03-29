@@ -60,6 +60,8 @@ pub struct CapsysFixture {
     /// The `CaptureResult` namedtuple class, created once and reused across `readouterr()` calls
     /// so that consecutive instances satisfy `isinstance` checks against each other.
     capture_result_class: Py<PyAny>,
+    /// The `logging.disable` level saved at construction time, restored at teardown.
+    saved_disable_level: Option<i32>,
 }
 
 impl CapsysFixture {
@@ -81,12 +83,23 @@ impl CapsysFixture {
             .call_method1("namedtuple", ("CaptureResult", ["out", "err"]))?
             .unbind();
 
+        let logging = py.import("logging")?;
+        let saved_disable_level = logging
+            .getattr("root")?
+            .getattr("manager")?
+            .getattr("disable")
+            .and_then(|v| v.extract::<i32>())
+            .ok();
+        let notset = logging.getattr("NOTSET")?;
+        logging.call_method1("disable", (notset,))?;
+
         Ok(Self {
             real_stdout,
             real_stderr,
             capture_stdout,
             capture_stderr,
             capture_result_class,
+            saved_disable_level,
         })
     }
 
@@ -150,6 +163,11 @@ impl CapsysFixture {
         let sys = py.import("sys")?;
         sys.setattr("stdout", &self.real_stdout)?;
         sys.setattr("stderr", &self.real_stderr)?;
+
+        let logging = py.import("logging")?;
+        let restore_level = self.saved_disable_level.unwrap_or(0);
+        logging.call_method1("disable", (restore_level,))?;
+
         Ok(())
     }
 }
@@ -169,6 +187,8 @@ pub struct CapsysBinaryFixture {
     capture_stderr: Py<PyAny>,
     /// The `CaptureResult` namedtuple class, created once and reused across `readouterr()` calls.
     capture_result_class: Py<PyAny>,
+    /// The `logging.disable` level saved at construction time, restored at teardown.
+    saved_disable_level: Option<i32>,
 }
 
 impl CapsysBinaryFixture {
@@ -190,12 +210,23 @@ impl CapsysBinaryFixture {
             .call_method1("namedtuple", ("CaptureResult", ["out", "err"]))?
             .unbind();
 
+        let logging = py.import("logging")?;
+        let saved_disable_level = logging
+            .getattr("root")?
+            .getattr("manager")?
+            .getattr("disable")
+            .and_then(|v| v.extract::<i32>())
+            .ok();
+        let notset = logging.getattr("NOTSET")?;
+        logging.call_method1("disable", (notset,))?;
+
         Ok(Self {
             real_stdout,
             real_stderr,
             capture_stdout,
             capture_stderr,
             capture_result_class,
+            saved_disable_level,
         })
     }
 
@@ -262,6 +293,11 @@ impl CapsysBinaryFixture {
         let sys = py.import("sys")?;
         sys.setattr("stdout", &self.real_stdout)?;
         sys.setattr("stderr", &self.real_stderr)?;
+
+        let logging = py.import("logging")?;
+        let restore_level = self.saved_disable_level.unwrap_or(0);
+        logging.call_method1("disable", (restore_level,))?;
+
         Ok(())
     }
 }
