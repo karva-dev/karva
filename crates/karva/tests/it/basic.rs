@@ -1398,7 +1398,7 @@ def test_pass():
         Starting 1 test across 1 worker
     diagnostics:
 
-    error[failed-to-import-module] Failed to import python module `test`: No module named 'nonexistent_module_xyz'
+    warning[failed-to-import-module] Failed to import python module `test`: No module named 'nonexistent_module_xyz'
 
     ────────────
          Summary [TIME] 0 tests run: 0 passed, 0 skipped
@@ -1437,7 +1437,7 @@ def test_pass():
 
     diagnostics:
 
-    error[failed-to-import-module]: Failed to import python module `test_bad`: No module named 'nonexistent_module_xyz'
+    warning[failed-to-import-module]: Failed to import python module `test_bad`: No module named 'nonexistent_module_xyz'
 
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped

@@ -458,7 +458,7 @@ def test_1():
         Starting 1 test across 1 worker
     diagnostics:
 
-    error[failed-to-import-module]: Failed to import python module `test`: Expected boolean values for conditions
+    warning[failed-to-import-module]: Failed to import python module `test`: Expected boolean values for conditions
 
     ────────────
          Summary [TIME] 0 tests run: 0 passed, 0 skipped
@@ -487,7 +487,7 @@ def test_1():
         Starting 1 test across 1 worker
     diagnostics:
 
-    error[failed-to-import-module]: Failed to import python module `test`: Expected boolean values for conditions
+    warning[failed-to-import-module]: Failed to import python module `test`: Expected boolean values for conditions
 
     ────────────
          Summary [TIME] 0 tests run: 0 passed, 0 skipped

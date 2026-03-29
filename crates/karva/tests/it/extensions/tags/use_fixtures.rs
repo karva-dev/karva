@@ -491,7 +491,7 @@ def test_1():
         Starting 1 test across 1 worker
     diagnostics:
 
-    error[failed-to-import-module]: Failed to import python module `test`: Expected a string or a list of strings for fixture names
+    warning[failed-to-import-module]: Failed to import python module `test`: Expected a string or a list of strings for fixture names
 
     ────────────
          Summary [TIME] 0 tests run: 0 passed, 0 skipped

@@ -715,7 +715,7 @@ def test_invalid(x):
         Starting 1 test across 1 worker
     diagnostics:
 
-    error[failed-to-import-module]: Failed to import python module `test`: Expected a string or a list of strings for the arg_names, and a list of lists of objects for the arg_values
+    warning[failed-to-import-module]: Failed to import python module `test`: Expected a string or a list of strings for the arg_names, and a list of lists of objects for the arg_values
 
     ────────────
          Summary [TIME] 0 tests run: 0 passed, 0 skipped
