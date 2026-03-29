@@ -1,3 +1,4 @@
+use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
 use pyo3::types::PyBytes;
 
@@ -154,18 +155,63 @@ impl CapsysFixture {
     }
 }
 
+/// A write buffer that accepts both `str` and `bytes` writes, storing everything as raw bytes.
+///
+/// Used by [`CapsysBinaryFixture`] as the replacement for `sys.stdout`/`sys.stderr` so that
+/// code writing bytes directly (e.g. `sys.stdout.write(b"..."`) does not fail with a
+/// `StringIO`-style "string argument expected" error.
+#[pyclass]
+struct BinaryCaptureStream {
+    data: Vec<u8>,
+}
+
+#[pymethods]
+impl BinaryCaptureStream {
+    /// Write `str` or `bytes` to the buffer, returning the number of bytes written.
+    fn write(&mut self, obj: &Bound<'_, PyAny>) -> PyResult<usize> {
+        if let Ok(s) = obj.extract::<&str>() {
+            let bytes = s.as_bytes();
+            let len = bytes.len();
+            self.data.extend_from_slice(bytes);
+            Ok(len)
+        } else if let Ok(b) = obj.extract::<&[u8]>() {
+            let len = b.len();
+            self.data.extend_from_slice(b);
+            Ok(len)
+        } else {
+            Err(PyTypeError::new_err(
+                "write() argument must be str or bytes-like object",
+            ))
+        }
+    }
+
+    #[expect(clippy::unused_self)]
+    fn flush(&self) {}
+
+    fn getvalue<'py>(&self, py: Python<'py>) -> Bound<'py, PyBytes> {
+        PyBytes::new(py, &self.data)
+    }
+
+    #[getter]
+    #[expect(clippy::unused_self)]
+    fn encoding(&self) -> &'static str {
+        "utf-8"
+    }
+}
+
 /// Like [`CapsysFixture`] but `readouterr()` returns `(bytes, bytes)` instead of `(str, str)`.
 ///
-/// The captured strings are UTF-8 encoded before being returned.
+/// Installs a [`BinaryCaptureStream`] (rather than `io.StringIO`) so that code writing raw bytes
+/// to `sys.stdout`/`sys.stderr` does not fail.
 #[pyclass]
 pub struct CapsysBinaryFixture {
     /// The real `sys.stdout` saved at fixture creation time.
     real_stdout: Py<PyAny>,
     /// The real `sys.stderr` saved at fixture creation time.
     real_stderr: Py<PyAny>,
-    /// The `io.StringIO` buffer currently installed as `sys.stdout`.
+    /// The [`BinaryCaptureStream`] currently installed as `sys.stdout`.
     capture_stdout: Py<PyAny>,
-    /// The `io.StringIO` buffer currently installed as `sys.stderr`.
+    /// The [`BinaryCaptureStream`] currently installed as `sys.stderr`.
     capture_stderr: Py<PyAny>,
     /// The `CaptureResult` namedtuple class, created once and reused across `readouterr()` calls.
     capture_result_class: Py<PyAny>,
@@ -174,13 +220,12 @@ pub struct CapsysBinaryFixture {
 impl CapsysBinaryFixture {
     fn new(py: Python<'_>) -> PyResult<Self> {
         let sys = py.import("sys")?;
-        let io = py.import("io")?;
 
         let real_stdout = sys.getattr("stdout")?.unbind();
         let real_stderr = sys.getattr("stderr")?.unbind();
 
-        let capture_stdout = io.call_method0("StringIO")?.unbind();
-        let capture_stderr = io.call_method0("StringIO")?.unbind();
+        let capture_stdout = Self::fresh_binary_stream(py)?;
+        let capture_stderr = Self::fresh_binary_stream(py)?;
 
         sys.setattr("stdout", &capture_stdout)?;
         sys.setattr("stderr", &capture_stderr)?;
@@ -199,8 +244,8 @@ impl CapsysBinaryFixture {
         })
     }
 
-    fn fresh_stringio(py: Python<'_>) -> PyResult<Py<PyAny>> {
-        Ok(py.import("io")?.call_method0("StringIO")?.unbind())
+    fn fresh_binary_stream(py: Python<'_>) -> PyResult<Py<PyAny>> {
+        Ok(Py::new(py, BinaryCaptureStream { data: Vec::new() })?.into_any())
     }
 }
 
@@ -215,20 +260,19 @@ impl CapsysBinaryFixture {
     /// Return a `CaptureResult(out, err)` namedtuple with captured output as `bytes` and reset
     /// the buffers.
     fn readouterr(&mut self, py: Python<'_>) -> PyResult<Py<PyAny>> {
-        let out = self
+        let out_bytes = self
             .capture_stdout
             .bind(py)
             .call_method0("getvalue")?
-            .extract::<String>()?;
-        let err = self
+            .unbind();
+        let err_bytes = self
             .capture_stderr
             .bind(py)
             .call_method0("getvalue")?
-            .extract::<String>()?;
+            .unbind();
 
-        // Reset both buffers to fresh StringIO instances.
-        let new_stdout = Self::fresh_stringio(py)?;
-        let new_stderr = Self::fresh_stringio(py)?;
+        let new_stdout = Self::fresh_binary_stream(py)?;
+        let new_stderr = Self::fresh_binary_stream(py)?;
 
         let sys = py.import("sys")?;
         sys.setattr("stdout", &new_stdout)?;
@@ -236,9 +280,6 @@ impl CapsysBinaryFixture {
 
         self.capture_stdout = new_stdout;
         self.capture_stderr = new_stderr;
-
-        let out_bytes = PyBytes::new(py, out.as_bytes()).unbind();
-        let err_bytes = PyBytes::new(py, err.as_bytes()).unbind();
 
         Ok(self
             .capture_result_class

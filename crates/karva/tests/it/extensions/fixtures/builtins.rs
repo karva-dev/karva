@@ -1849,6 +1849,44 @@ def test_capsysbinary_stderr(capsysbinary):
 }
 
 #[test]
+fn test_capsysbinary_accepts_bytes_writes() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+import sys
+
+def test_write_bytes_to_stdout(capsysbinary):
+    sys.stdout.write(b'raw bytes')
+    captured = capsysbinary.readouterr()
+    assert captured.out == b'raw bytes'
+    assert captured.err == b''
+
+def test_write_bytes_to_stderr(capsysbinary):
+    sys.stderr.write(b'error bytes')
+    captured = capsysbinary.readouterr()
+    assert captured.out == b''
+    assert captured.err == b'error bytes'
+
+def test_mixed_str_and_bytes_writes(capsysbinary):
+    sys.stdout.write('hello ')
+    sys.stdout.write(b'world')
+    captured = capsysbinary.readouterr()
+    assert captured.out == b'hello world'
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-q"), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    ────────────
+         Summary [TIME] 3 tests run: 3 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
 fn test_capfdbinary_captures_output() {
     let context = TestContext::with_file(
         "test.py",
