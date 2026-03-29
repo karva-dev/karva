@@ -5,6 +5,7 @@ use pyo3::types::{PyDict, PyIterator};
 use crate::extensions::fixtures::NormalizedFixture;
 
 mod caplog;
+mod capsys;
 mod mock_env;
 mod temp_path;
 
@@ -32,6 +33,15 @@ pub fn get_builtin_fixture(py: Python<'_>, fixture_name: &str) -> Option<Normali
                 return Some(NormalizedFixture::built_in_with_finalizer(
                     fixture_name.to_string(),
                     caplog_instance,
+                    finalizer,
+                ));
+            }
+        }
+        _ if capsys::is_capsys_fixture_name(fixture_name) => {
+            if let Some((capsys_instance, finalizer)) = capsys::create_capsys_fixture(py) {
+                return Some(NormalizedFixture::built_in_with_finalizer(
+                    fixture_name.to_string(),
+                    capsys_instance,
                     finalizer,
                 ));
             }

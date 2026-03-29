@@ -977,6 +977,33 @@ def test_caplog_records(caplog):
 }
 
 #[test]
+fn test_capsys_captures_stdout() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+def test_capsys_stdout(capsys):
+    print('hello')
+    captured = capsys.readouterr()
+    assert captured.out == 'hello\n'
+    assert captured.err == ''
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_capsys_stdout(capsys=<CapsysFixture object>)
+
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
 fn test_caplog_text() {
     let context = TestContext::with_file(
         "test.py",
@@ -994,6 +1021,35 @@ def test_caplog_text(caplog):
     success: true
     exit_code: 0
     ----- stdout -----
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_capsys_captures_stderr() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+import sys
+
+def test_capsys_stderr(capsys):
+    print('error message', file=sys.stderr)
+    captured = capsys.readouterr()
+    assert captured.out == ''
+    assert captured.err == 'error message\n'
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_capsys_stderr(capsys=<CapsysFixture object>)
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -1028,6 +1084,36 @@ def test_caplog_messages(caplog):
 }
 
 #[test]
+fn test_capsys_readouterr_resets_buffer() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+def test_capsys_reset(capsys):
+    print('first')
+    captured = capsys.readouterr()
+    assert captured.out == 'first\n'
+
+    print('second')
+    captured = capsys.readouterr()
+    assert captured.out == 'second\n', f'Expected only second, got: {captured.out!r}'
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_capsys_reset(capsys=<CapsysFixture object>)
+
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
 fn test_caplog_at_level_filters() {
     let context = TestContext::with_file(
         "test.py",
@@ -1048,6 +1134,36 @@ def test_caplog_at_level_filters(caplog):
     success: true
     exit_code: 0
     ----- stdout -----
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_capsys_disabled() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+def test_capsys_disabled(capsys):
+    print('captured before')
+    with capsys.disabled():
+        # Anything printed here goes to real stdout; the test just checks no error is raised.
+        pass
+    print('captured after')
+    captured = capsys.readouterr()
+    assert 'captured after' in captured.out
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_capsys_disabled(capsys=<CapsysFixture object>)
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -1165,6 +1281,42 @@ def test_level_restored():
     success: true
     exit_code: 0
     ----- stdout -----
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_capsys_restores_stdout_after_test() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+import sys
+
+def test_capsys_uses_capture(capsys):
+    print('inside capsys test')
+    captured = capsys.readouterr()
+    assert captured.out == 'inside capsys test\n'
+
+def test_stdout_works_after(capsys):
+    # If capsys teardown didn't restore stdout, this would fail or hang.
+    assert sys.stdout is not None
+    print('after capsys test')
+    captured = capsys.readouterr()
+    assert 'after capsys test' in captured.out
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+        Starting 2 tests across 1 worker
+            PASS [TIME] test::test_capsys_uses_capture(capsys=<CapsysFixture object>)
+            PASS [TIME] test::test_stdout_works_after(capsys=<CapsysFixture object>)
+
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
