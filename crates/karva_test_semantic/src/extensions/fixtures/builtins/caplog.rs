@@ -41,6 +41,10 @@ pub struct CapLog {
     records: Py<PyList>,
     /// The `logging.disable` level saved at construction time, restored at teardown.
     saved_disable_level: Option<i32>,
+    /// The logger level saved by `set_level()`, restored at teardown.
+    saved_level: Option<i32>,
+    /// The logger name passed to `set_level()`, used to restore its level at teardown.
+    saved_level_logger: Option<String>,
 }
 
 impl CapLog {
@@ -81,6 +85,8 @@ impl CapLog {
             handler: handler.unbind(),
             records: records.unbind(),
             saved_disable_level,
+            saved_level: None,
+            saved_level_logger: None,
         })
     }
 }
@@ -117,28 +123,37 @@ impl CapLog {
     }
 
     /// Set the capture level for the remainder of the test (no context manager).
+    ///
+    /// The original level is saved on first call and restored by `_teardown`.
     #[pyo3(signature = (level, logger = None))]
-    fn set_level(&self, py: Python<'_>, level: i32, logger: Option<&str>) -> PyResult<()> {
+    fn set_level(
+        mut slf: PyRefMut<'_, Self>,
+        py: Python<'_>,
+        level: i32,
+        logger: Option<&str>,
+    ) -> PyResult<()> {
         let logging = py.import("logging")?;
         let target = if let Some(name) = logger {
             logging.call_method1("getLogger", (name,))?
         } else {
             logging.call_method0("getLogger")?
         };
+
+        // Save the original level on first call so `_teardown` can restore it.
+        if slf.saved_level.is_none() {
+            slf.saved_level = Some(target.getattr("level")?.extract::<i32>()?);
+            slf.saved_level_logger = logger.map(str::to_owned);
+        }
+
         target.call_method1("setLevel", (level,))?;
-        self.handler.bind(py).call_method1("setLevel", (level,))?;
+        slf.handler.bind(py).call_method1("setLevel", (level,))?;
         Ok(())
     }
 
     /// Context manager that temporarily sets the capture level.
     #[pyo3(signature = (level, logger = None))]
     fn at_level(&self, py: Python<'_>, level: i32, logger: Option<String>) -> PyResult<Py<PyAny>> {
-        let prev_handler_level = self
-            .handler
-            .bind(py)
-            .getattr("level")
-            .and_then(|v| v.extract::<i32>())
-            .ok();
+        let prev_handler_level = self.handler.bind(py).getattr("level")?.extract::<i32>()?;
 
         let context = CapLogLevelContext {
             handler: self.handler.clone_ref(py),
@@ -156,7 +171,8 @@ impl CapLog {
         self.records.bind(py).call_method0("clear").ok();
     }
 
-    /// Remove the handler from the root logger and restore the saved disable level.
+    /// Remove the handler from the root logger and restore the saved disable level and any
+    /// logger level changed by `set_level()`.
     fn _teardown(&self, py: Python<'_>) -> PyResult<()> {
         let logging = py.import("logging")?;
         let root_logger = logging.call_method0("getLogger")?;
@@ -164,6 +180,15 @@ impl CapLog {
 
         let restore_level = self.saved_disable_level.unwrap_or(0);
         logging.call_method1("disable", (restore_level,))?;
+
+        if let Some(prev) = self.saved_level {
+            let target = if let Some(ref name) = self.saved_level_logger {
+                logging.call_method1("getLogger", (name.as_str(),))?
+            } else {
+                logging.call_method0("getLogger")?
+            };
+            target.call_method1("setLevel", (prev,))?;
+        }
 
         Ok(())
     }
@@ -183,7 +208,7 @@ struct CapLogLevelContext {
     handler: Py<PyAny>,
     level: i32,
     logger_name: Option<String>,
-    prev_handler_level: Option<i32>,
+    prev_handler_level: i32,
     prev_logger_level: Option<i32>,
 }
 
@@ -198,10 +223,7 @@ impl CapLogLevelContext {
             logging.call_method0("getLogger")?
         };
 
-        slf.prev_logger_level = target
-            .getattr("level")
-            .and_then(|v| v.extract::<i32>())
-            .ok();
+        slf.prev_logger_level = Some(target.getattr("level")?.extract::<i32>()?);
 
         target.call_method1("setLevel", (slf.level,))?;
         slf.handler
@@ -228,9 +250,9 @@ impl CapLogLevelContext {
         if let Some(prev) = self.prev_logger_level {
             target.call_method1("setLevel", (prev,))?;
         }
-        if let Some(prev) = self.prev_handler_level {
-            self.handler.bind(py).call_method1("setLevel", (prev,))?;
-        }
+        self.handler
+            .bind(py)
+            .call_method1("setLevel", (self.prev_handler_level,))?;
 
         Ok(false)
     }

@@ -1137,3 +1137,37 @@ def test_second(caplog):
     ----- stderr -----
     ");
 }
+
+/// Verify that `set_level()` changes are undone after the test completes so a
+/// subsequent test without `caplog` sees the original root logger level.
+#[test]
+fn test_caplog_set_level_restored_after_teardown() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+import logging
+
+def test_sets_debug(caplog):
+    caplog.set_level(logging.DEBUG)
+    logging.debug('should be captured')
+    assert len(caplog.records) == 1
+
+def test_level_restored():
+    # Root logger level must be back to WARNING (default) after the previous
+    # test's caplog fixture is torn down, so a bare debug call emits nothing.
+    import logging
+    root = logging.getLogger()
+    assert root.level == logging.WARNING, f'Expected WARNING, got {root.level}'
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-q"), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
