@@ -121,6 +121,73 @@ def test_tmpdir_factory(tmpdir_factory):
 }
 
 #[test]
+fn test_tmp_path_factory_session_scope() {
+    // Multiple tests in the same module share the same factory instance,
+    // so getbasetemp() returns the same directory for both.
+    let test_context = TestContext::with_file(
+        "test.py",
+        r"
+_recorded_base = []
+
+def test_record_base(tmp_path_factory):
+    _recorded_base.append(str(tmp_path_factory.getbasetemp()))
+
+def test_check_same_base(tmp_path_factory):
+    _recorded_base.append(str(tmp_path_factory.getbasetemp()))
+    assert len(_recorded_base) == 2
+    assert _recorded_base[0] == _recorded_base[1], \
+        f'tmp_path_factory must be session-scoped: {_recorded_base}'
+        ",
+    );
+
+    assert_cmd_snapshot!(test_context.command().arg("-q"), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_tmp_path_factory_in_session_fixture() {
+    // tmp_path_factory can be used inside a session-scoped user fixture.
+    let test_context = TestContext::with_file(
+        "test.py",
+        r"
+import pathlib
+import karva
+
+@karva.fixture(scope='session')
+def shared_dir(tmp_path_factory):
+    d = tmp_path_factory.mktemp('shared')
+    (d / 'data.txt').write_text('hello')
+    return d
+
+def test_uses_shared_dir(shared_dir):
+    assert isinstance(shared_dir, pathlib.Path)
+    assert shared_dir.is_dir()
+    assert (shared_dir / 'data.txt').read_text() == 'hello'
+
+def test_uses_shared_dir_again(shared_dir):
+    assert (shared_dir / 'data.txt').read_text() == 'hello'
+        ",
+    );
+
+    assert_cmd_snapshot!(test_context.command().arg("-q"), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
 fn test_monkeypatch_setattr() {
     let context = TestContext::with_file(
         "test.py",

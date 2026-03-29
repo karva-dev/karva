@@ -78,6 +78,17 @@ impl NormalizedFixture {
         })
     }
 
+    /// Creates a built-in fixture with an explicit scope.
+    pub(crate) fn built_in_with_scope(name: String, value: Py<PyAny>, scope: FixtureScope) -> Self {
+        Self::BuiltIn(BuiltInFixture {
+            name,
+            py_value: Rc::new(value),
+            dependencies: vec![],
+            scope,
+            finalizer: None,
+        })
+    }
+
     /// Creates a built-in fixture with a finalizer.
     pub(crate) fn built_in_with_finalizer(
         name: String,
@@ -184,5 +195,15 @@ impl NormalizedFixture {
     /// [`UserDefined`]: NormalizedFixture::UserDefined
     pub fn is_user_defined(&self) -> bool {
         matches!(self, Self::UserDefined(..))
+    }
+
+    /// Returns `true` if this fixture's value should be inserted into the fixture cache.
+    ///
+    /// User-defined fixtures are always cached so they can be shared within their declared
+    /// scope. Built-in fixtures are only cached when their scope is broader than function,
+    /// because function-scoped built-ins (e.g. `tmp_path`, `monkeypatch`) must be fresh
+    /// for each test invocation.
+    pub(crate) fn should_cache(&self) -> bool {
+        self.is_user_defined() || self.scope() != FixtureScope::Function
     }
 }

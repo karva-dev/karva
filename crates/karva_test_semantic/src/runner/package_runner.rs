@@ -538,8 +538,7 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
                 }
             };
 
-        if fixture.is_user_defined() {
-            // Cache the result
+        if fixture.should_cache() {
             self.fixture_cache.insert(
                 fixture.function_name().to_string(),
                 final_result.clone_ref(py),
