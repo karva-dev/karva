@@ -125,12 +125,6 @@ PROJECTS: list[Project] = [
         test_paths=["tests/"],
     ),
     Project(
-        name="rich",
-        repo="https://github.com/Textualize/rich",
-        commit="fc41075a3206d2a5fd846c6f41c4d2becab814fa",
-        test_paths=["tests/"],
-    ),
-    Project(
         name="textual",
         repo="https://github.com/Textualize/textual",
         commit="04b03c8db64266a6a7811cc161bae9986e53b1a1",
