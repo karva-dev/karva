@@ -13,10 +13,10 @@ def test_fast():
     pass
 
 def test_medium():
-    time.sleep(0.05)
+    time.sleep(0.2)
 
 def test_slow():
-    time.sleep(0.1)
+    time.sleep(0.5)
 ",
     );
 

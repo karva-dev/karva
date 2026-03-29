@@ -713,7 +713,7 @@ def test_invalid(x):
     exit_code: 1
     ----- stdout -----
         Starting 1 test across 1 worker
-    discovery diagnostics:
+    diagnostics:
 
     error[failed-to-import-module]: Failed to import python module `test`: Expected a string or a list of strings for the arg_names, and a list of lists of objects for the arg_values
 

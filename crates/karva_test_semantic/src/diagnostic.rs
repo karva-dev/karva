@@ -27,7 +27,8 @@ declare_diagnostic_type! {
     /// ## Failed to import module
     ///
     /// This comes from when we try to import tests or fixtures.
-    /// If we try to import a module and it fails, we will raise this error.
+    /// If we try to import a module and it fails, we will raise this warning.
+    /// Tests that were successfully collected still run and determine the exit code.
     pub static FAILED_TO_IMPORT_MODULE = {
         summary: "Failed to import python module",
         severity: Severity::Error,

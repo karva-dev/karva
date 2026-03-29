@@ -456,7 +456,7 @@ def test_1():
     exit_code: 1
     ----- stdout -----
         Starting 1 test across 1 worker
-    discovery diagnostics:
+    diagnostics:
 
     error[failed-to-import-module]: Failed to import python module `test`: Expected boolean values for conditions
 
@@ -485,7 +485,7 @@ def test_1():
     exit_code: 1
     ----- stdout -----
         Starting 1 test across 1 worker
-    discovery diagnostics:
+    diagnostics:
 
     error[failed-to-import-module]: Failed to import python module `test`: Expected boolean values for conditions
 
