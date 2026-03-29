@@ -5,6 +5,9 @@ These fixtures are automatically available to all tests without any imports.
 
 from __future__ import annotations
 
+import contextlib
+from typing import Self
+
 from karva._karva import fixture
 
 
@@ -96,7 +99,7 @@ class MockEnv:
         """Return a context manager that creates a fresh :class:`MockEnv` and undoes it on exit."""
         return _MockEnvContext()
 
-    def __enter__(self) -> MockEnv:
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(self, *args: object) -> bool:
@@ -111,7 +114,7 @@ class MockEnv:
         - ``setattr(target, name, value)`` — direct object + attribute name + new value
         - ``setattr("module.attr", value)`` — dotted import string + new value
         """
-        if len(args) == 2:  # noqa: PLR2004
+        if len(args) == 2:
             target_str, value = args
             if not isinstance(target_str, str):
                 raise TypeError(
@@ -119,7 +122,7 @@ class MockEnv:
                     " with target being a dotted import string"
                 )
             attr_name, target = _derive_importpath(target_str, raising)
-        elif len(args) == 3:  # noqa: PLR2004
+        elif len(args) == 3:
             target, attr_name, value = args
             if not isinstance(attr_name, str):
                 raise TypeError("attribute name must be a string")
@@ -131,9 +134,12 @@ class MockEnv:
         # For classes, read the raw __dict__ entry to capture descriptors correctly.
         if isinstance(target, type):
             old_val: object = target.__dict__.get(attr_name, _MISSING)
-            if isinstance(old_val, _Missing) and not _builtin_hasattr(target, attr_name):
-                if raising:
-                    raise AttributeError(f"{target!r} has no attribute {attr_name!r}")
+            if (
+                isinstance(old_val, _Missing)
+                and not _builtin_hasattr(target, attr_name)
+                and raising
+            ):
+                raise AttributeError(f"{target!r} has no attribute {attr_name!r}")
         elif _builtin_hasattr(target, attr_name):
             old_val = _builtin_getattr(target, attr_name)
         elif raising:
@@ -207,9 +213,7 @@ class MockEnv:
         self._setitem_ops.append((dic, name, old_val))
         del dic[name]  # type: ignore[index]
 
-    def setenv(
-        self, name: str, value: object, prepend: str | None = None
-    ) -> None:
+    def setenv(self, name: str, value: object, prepend: str | None = None) -> None:
         """Set the environment variable *name* to *value*, remembering the old value."""
         import os
 
@@ -268,20 +272,16 @@ class MockEnv:
 
         for obj, name, old_val in reversed(self._setattr_ops):
             if isinstance(old_val, _Missing):
-                try:
+                with contextlib.suppress(AttributeError):
                     _builtin_delattr(obj, name)
-                except AttributeError:
-                    pass
             else:
                 _builtin_setattr(obj, name, old_val)
         self._setattr_ops.clear()
 
         for dic, key, old_val in reversed(self._setitem_ops):
             if isinstance(old_val, _Missing):
-                try:
+                with contextlib.suppress(KeyError, IndexError):
                     del dic[key]  # type: ignore[index]
-                except (KeyError, IndexError):
-                    pass
             else:
                 dic[key] = old_val  # type: ignore[index]
         self._setitem_ops.clear()
@@ -319,16 +319,18 @@ def monkeypatch():  # type: ignore[no-untyped-def]
 
 def _capsys_impl():  # type: ignore[no-untyped-def]
     """Shared generator for capsys and capfd."""
-    import collections
     import io
     import logging
     import sys
+    from typing import NamedTuple
 
     real_stdout = sys.stdout
     real_stderr = sys.stderr
     saved_disable = logging.root.manager.disable
 
-    CaptureResult = collections.namedtuple("CaptureResult", ["out", "err"])
+    class CaptureResult(NamedTuple):
+        out: str
+        err: str
 
     class _CapsysFixture:
         def __init__(self) -> None:
@@ -354,12 +356,12 @@ def _capsys_impl():  # type: ignore[no-untyped-def]
             cur_err = self._err
 
             class _Disabled:
-                def __enter__(inner_self) -> object:  # noqa: N805
+                def __enter__(inner_self) -> object:
                     sys.stdout = real_stdout
                     sys.stderr = real_stderr
                     return inner_self
 
-                def __exit__(inner_self, *args: object) -> bool:  # noqa: N805
+                def __exit__(inner_self, *args: object) -> bool:
                     sys.stdout = cur_out
                     sys.stderr = cur_err
                     return False
@@ -390,15 +392,17 @@ def capfd():  # type: ignore[no-untyped-def]
 
 def _capsysbinary_impl():  # type: ignore[no-untyped-def]
     """Shared generator for capsysbinary and capfdbinary."""
-    import collections
     import logging
     import sys
+    from typing import NamedTuple
 
     real_stdout = sys.stdout
     real_stderr = sys.stderr
     saved_disable = logging.root.manager.disable
 
-    CaptureResult = collections.namedtuple("CaptureResult", ["out", "err"])
+    class CaptureResult(NamedTuple):
+        out: bytes
+        err: bytes
 
     class _BinaryCaptureStream:
         """Accepts both str and bytes writes, stores raw bytes."""
@@ -450,12 +454,12 @@ def _capsysbinary_impl():  # type: ignore[no-untyped-def]
             cur_err = self._err
 
             class _Disabled:
-                def __enter__(inner_self) -> object:  # noqa: N805
+                def __enter__(inner_self) -> object:
                     sys.stdout = real_stdout
                     sys.stderr = real_stderr
                     return inner_self
 
-                def __exit__(inner_self, *args: object) -> bool:  # noqa: N805
+                def __exit__(inner_self, *args: object) -> bool:
                     sys.stdout = cur_out  # type: ignore[assignment]
                     sys.stderr = cur_err  # type: ignore[assignment]
                     return False
@@ -514,7 +518,7 @@ def caplog():  # type: ignore[no-untyped-def]
             self._prev_handler_level = handler.level
             self._prev_logger_level: int | None = None
 
-        def __enter__(self) -> _CapLogAtLevel:
+        def __enter__(self) -> Self:
             logger = logging.getLogger(self._logger_name)
             self._prev_logger_level = logger.level
             logger.setLevel(self._level)
@@ -695,7 +699,9 @@ def tmpdir_factory():  # type: ignore[no-untyped-def]
             path = base / name
             path.mkdir(parents=True, exist_ok=True)
             path_str = str(path)
-            return local_cls(path_str) if local_cls is not None else pathlib.Path(path_str)
+            return (
+                local_cls(path_str) if local_cls is not None else pathlib.Path(path_str)
+            )
 
         def getbasetemp(self) -> object:
             """Return the base temporary directory."""
