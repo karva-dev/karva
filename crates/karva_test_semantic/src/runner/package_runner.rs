@@ -101,8 +101,10 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
             // Create a new resolver for each test to handle fixture resolution
             let mut test_resolver = RuntimeFixtureResolver::new(parents, module);
 
-            // Iterate over all test variants (parametrize combinations × fixture combinations)
-            for variant in TestVariantIterator::new(py, test_function, &mut test_resolver) {
+            // Iterate over all test variants (parametrize combinations × fixture combinations).
+            // Uses next_with_py so each variant gets fresh function-scoped built-in fixtures.
+            let mut iterator = TestVariantIterator::new(py, test_function, &mut test_resolver);
+            while let Some(variant) = iterator.next_with_py(py) {
                 passed &= self.execute_test_variant(py, variant);
 
                 if self.context.settings().test().fail_fast && !passed {
