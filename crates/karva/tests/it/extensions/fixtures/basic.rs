@@ -721,3 +721,38 @@ def test_third(make_subdir):
     ----- stderr -----
     ");
 }
+
+#[test]
+fn test_pytest_fixture_imported_into_conftest() {
+    let context = TestContext::with_files([
+        ("mypackage/__init__.py", ""),
+        (
+            "mypackage/fixtures.py",
+            r"
+import pytest
+
+@pytest.fixture
+def invoke():
+    return 'invoked'
+",
+        ),
+        ("conftest.py", "from mypackage.fixtures import invoke"),
+        (
+            "test_invoke.py",
+            "def test_invoke(invoke): assert invoke == 'invoked'",
+        ),
+    ]);
+
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+        Starting 1 test across 1 worker
+            PASS [TIME] test_invoke::test_invoke(invoke=invoked)
+
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}

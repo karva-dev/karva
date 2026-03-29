@@ -2,7 +2,7 @@ use std::path::Path;
 use std::rc::Rc;
 
 use camino::Utf8Path;
-use karva_python_semantic::{ModulePath, is_fixture_function};
+use karva_python_semantic::ModulePath;
 use pyo3::prelude::*;
 use pyo3::types::PyModule;
 use ruff_python_ast::visitor::source_order::{self, SourceOrderVisitor};
@@ -14,6 +14,7 @@ use crate::Context;
 use crate::diagnostic::{report_failed_to_import_module, report_invalid_fixture};
 use crate::discovery::{DiscoveredModule, DiscoveredTestFunction};
 use crate::extensions::fixtures::DiscoveredFixture;
+use crate::extensions::fixtures::python::FixtureFunctionDefinition;
 
 /// Visitor for discovering test functions and fixture definitions in a given module.
 ///
@@ -129,11 +130,13 @@ impl FunctionDefinitionVisitor<'_, '_, '_, '_> {
             return;
         };
 
-        let symbols =
-            find_imported_symbols(self.module.source_text(), self.context.python_version());
-
-        for ImportedSymbol { name } in symbols {
-            self.try_process_imported_symbol(&py_module, &name);
+        for (name_obj, value) in py_module.dict().iter() {
+            let Ok(name) = name_obj.extract::<String>() else {
+                continue;
+            };
+            if value.is_callable() && is_fixture_value(&value) {
+                self.try_process_imported_symbol(&py_module, &name);
+            }
         }
     }
 
@@ -195,12 +198,17 @@ impl FunctionDefinitionVisitor<'_, '_, '_, '_> {
         let utf8_file_name = Utf8Path::from_path(Path::new(&file_name))?;
         let module_path = ModulePath::new(utf8_file_name, &self.context.cwd().to_path_buf())?;
         let source_text = std::fs::read_to_string(utf8_file_name).ok()?;
-        let stmt_function_def =
-            find_function_statement(name, &source_text, self.context.python_version())?;
 
-        if !is_fixture_function(&stmt_function_def) {
-            return None;
-        }
+        // Use the function's own __name__ to find its definition in the source, since the
+        // conftest symbol name may differ when the fixture is imported under an alias.
+        let func_name = value
+            .getattr("__name__")
+            .ok()
+            .and_then(|n| n.extract::<String>().ok())
+            .unwrap_or_else(|| name.to_string());
+
+        let stmt_function_def =
+            find_function_statement(&func_name, &source_text, self.context.python_version())?;
 
         let is_generator_function = is_generator(&stmt_function_def);
 
@@ -234,6 +242,11 @@ pub fn discover(
     test_function_defs: Vec<StmtFunctionDef>,
     fixture_function_defs: Vec<StmtFunctionDef>,
 ) {
+    let is_conftest = module
+        .path()
+        .file_name()
+        .is_some_and(|name| name == "conftest.py");
+
     let mut visitor = FunctionDefinitionVisitor::new(py, context, module);
 
     for test_function_def in test_function_defs {
@@ -244,7 +257,7 @@ pub fn discover(
         visitor.process_fixture_function(fixture_function_def);
     }
 
-    if context.settings().test().try_import_fixtures {
+    if is_conftest || context.settings().test().try_import_fixtures {
         visitor.find_extra_fixtures();
     }
 }
@@ -274,6 +287,15 @@ impl SourceOrderVisitor<'_> for GeneratorFunctionVisitor {
     }
 }
 
+/// Returns `true` if `value` is a fixture — either a pytest-decorated function
+/// (detected via `_fixture_function_marker` / `_pytestfixturefunction`) or a
+/// Karva `FixtureFunctionDefinition` object.
+fn is_fixture_value(value: &Bound<'_, PyAny>) -> bool {
+    value.getattr("_fixture_function_marker").is_ok()
+        || value.getattr("_pytestfixturefunction").is_ok()
+        || value.cast::<FixtureFunctionDefinition>().is_ok()
+}
+
 fn find_function_statement(
     name: &str,
     source_text: &str,
@@ -294,39 +316,4 @@ fn find_function_statement(
     }
 
     None
-}
-
-/// Represents a symbol imported into a module via `from ... import ...`.
-///
-/// Used to track imported fixtures that may need to be discovered.
-struct ImportedSymbol {
-    /// The name of the imported symbol.
-    name: String,
-}
-
-fn find_imported_symbols(source_text: &str, python_version: PythonVersion) -> Vec<ImportedSymbol> {
-    let mut parse_options = ParseOptions::from(Mode::Module);
-
-    parse_options = parse_options.with_target_version(python_version);
-
-    let mut symbols = Vec::new();
-
-    let Some(parsed) = parse_unchecked(source_text, parse_options).try_into_module() else {
-        return symbols;
-    };
-
-    for stmt in parsed.into_syntax().body {
-        if let Stmt::ImportFrom(stmt_import_from) = stmt {
-            for name in stmt_import_from.names {
-                if name.asname.is_some() {
-                    continue;
-                }
-                symbols.push(ImportedSymbol {
-                    name: name.name.to_string(),
-                });
-            }
-        }
-    }
-
-    symbols
 }
