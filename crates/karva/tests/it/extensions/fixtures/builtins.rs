@@ -5,9 +5,7 @@ use rstest::rstest;
 use crate::common::TestContext;
 
 #[rstest]
-fn test_temp_directory_fixture(
-    #[values("tmp_path", "temp_path", "temp_dir", "tmpdir")] fixture_name: &str,
-) {
+fn test_temp_directory_fixture(#[values("tmp_path", "temp_path", "temp_dir")] fixture_name: &str) {
     let test_context = TestContext::with_file(
         "test.py",
         &format!(
@@ -34,6 +32,92 @@ fn test_temp_directory_fixture(
         ----- stderr -----
         ");
     }
+}
+
+#[test]
+fn test_tmpdir_fixture_is_py_path_local() {
+    let test_context = TestContext::with_file(
+        "test.py",
+        r"
+def test_tmpdir(tmpdir):
+    # tmpdir must be a py.path.local object (has .join() and .strpath)
+    assert hasattr(tmpdir, 'join'), 'tmpdir must be py.path.local, not pathlib.Path'
+    f = tmpdir.join('hello.txt')
+    f.write('world')
+    assert f.read() == 'world'
+    assert tmpdir.strpath
+        ",
+    );
+
+    assert_cmd_snapshot!(test_context.command().arg("-q"), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_tmp_path_factory() {
+    let test_context = TestContext::with_file(
+        "test.py",
+        r"
+import pathlib
+
+def test_tmp_path_factory(tmp_path_factory):
+    d1 = tmp_path_factory.mktemp('mydir')
+    d2 = tmp_path_factory.mktemp('mydir')
+    assert isinstance(d1, pathlib.Path)
+    assert d1.exists() and d1.is_dir()
+    assert d2.exists() and d2.is_dir()
+    assert d1 != d2, 'numbered mktemp dirs must be unique'
+    base = tmp_path_factory.getbasetemp()
+    assert isinstance(base, pathlib.Path)
+    assert base.is_dir()
+        ",
+    );
+
+    assert_cmd_snapshot!(test_context.command().arg("-q"), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_tmpdir_factory() {
+    let test_context = TestContext::with_file(
+        "test.py",
+        r"
+def test_tmpdir_factory(tmpdir_factory):
+    d1 = tmpdir_factory.mktemp('mydir')
+    d2 = tmpdir_factory.mktemp('mydir')
+    # tmpdir_factory.mktemp returns py.path.local
+    assert hasattr(d1, 'join'), 'mktemp must return py.path.local'
+    assert d1.strpath
+    assert d2.strpath
+    assert d1.strpath != d2.strpath, 'numbered mktemp dirs must be unique'
+    base = tmpdir_factory.getbasetemp()
+    assert hasattr(base, 'join'), 'getbasetemp must return py.path.local'
+        ",
+    );
+
+    assert_cmd_snapshot!(test_context.command().arg("-q"), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    ");
 }
 
 #[test]
@@ -203,6 +287,34 @@ def test_syspath_prepend_multiple(monkeypatch):
 
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_monkeypatch_syspath_prepend_path_object() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+import sys
+import pathlib
+
+def test_syspath_prepend_with_path(monkeypatch, tmp_path):
+    old_path = sys.path.copy()
+    monkeypatch.syspath_prepend(tmp_path)
+    assert sys.path[0] == str(tmp_path)
+    monkeypatch.undo()
+    assert sys.path == old_path
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-q"), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -950,6 +1062,36 @@ def test_setitem_none_value_undo(monkeypatch):
 }
 
 #[test]
+fn test_monkeypatch_setattr_none_as_new_value() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+def test_setattr_none_as_new_value(monkeypatch):
+    class A:
+        x = 'original'
+
+    monkeypatch.setattr(A, 'x', None)
+    assert A.x is None
+    monkeypatch.undo()
+    assert A.x == 'original'
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_setattr_none_as_new_value(monkeypatch=<MockEnv object>)
+
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
 fn test_caplog_records() {
     let context = TestContext::with_file(
         "test.py",
@@ -962,6 +1104,7 @@ def test_caplog_records(caplog):
     assert len(caplog.records) == 1
     assert caplog.records[0].levelname == 'WARNING'
     assert caplog.records[0].getMessage() == 'something happened'
+    assert caplog.records[0].message == 'something happened'
         ",
     );
 
@@ -1557,6 +1700,37 @@ def test_creates_subdir(value, tmp_path):
     ----- stdout -----
     ────────────
          Summary [TIME] 3 tests run: 3 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_capfd_captures_output() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+def test_capfd_stdout(capfd):
+    print('hello from capfd')
+    captured = capfd.readouterr()
+    assert captured.out == 'hello from capfd\n'
+    assert captured.err == ''
+
+def test_capfd_stderr(capfd):
+    import sys
+    print('error output', file=sys.stderr)
+    captured = capfd.readouterr()
+    assert captured.out == ''
+    assert captured.err == 'error output\n'
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-q"), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
     ----- stderr -----
     ");

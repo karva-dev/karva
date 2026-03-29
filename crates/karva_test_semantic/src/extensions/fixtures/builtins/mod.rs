@@ -10,6 +10,8 @@ mod mock_env;
 mod recwarn;
 mod temp_path;
 
+use capsys::{create_capfd_fixture, is_capfd_fixture_name};
+
 pub fn get_builtin_fixture(py: Python<'_>, fixture_name: &str) -> Option<NormalizedFixture> {
     match fixture_name {
         _ if temp_path::is_temp_path_fixture_name(fixture_name) => {
@@ -17,6 +19,30 @@ pub fn get_builtin_fixture(py: Python<'_>, fixture_name: &str) -> Option<Normali
                 return Some(NormalizedFixture::built_in(
                     fixture_name.to_string(),
                     path_obj,
+                ));
+            }
+        }
+        _ if temp_path::is_tmpdir_fixture_name(fixture_name) => {
+            if let Some(path_obj) = temp_path::create_tmpdir_fixture(py) {
+                return Some(NormalizedFixture::built_in(
+                    fixture_name.to_string(),
+                    path_obj,
+                ));
+            }
+        }
+        _ if temp_path::is_tmp_path_factory_fixture_name(fixture_name) => {
+            if let Some(factory) = temp_path::create_tmp_path_factory_fixture(py) {
+                return Some(NormalizedFixture::built_in(
+                    fixture_name.to_string(),
+                    factory,
+                ));
+            }
+        }
+        _ if temp_path::is_tmpdir_factory_fixture_name(fixture_name) => {
+            if let Some(factory) = temp_path::create_tmpdir_factory_fixture(py) {
+                return Some(NormalizedFixture::built_in(
+                    fixture_name.to_string(),
+                    factory,
                 ));
             }
         }
@@ -43,6 +69,15 @@ pub fn get_builtin_fixture(py: Python<'_>, fixture_name: &str) -> Option<Normali
                 return Some(NormalizedFixture::built_in_with_finalizer(
                     fixture_name.to_string(),
                     capsys_instance,
+                    finalizer,
+                ));
+            }
+        }
+        _ if is_capfd_fixture_name(fixture_name) => {
+            if let Some((capfd_instance, finalizer)) = create_capfd_fixture(py) {
+                return Some(NormalizedFixture::built_in_with_finalizer(
+                    fixture_name.to_string(),
+                    capfd_instance,
                     finalizer,
                 ));
             }

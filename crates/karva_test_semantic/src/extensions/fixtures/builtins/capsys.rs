@@ -4,10 +4,22 @@ pub fn is_capsys_fixture_name(fixture_name: &str) -> bool {
     matches!(fixture_name, "capsys")
 }
 
+/// `capfd` captures output at the file-descriptor level. This implementation
+/// uses stream-level capture (same as `capsys`), which is sufficient for Python
+/// code writing to `sys.stdout`/`sys.stderr`. True fd-level capture via
+/// `os.dup2` is not implemented.
+pub fn is_capfd_fixture_name(fixture_name: &str) -> bool {
+    matches!(fixture_name, "capfd")
+}
+
 pub fn create_capsys_fixture(py: Python<'_>) -> Option<(Py<PyAny>, Py<PyAny>)> {
     let capsys = Py::new(py, CapsysFixture::new(py).ok()?).ok()?;
     let restore_method = capsys.getattr(py, "_restore").ok()?;
     Some((capsys.into_any(), restore_method))
+}
+
+pub fn create_capfd_fixture(py: Python<'_>) -> Option<(Py<PyAny>, Py<PyAny>)> {
+    create_capsys_fixture(py)
 }
 
 /// Captures writes to `sys.stdout` and `sys.stderr` during a test.
