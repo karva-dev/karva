@@ -1974,3 +1974,59 @@ def test_capsys_logging_warning(capsys):
     ----- stderr -----
     ");
 }
+
+/// `capsys` must re-enable logging for the duration of the test even when an earlier call to
+/// `logging.disable()` has suppressed all log levels globally. Without the fix, `readouterr()`
+/// would return empty strings and the assertion would fail.
+#[test]
+fn test_capsys_restores_logging_disable() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+import logging
+
+logging.disable(logging.CRITICAL)
+
+def test_capsys_with_disabled_logging(capsys):
+    logging.warning('should be captured')
+    captured = capsys.readouterr()
+    assert 'should be captured' in captured.err, f'Expected log in stderr, got: {captured.err!r}'
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command().arg("-q"), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+/// `capfd` shares the same implementation as `capsys` and must also capture logging output.
+#[test]
+fn test_capfd_captures_logging_warning() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+import logging
+
+def test_capfd_logging_warning(capfd):
+    logging.warning('capfd regression check')
+    captured = capfd.readouterr()
+    assert 'capfd regression check' in captured.err, f'Expected log output in stderr, got: {captured.err!r}'
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command().arg("-q"), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
