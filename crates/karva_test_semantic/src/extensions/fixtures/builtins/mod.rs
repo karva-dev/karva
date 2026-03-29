@@ -10,7 +10,10 @@ mod mock_env;
 mod recwarn;
 mod temp_path;
 
-use capsys::{create_capfd_fixture, is_capfd_fixture_name};
+use capsys::{
+    create_capfd_fixture, create_capfdbinary_fixture, create_capsysbinary_fixture,
+    is_capfd_fixture_name, is_capfdbinary_fixture_name, is_capsysbinary_fixture_name,
+};
 
 pub fn get_builtin_fixture(py: Python<'_>, fixture_name: &str) -> Option<NormalizedFixture> {
     match fixture_name {
@@ -78,6 +81,24 @@ pub fn get_builtin_fixture(py: Python<'_>, fixture_name: &str) -> Option<Normali
                 return Some(NormalizedFixture::built_in_with_finalizer(
                     fixture_name.to_string(),
                     capfd_instance,
+                    finalizer,
+                ));
+            }
+        }
+        _ if is_capsysbinary_fixture_name(fixture_name) => {
+            if let Some((capsysbinary_instance, finalizer)) = create_capsysbinary_fixture(py) {
+                return Some(NormalizedFixture::built_in_with_finalizer(
+                    fixture_name.to_string(),
+                    capsysbinary_instance,
+                    finalizer,
+                ));
+            }
+        }
+        _ if is_capfdbinary_fixture_name(fixture_name) => {
+            if let Some((capfdbinary_instance, finalizer)) = create_capfdbinary_fixture(py) {
+                return Some(NormalizedFixture::built_in_with_finalizer(
+                    fixture_name.to_string(),
+                    capfdbinary_instance,
                     finalizer,
                 ));
             }

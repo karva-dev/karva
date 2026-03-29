@@ -1787,3 +1787,65 @@ def test_capfd_stderr(capfd):
     ----- stderr -----
     ");
 }
+
+#[test]
+fn test_capsysbinary_captures_output() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+def test_capsysbinary_stdout(capsysbinary):
+    print('hello bytes')
+    captured = capsysbinary.readouterr()
+    assert captured.out == b'hello bytes\n'
+    assert captured.err == b''
+
+def test_capsysbinary_stderr(capsysbinary):
+    import sys
+    print('error bytes', file=sys.stderr)
+    captured = capsysbinary.readouterr()
+    assert captured.out == b''
+    assert captured.err == b'error bytes\n'
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-q"), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_capfdbinary_captures_output() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+def test_capfdbinary_stdout(capfdbinary):
+    print('hello fd bytes')
+    captured = capfdbinary.readouterr()
+    assert captured.out == b'hello fd bytes\n'
+    assert captured.err == b''
+
+def test_capfdbinary_stderr(capfdbinary):
+    import sys
+    print('error fd bytes', file=sys.stderr)
+    captured = capfdbinary.readouterr()
+    assert captured.out == b''
+    assert captured.err == b'error fd bytes\n'
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-q"), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
