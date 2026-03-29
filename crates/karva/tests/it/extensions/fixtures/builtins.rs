@@ -1535,3 +1535,29 @@ def test_stdout_works_after(capsys):
     ----- stderr -----
     ");
 }
+
+#[test]
+fn test_tmp_path_isolated_per_parametrize_variant() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+import karva
+
+@karva.tags.parametrize('value', [1, 2, 3])
+def test_creates_subdir(value, tmp_path):
+    sub = tmp_path / 'subdir'
+    sub.mkdir()
+    assert sub.exists()
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-q"), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    ────────────
+         Summary [TIME] 3 tests run: 3 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
