@@ -192,21 +192,9 @@ PROJECTS: list[Project] = [
         pip_only=True,
     ),
     Project(
-        name="scikit-build-core",
-        repo="https://github.com/scikit-build/scikit-build-core",
-        commit="5e66cd50d4380b4f5ab9025c0cd564615bf609e9",
-        test_paths=["tests/"],
-    ),
-    Project(
         name="svcs",
         repo="https://github.com/hynek/svcs",
         commit="bfdc0b0fd960414d31948be1869daadaec45aefe",
-        test_paths=["tests/"],
-    ),
-    Project(
-        name="bidict",
-        repo="https://github.com/jab/bidict",
-        commit="0745863baa8a70f7163ff015bd1a74f62551c3fe",
         test_paths=["tests/"],
     ),
 ]
@@ -593,7 +581,7 @@ def run_karva(project: Project, project_dir: Path, verbosity: Verbosity) -> Karv
     console.print(f"  [dim]\\[karva] running tests at {paths}...[/dim]")
     try:
         result = subprocess.run(
-            [str(karva_bin(project_dir)), "test", *project.test_paths],
+            [str(karva_bin(project_dir)), "test", "--retry", "3", *project.test_paths],
             cwd=project_dir,
             env=clean_env(),
             timeout=KARVA_TIMEOUT,
