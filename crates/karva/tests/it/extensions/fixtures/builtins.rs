@@ -61,6 +61,30 @@ def test_tmpdir(tmpdir):
 }
 
 #[test]
+fn test_tmpdir_mkdir() {
+    let test_context = TestContext::with_file(
+        "test.py",
+        r"
+def test_tmpdir_mkdir(tmpdir):
+    sub = tmpdir.join('subdir')
+    sub.mkdir()
+    assert sub.isdir()
+    assert not sub.isfile()
+        ",
+    );
+
+    assert_cmd_snapshot!(test_context.command().arg("-q"), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
 fn test_tmp_path_factory() {
     let test_context = TestContext::with_file(
         "test.py",

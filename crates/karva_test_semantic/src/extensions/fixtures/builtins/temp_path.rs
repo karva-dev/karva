@@ -1,7 +1,144 @@
 use std::sync::atomic::{AtomicU32, Ordering};
 
 use pyo3::prelude::*;
+use pyo3::types::PyDict;
 use tempfile::TempDir;
+
+/// Minimal `py.path.local`-compatible shim class, defined as inline Python.
+///
+/// Used as a last resort when neither the standalone `py` package nor pytest's
+/// bundled `_pytest._py.path.LocalPath` is importable (e.g., when running tests
+/// without pytest installed).  The shim wraps `pathlib.Path` and exposes the
+/// subset of the `py.path.local` API that real-world test suites rely on:
+/// `join`, `mkdir`, `makedirs`, `read`, `write`, `isdir`, `isfile`, `exists`,
+/// `strpath`, `basename`, `dirname`, `dirpath`, `listdir`, `remove`, etc.
+const LOCAL_PATH_SHIM: &str = r#"
+import pathlib
+import shutil
+
+class LocalPath:
+    def __init__(self, path):
+        self._path = pathlib.Path(str(path))
+
+    @property
+    def strpath(self):
+        return str(self._path)
+
+    def __str__(self):
+        return self.strpath
+
+    def __repr__(self):
+        return "local({!r})".format(self.strpath)
+
+    def __eq__(self, other):
+        if isinstance(other, type(self)):
+            return self._path == other._path
+        return str(self._path) == str(other)
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __hash__(self):
+        return hash(self._path)
+
+    def __fspath__(self):
+        return self.strpath
+
+    def __truediv__(self, other):
+        return self.join(str(other))
+
+    def join(self, *args):
+        result = self._path
+        for arg in args:
+            result = result / str(arg)
+        return type(self)(result)
+
+    def mkdir(self, mode=0o777):
+        self._path.mkdir(mode=mode)
+        return self
+
+    def makedirs(self, mode=0o777):
+        self._path.mkdir(parents=True, exist_ok=True, mode=mode)
+        return self
+
+    def isdir(self):
+        return self._path.is_dir()
+
+    def isfile(self):
+        return self._path.is_file()
+
+    def exists(self):
+        return self._path.exists()
+
+    def check(self, **kw):
+        return self._path.exists()
+
+    def read(self, mode="r"):
+        if "b" in mode:
+            return self._path.read_bytes()
+        return self._path.read_text()
+
+    def read_binary(self):
+        return self._path.read_bytes()
+
+    def write(self, content, mode="w"):
+        if "b" in mode:
+            self._path.write_bytes(content)
+        else:
+            self._path.write_text(str(content))
+        return self
+
+    def write_binary(self, data):
+        self._path.write_bytes(data)
+        return self
+
+    @property
+    def basename(self):
+        return self._path.name
+
+    @property
+    def dirname(self):
+        return str(self._path.parent)
+
+    @property
+    def ext(self):
+        return self._path.suffix
+
+    def dirpath(self, *args):
+        p = type(self)(self._path.parent)
+        if args:
+            return p.join(*args)
+        return p
+
+    def listdir(self, fil=None):
+        entries = [type(self)(p) for p in self._path.iterdir()]
+        if fil is not None:
+            entries = [e for e in entries if fil(e)]
+        return entries
+
+    def remove(self, rec=1):
+        if self._path.is_dir():
+            shutil.rmtree(self._path)
+        else:
+            self._path.unlink()
+
+    def stat(self):
+        return self._path.stat()
+
+    def size(self):
+        return self._path.stat().st_size
+
+    def mtime(self):
+        return self._path.stat().st_mtime
+
+    def copy(self, target):
+        shutil.copy2(str(self._path), str(target))
+        return type(self)(target)
+
+    def move(self, target):
+        shutil.move(str(self._path), str(target))
+        return type(self)(target)
+"#;
 
 pub fn is_temp_path_fixture_name(fixture_name: &str) -> bool {
     matches!(fixture_name, "tmp_path" | "temp_path" | "temp_dir")
@@ -36,32 +173,14 @@ pub fn create_temp_dir_fixture(py: Python<'_>) -> Option<Py<PyAny>> {
 
 /// Create a `py.path.local` temporary directory fixture (`tmpdir`).
 ///
-/// Returns a `py.path.local` object (provided by pytest's bundled `_pytest._py`
-/// or the standalone `py` package) for backward-compatibility with older test code.
-/// Falls back to a `pathlib.Path` if neither is available.
+/// Returns a `py.path.local`-compatible object for backward-compatibility with
+/// older test code.  Tries the standalone `py` package first, then pytest's
+/// bundled `_pytest._py.path.LocalPath`, then falls back to the built-in shim.
 pub fn create_tmpdir_fixture(py: Python<'_>) -> Option<Py<PyAny>> {
     let path_str = make_temp_dir()?;
-
-    // Try `py.path.local` first (standalone `py` package), then pytest's bundled copy.
-    let local_class = py
-        .import("py")
-        .ok()
-        .and_then(|m| m.getattr("path").ok())
-        .and_then(|p| p.getattr("local").ok())
-        .or_else(|| {
-            py.import("_pytest._py.path")
-                .ok()
-                .and_then(|m| m.getattr("LocalPath").ok())
-        });
-
-    if let Some(local_class) = local_class {
-        local_class.call1((path_str,)).ok().map(Bound::unbind)
-    } else {
-        // Fall back to pathlib.Path if py.path.local is not available.
-        let pathlib = py.import("pathlib").ok()?;
-        let path_class = pathlib.getattr("Path").ok()?;
-        path_class.call1((path_str,)).ok().map(Bound::unbind)
-    }
+    get_local_path_class(py)
+        .and_then(|cls| cls.call1((path_str,)).ok())
+        .map(Bound::unbind)
 }
 
 fn make_temp_dir() -> Option<String> {
@@ -77,7 +196,10 @@ fn make_temp_dir() -> Option<String> {
     Some(path_str)
 }
 
-/// Get the `py.path.local` class, trying `py.path.local` then `_pytest._py.path.LocalPath`.
+/// Get the `py.path.local` class, trying in order:
+/// 1. `py.path.local` (standalone `py` package)
+/// 2. `_pytest._py.path.LocalPath` (pytest's bundled copy)
+/// 3. The built-in [`LOCAL_PATH_SHIM`] (always available, no external dependencies)
 fn get_local_path_class(py: Python<'_>) -> Option<Bound<'_, PyAny>> {
     py.import("py")
         .ok()
@@ -88,6 +210,19 @@ fn get_local_path_class(py: Python<'_>) -> Option<Bound<'_, PyAny>> {
                 .ok()
                 .and_then(|m| m.getattr("LocalPath").ok())
         })
+        .or_else(|| get_local_path_shim_class(py))
+}
+
+/// Define and return the [`LOCAL_PATH_SHIM`] `LocalPath` class.
+fn get_local_path_shim_class(py: Python<'_>) -> Option<Bound<'_, PyAny>> {
+    let globals = PyDict::new(py);
+    py.run(
+        &std::ffi::CString::new(LOCAL_PATH_SHIM).expect("shim code contains no null bytes"),
+        Some(&globals),
+        None,
+    )
+    .ok()?;
+    globals.get_item("LocalPath").ok().flatten()
 }
 
 /// Create a `TempPathFactory` fixture (`tmp_path_factory`).
@@ -194,27 +329,21 @@ impl TmpDirFactory {
 
         let path_str = path.to_string_lossy().into_owned();
 
-        if let Some(local_class) = get_local_path_class(py) {
-            local_class.call1((path_str,)).map(Bound::unbind)
-        } else {
-            let pathlib = py.import("pathlib")?;
-            let path_class = pathlib.getattr("Path")?;
-            path_class.call1((path_str,)).map(Bound::unbind)
-        }
+        get_local_path_class(py)
+            .and_then(|cls| cls.call1((path_str,)).ok())
+            .map(Bound::unbind)
+            .ok_or_else(|| {
+                pyo3::exceptions::PyRuntimeError::new_err("Failed to create local path object")
+            })
     }
 
     fn getbasetemp(&self, py: Python<'_>) -> PyResult<Py<PyAny>> {
-        if let Some(local_class) = get_local_path_class(py) {
-            local_class
-                .call1((self.basetemp.as_str(),))
-                .map(Bound::unbind)
-        } else {
-            let pathlib = py.import("pathlib")?;
-            let path_class = pathlib.getattr("Path")?;
-            path_class
-                .call1((self.basetemp.as_str(),))
-                .map(Bound::unbind)
-        }
+        get_local_path_class(py)
+            .and_then(|cls| cls.call1((self.basetemp.as_str(),)).ok())
+            .map(Bound::unbind)
+            .ok_or_else(|| {
+                pyo3::exceptions::PyRuntimeError::new_err("Failed to create local path object")
+            })
     }
 
     fn __repr__(&self) -> String {
