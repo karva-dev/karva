@@ -231,31 +231,30 @@ class KarvaResult(NamedTuple):
 
 
 @dataclass
-class ProjectResult:
+class ProjectRunResult:
     project: str
     status: str  # PASS, FAIL, TIMEOUT, SETUP_OK, SETUP_FAIL
     exit_code: int | None = None
     error: str | None = None
     test_stats: TestStats | None = None
 
-
-def _is_ok(r: ProjectResult) -> bool:
-    return r.status in ("PASS", "SETUP_OK")
+    def is_ok(self) -> bool:
+        return self.status in ("PASS", "SETUP_OK")
 
 
 @dataclass
 class ProjectDiff:
     project: str
-    baseline: ProjectResult
-    current: ProjectResult
+    baseline: ProjectRunResult
+    current: ProjectRunResult
 
     @property
     def is_regression(self) -> bool:
-        return _is_ok(self.baseline) and not _is_ok(self.current)
+        return self.baseline.is_ok() and not self.current.is_ok()
 
     @property
     def is_fix(self) -> bool:
-        return not _is_ok(self.baseline) and _is_ok(self.current)
+        return not self.baseline.is_ok() and self.current.is_ok()
 
     @property
     def test_counts_changed(self) -> bool:
@@ -271,7 +270,7 @@ class ProjectDiff:
 
 
 def compute_diff(
-    baseline: list[ProjectResult], current: list[ProjectResult]
+    baseline: list[ProjectRunResult], current: list[ProjectRunResult]
 ) -> list[ProjectDiff]:
     baseline_map = {r.project: r for r in baseline}
     diffs = []
@@ -312,8 +311,8 @@ def show_diff_table(diffs: list[ProjectDiff]) -> None:
     table.add_column("Change", justify="left")
 
     for d in diffs:
-        b_style = "green" if _is_ok(d.baseline) else "red"
-        c_style = "green" if _is_ok(d.current) else "red"
+        b_style = "green" if d.baseline.is_ok() else "red"
+        c_style = "green" if d.current.is_ok() else "red"
         change = _change_description(d)
         change_styled = (
             f"[red]{change}[/red]"
@@ -345,14 +344,14 @@ def show_diff_table(diffs: list[ProjectDiff]) -> None:
         console.print("  " + ", ".join(parts))
 
 
-def _result_md(r: ProjectResult) -> str:
+def _result_md(r: ProjectRunResult) -> str:
     if r.test_stats:
         return f"{r.status} ({r.test_stats.passed}p/{r.test_stats.failed}f)"
     return r.status
 
 
 def write_markdown_comment(
-    current: list[ProjectResult],
+    current: list[ProjectRunResult],
     diffs: list[ProjectDiff] | None,
     path: Path,
 ) -> None:
@@ -365,7 +364,7 @@ def write_markdown_comment(
     ]
     for r in current:
         icon = (
-            "✅" if _is_ok(r) else ("❌" if r.status in ("FAIL", "SETUP_FAIL") else "⏱️")
+            "✅" if r.is_ok() else ("❌" if r.status in ("FAIL", "SETUP_FAIL") else "⏱️")
         )
         passed = str(r.test_stats.passed) if r.test_stats else ""
         failed = str(r.test_stats.failed) if r.test_stats else ""
@@ -405,8 +404,8 @@ def write_markdown_comment(
                 "|---------|---------|---------|--------|",
             ]
             for d in diffs:
-                b_icon = "✅" if _is_ok(d.baseline) else "❌"
-                c_icon = "✅" if _is_ok(d.current) else "❌"
+                b_icon = "✅" if d.baseline.is_ok() else "❌"
+                c_icon = "✅" if d.current.is_ok() else "❌"
                 change = _change_description(d)
                 if d.is_regression:
                     change = f"🔴 {change}"
@@ -621,7 +620,7 @@ def run_project(
     verbosity: Verbosity,
     silent: bool = False,
     skip_setup: bool = False,
-) -> ProjectResult:
+) -> ProjectRunResult:
     """Run a single project through clone → sync → install → test.
 
     *silent* suppresses the section rule (used for the quiet baseline pass).
@@ -642,22 +641,22 @@ def run_project(
         except Exception as exc:
             if not silent:
                 console.print(f"  [red][ERROR][/red] {exc}")
-            return ProjectResult(project.name, "SETUP_FAIL", error=str(exc))
+            return ProjectRunResult(project.name, "SETUP_FAIL", error=str(exc))
     else:
         try:
             install_wheel(project_dir, wheel, project.extra_deps)
         except Exception as exc:
-            return ProjectResult(project.name, "SETUP_FAIL", error=str(exc))
+            return ProjectRunResult(project.name, "SETUP_FAIL", error=str(exc))
 
     if setup_only:
-        return ProjectResult(project.name, "SETUP_OK")
+        return ProjectRunResult(project.name, "SETUP_OK")
 
     run_verbosity = Verbosity.NORMAL if silent else verbosity
     karva_result = run_karva(project, project_dir, run_verbosity)
     if karva_result.exit_code == -1:
-        return ProjectResult(project.name, "TIMEOUT")
+        return ProjectRunResult(project.name, "TIMEOUT")
     status = "PASS" if karva_result.exit_code == 0 else "FAIL"
-    return ProjectResult(
+    return ProjectRunResult(
         project.name,
         status,
         exit_code=karva_result.exit_code,
@@ -733,7 +732,7 @@ def main(
 
     # Optional baseline pass — runs each project with the baseline wheel so we
     # can diff the results at the end.
-    baseline_results: list[ProjectResult] | None = None
+    baseline_results: list[ProjectRunResult] | None = None
     if baseline_wheel is not None:
         console.rule("[dim]Baseline pass[/dim]")
         baseline_results = [
@@ -748,7 +747,7 @@ def main(
     baseline_map = (
         {r.project: r for r in baseline_results} if baseline_results is not None else {}
     )
-    results: list[ProjectResult] = []
+    results: list[ProjectRunResult] = []
     for proj in projects_to_run:
         baseline_r = baseline_map.get(proj.name)
         skip_setup = baseline_r is not None and baseline_r.status != "SETUP_FAIL"
