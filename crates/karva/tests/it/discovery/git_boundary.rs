@@ -26,7 +26,7 @@ fn test_discovery_stops_at_git_boundary() {
 name = "outer-project"
 
 [tool.karva.test]
-test-function-prefix = "outer"
+test-function-prefix = "outer_"
 "#,
         ),
         (
@@ -47,7 +47,7 @@ def test_inner(): pass
 
     // Run karva from inside the subproject. Discovery starts at `subproject/`,
     // finds .git there, and stops — it must NOT reach the outer pyproject.toml
-    // that sets test-function-prefix = "outer". The default prefix "test" is
+    // that sets test-function-prefix = "outer_". The default prefix "test_" is
     // used, so test_inner() is found and run.
     let mut cmd = context.karva_command_in(context.root().join("subproject"));
     cmd.arg("test");
