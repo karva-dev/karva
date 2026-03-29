@@ -365,56 +365,6 @@ def test_second():
     "#);
 }
 
-/// Autouse fixtures defined in a conftest.py that is in the same directory as the tests
-/// must be applied when there are multiple conftest.py files at different directory levels.
-/// This mirrors the cibuildwheel scenario where a monkeypatch-dependent autouse fixture
-/// in a subdirectory conftest was not being applied.
-#[rstest]
-fn test_auto_use_fixture_in_subdirectory_conftest_with_parent_conftest(
-    #[values("pytest", "karva")] framework: &str,
-) {
-    let sub_conftest = format!(
-        r#"
-import os
-import {framework}
-
-@{framework}.fixture({auto_use_kw}=True)
-def auto_fixture(monkeypatch):
-    monkeypatch.setenv("TEST_WAS_SET", "1")
-"#,
-        auto_use_kw = get_auto_use_kw(framework)
-    );
-    let parent_conftest = format!("import {framework}");
-    let context = TestContext::with_files([
-        ("unit_test/conftest.py", parent_conftest.as_str()),
-        ("unit_test/main_tests/conftest.py", sub_conftest.as_str()),
-        (
-            "unit_test/main_tests/test_something.py",
-            "
-import os
-
-def test_fixture_ran():
-    assert os.environ.get('TEST_WAS_SET') == '1'
-",
-        ),
-    ]);
-
-    allow_duplicates! {
-        assert_cmd_snapshot!(context.command_no_parallel(), @"
-        success: true
-        exit_code: 0
-        ----- stdout -----
-            Starting 1 test across 1 worker
-                PASS [TIME] unit_test.main_tests.test_something::test_fixture_ran
-
-        ────────────
-             Summary [TIME] 1 test run: 1 passed, 0 skipped
-
-        ----- stderr -----
-        ");
-    }
-}
-
 /// Mirrors the cibuildwheel scenario exactly: multiple autouse fixtures in a subdirectory
 /// conftest, where one depends on a non-autouse fixture from the parent conftest.
 ///
