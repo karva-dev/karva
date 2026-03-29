@@ -1339,6 +1339,35 @@ def test_caplog_messages(caplog):
 }
 
 #[test]
+fn test_caplog_record_tuples() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+import logging
+
+def test_caplog_record_tuples(caplog):
+    with caplog.at_level(logging.INFO):
+        logging.info('first')
+        logging.warning('second')
+    assert caplog.record_tuples == [
+        ('root', logging.INFO, 'first'),
+        ('root', logging.WARNING, 'second'),
+    ]
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command().arg("-q"), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
 fn test_capsys_readouterr_resets_buffer() {
     let context = TestContext::with_file(
         "test.py",

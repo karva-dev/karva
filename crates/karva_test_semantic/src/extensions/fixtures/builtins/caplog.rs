@@ -1,6 +1,6 @@
 use pyo3::exceptions::PyRuntimeError;
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyList};
+use pyo3::types::{PyDict, PyList, PyTuple};
 
 pub fn is_caplog_fixture_name(fixture_name: &str) -> bool {
     matches!(fixture_name, "caplog")
@@ -97,6 +97,21 @@ impl CapLog {
     #[getter]
     fn records<'py>(&self, py: Python<'py>) -> Bound<'py, PyList> {
         self.records.bind(py).clone()
+    }
+
+    #[getter]
+    fn record_tuples<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyList>> {
+        let records = self.records.bind(py);
+        let tuples: Vec<_> = records
+            .iter()
+            .map(|r| {
+                let name = r.getattr("name")?;
+                let levelno = r.getattr("levelno")?;
+                let message = r.call_method0("getMessage")?;
+                PyTuple::new(py, [name, levelno, message])
+            })
+            .collect::<PyResult<_>>()?;
+        PyList::new(py, tuples)
     }
 
     #[getter]
