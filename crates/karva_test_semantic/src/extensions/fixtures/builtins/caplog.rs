@@ -100,6 +100,11 @@ impl CapLog {
     }
 
     #[getter]
+    fn handler<'py>(&self, py: Python<'py>) -> Bound<'py, PyAny> {
+        self.handler.bind(py).clone()
+    }
+
+    #[getter]
     fn record_tuples<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyList>> {
         let records = self.records.bind(py);
         let tuples: Vec<_> = records

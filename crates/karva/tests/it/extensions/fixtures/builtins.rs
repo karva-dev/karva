@@ -1435,6 +1435,32 @@ def test_caplog_record_tuples(caplog):
 }
 
 #[test]
+fn test_caplog_handler() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+import logging
+
+def test_caplog_handler(caplog):
+    with caplog.at_level(logging.INFO):
+        logging.info('hello')
+        assert isinstance(caplog.handler, logging.Handler)
+        assert caplog.handler.level == logging.INFO
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command().arg("-q"), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
 fn test_capsys_readouterr_resets_buffer() {
     let context = TestContext::with_file(
         "test.py",
