@@ -5,6 +5,7 @@ use pyo3::types::{PyDict, PyIterator};
 use crate::extensions::fixtures::NormalizedFixture;
 
 mod caplog;
+mod capsys;
 mod mock_env;
 mod temp_path;
 
@@ -36,6 +37,15 @@ pub fn get_builtin_fixture(py: Python<'_>, fixture_name: &str) -> Option<Normali
                 ));
             }
         }
+        _ if capsys::is_capsys_fixture_name(fixture_name) => {
+            if let Some((capsys_instance, finalizer)) = capsys::create_capsys_fixture(py) {
+                return Some(NormalizedFixture::built_in_with_finalizer(
+                    fixture_name.to_string(),
+                    capsys_instance,
+                    finalizer,
+                ));
+            }
+        }
         _ => {}
     }
 
@@ -56,7 +66,11 @@ def _builtin_finalizer(value, finalizer):
 
     let locals = PyDict::new(py);
 
-    py.run(&std::ffi::CString::new(code).unwrap(), None, Some(&locals))?;
+    py.run(
+        &std::ffi::CString::new(code).expect("fixture code contains null byte"),
+        None,
+        Some(&locals),
+    )?;
 
     let generator_function = locals
         .get_item("_builtin_finalizer")?
