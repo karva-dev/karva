@@ -257,7 +257,6 @@ pub fn get_auto_use_fixtures<'a>(
         }
 
         auto_use_fixtures_called.push(fixture);
-        break;
     }
 
     for parent in parents {
@@ -273,7 +272,6 @@ pub fn get_auto_use_fixtures<'a>(
             }
 
             auto_use_fixtures_called.push(fixture);
-            break;
         }
     }
 

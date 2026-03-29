@@ -364,3 +364,45 @@ def test_second():
     ----- stderr -----
     "#);
 }
+
+/// All autouse fixtures in a module must be applied, not just the first one.
+#[rstest]
+fn test_multiple_auto_use_fixtures(#[values("pytest", "karva")] framework: &str) {
+    let context = TestContext::with_file(
+        "test.py",
+        &format!(
+            r#"
+import {framework}
+
+arr = []
+
+@{framework}.fixture({auto_use_kw}=True)
+def first_fixture():
+    arr.append("first")
+
+@{framework}.fixture({auto_use_kw}=True)
+def second_fixture():
+    arr.append("second")
+
+def test_both_fixtures_run():
+    assert arr == ["first", "second"], arr
+"#,
+            auto_use_kw = get_auto_use_kw(framework),
+        ),
+    );
+
+    allow_duplicates! {
+        assert_cmd_snapshot!(context.command_no_parallel(), @"
+        success: true
+        exit_code: 0
+        ----- stdout -----
+            Starting 1 test across 1 worker
+                PASS [TIME] test::test_both_fixtures_run
+
+        ────────────
+             Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+        ----- stderr -----
+        ");
+    }
+}
