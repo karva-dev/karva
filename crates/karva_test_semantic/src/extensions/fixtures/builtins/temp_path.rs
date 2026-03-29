@@ -98,7 +98,7 @@ fn get_local_path_class(py: Python<'_>) -> Option<Bound<'_, PyAny>> {
 pub fn create_tmp_path_factory_fixture(py: Python<'_>) -> Option<Py<PyAny>> {
     let base = make_temp_dir()?;
     let factory = TmpPathFactory::new(base);
-    Py::new(py, factory).ok().map(|p| p.into_any())
+    Py::new(py, factory).ok().map(Py::into_any)
 }
 
 /// Create a `TmpDirFactory` fixture (`tmpdir_factory`).
@@ -107,7 +107,7 @@ pub fn create_tmp_path_factory_fixture(py: Python<'_>) -> Option<Py<PyAny>> {
 pub fn create_tmpdir_factory_fixture(py: Python<'_>) -> Option<Py<PyAny>> {
     let base = make_temp_dir()?;
     let factory = TmpDirFactory::new(base);
-    Py::new(py, factory).ok().map(|p| p.into_any())
+    Py::new(py, factory).ok().map(Py::into_any)
 }
 
 /// Factory for `tmp_path_factory` — produces numbered `pathlib.Path` subdirs.
@@ -195,11 +195,11 @@ impl TmpDirFactory {
         let path_str = path.to_string_lossy().into_owned();
 
         if let Some(local_class) = get_local_path_class(py) {
-            local_class.call1((path_str,)).map(|b| b.unbind())
+            local_class.call1((path_str,)).map(Bound::unbind)
         } else {
             let pathlib = py.import("pathlib")?;
             let path_class = pathlib.getattr("Path")?;
-            path_class.call1((path_str,)).map(|b| b.unbind())
+            path_class.call1((path_str,)).map(Bound::unbind)
         }
     }
 
@@ -207,13 +207,13 @@ impl TmpDirFactory {
         if let Some(local_class) = get_local_path_class(py) {
             local_class
                 .call1((self.basetemp.as_str(),))
-                .map(|b| b.unbind())
+                .map(Bound::unbind)
         } else {
             let pathlib = py.import("pathlib")?;
             let path_class = pathlib.getattr("Path")?;
             path_class
                 .call1((self.basetemp.as_str(),))
-                .map(|b| b.unbind())
+                .map(Bound::unbind)
         }
     }
 
