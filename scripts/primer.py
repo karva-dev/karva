@@ -99,18 +99,6 @@ PROJECTS: list[Project] = [
         test_paths=["tests/"],
     ),
     Project(
-        name="flask",
-        repo="https://github.com/pallets/flask",
-        commit="7ef2946fb5151b745df30201b8c27790cac53875",
-        test_paths=["tests/"],
-    ),
-    Project(
-        name="werkzeug",
-        repo="https://github.com/pallets/werkzeug",
-        commit="9029a1ec49170a0a1f2908b7732ae9e4390c2ce3",
-        test_paths=["tests/"],
-    ),
-    Project(
         name="requests",
         repo="https://github.com/psf/requests",
         commit="bc04dfd6dad4cb02cd92f5daa81eb562d280a761",
@@ -127,12 +115,6 @@ PROJECTS: list[Project] = [
         repo="https://github.com/python-websockets/websockets",
         commit="ea164d2fe0cb699dd52d28bfbe98165fb35cb13c",
         test_paths=["tests/"],
-    ),
-    Project(
-        name="trio",
-        repo="https://github.com/python-trio/trio",
-        commit="82af3abcaf250aacc797b281e6815891766410fd",
-        test_paths=["src/trio/_tests/"],
     ),
     Project(
         name="typer",
@@ -189,12 +171,6 @@ PROJECTS: list[Project] = [
         test_paths=["tests/"],
     ),
     Project(
-        name="pytest",
-        repo="https://github.com/pytest-dev/pytest",
-        commit="d46fb403bb5169b1f91db53689379e28161b1eba",
-        test_paths=["testing/"],
-    ),
-    Project(
         name="packaging",
         repo="https://github.com/pypa/packaging",
         commit="c901ded1a6b97acee3b6b1eb17526228129c4645",
@@ -245,20 +221,6 @@ PROJECTS: list[Project] = [
         test_paths=["unit_test/"],
     ),
     Project(
-        name="build",
-        repo="https://github.com/pypa/build",
-        commit="7b7ae078aa1dabff33ea72d07ed15dd298acf80a",
-        test_paths=["tests/"],
-        pip_only=True,
-    ),
-    Project(
-        name="black",
-        repo="https://github.com/psf/black",
-        commit="9e969ddc31863a5c353b3f4e8f69d2aca05e36ae",
-        test_paths=["tests/"],
-        pip_only=True,
-    ),
-    Project(
         name="mypy",
         repo="https://github.com/python/mypy",
         commit="9790459eb33901e32ac9f0f2e2e332965bf4cad5",
@@ -276,13 +238,6 @@ PROJECTS: list[Project] = [
         repo="https://github.com/PyCQA/isort",
         commit="2fb94e188f3c0d8b3a593d437d58b0ce8bde4fca",
         test_paths=["tests/"],
-    ),
-    Project(
-        name="pylint",
-        repo="https://github.com/pylint-dev/pylint",
-        commit="e039e7ba1c1ac1eed30e9067f434f30ac58189c8",
-        test_paths=["tests/"],
-        pip_only=True,
     ),
     Project(
         name="anyio",
@@ -372,22 +327,9 @@ PROJECTS: list[Project] = [
         test_paths=["tests/"],
     ),
     Project(
-        name="cattrs",
-        repo="https://github.com/python-attrs/cattrs",
-        commit="2ebbe303d48b8a31582796b346bb14645f69cd83",
-        test_paths=["tests/"],
-        extra_deps=["hypothesis"],
-    ),
-    Project(
         name="structlog",
         repo="https://github.com/hynek/structlog",
         commit="599fb22e271bbfa9c6951f26ea514b43ab7b2835",
-        test_paths=["tests/"],
-    ),
-    Project(
-        name="loguru",
-        repo="https://github.com/Delgan/loguru",
-        commit="2abeb0fa6d7be4b0455c6e0b580b1e9dab19005e",
         test_paths=["tests/"],
     ),
     Project(
