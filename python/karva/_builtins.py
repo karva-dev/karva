@@ -8,11 +8,6 @@ from __future__ import annotations
 from karva._karva import fixture
 
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-
 class _Missing:
     """Sentinel for "attribute or item did not exist before patching"."""
 
@@ -71,11 +66,6 @@ def _derive_importpath(import_path: str, raising: bool = True) -> tuple[str, obj
     return attr, target
 
 
-# ---------------------------------------------------------------------------
-# MockEnv — monkeypatch helper
-# ---------------------------------------------------------------------------
-
-
 class MockEnv:
     """Helper for patching attributes, items, environment variables, and more.
 
@@ -112,10 +102,6 @@ class MockEnv:
     def __exit__(self, *args: object) -> bool:
         self.undo()
         return False
-
-    # ------------------------------------------------------------------
-    # Public patch methods
-    # ------------------------------------------------------------------
 
     def setattr(self, *args: object, raising: bool = True) -> None:
         """Set an attribute on *target*, remembering the old value for :meth:`undo`.
@@ -323,22 +309,12 @@ class _MockEnvContext:
         return False
 
 
-# ---------------------------------------------------------------------------
-# monkeypatch fixture
-# ---------------------------------------------------------------------------
-
-
 @fixture
 def monkeypatch():  # type: ignore[no-untyped-def]
     """Fixture that provides a :class:`MockEnv` for patching during a test."""
     mp = MockEnv()
     yield mp
     mp.undo()
-
-
-# ---------------------------------------------------------------------------
-# capsys / capfd  (shared implementation)
-# ---------------------------------------------------------------------------
 
 
 def _capsys_impl():  # type: ignore[no-untyped-def]
@@ -410,11 +386,6 @@ def capsys():  # type: ignore[no-untyped-def]
 def capfd():  # type: ignore[no-untyped-def]
     """Capture writes to ``sys.stdout`` and ``sys.stderr`` (fd-level alias of capsys)."""
     yield from _capsys_impl()
-
-
-# ---------------------------------------------------------------------------
-# capsysbinary / capfdbinary  (shared implementation)
-# ---------------------------------------------------------------------------
 
 
 def _capsysbinary_impl():  # type: ignore[no-untyped-def]
@@ -511,11 +482,6 @@ def capsysbinary():  # type: ignore[no-untyped-def]
 def capfdbinary():  # type: ignore[no-untyped-def]
     """Capture writes to ``sys.stdout`` and ``sys.stderr`` as bytes (fd-level alias)."""
     yield from _capsysbinary_impl()
-
-
-# ---------------------------------------------------------------------------
-# caplog
-# ---------------------------------------------------------------------------
 
 
 @fixture
@@ -623,11 +589,6 @@ def caplog():  # type: ignore[no-untyped-def]
         logging.getLogger(cap._saved_level_logger).setLevel(cap._saved_level)
 
 
-# ---------------------------------------------------------------------------
-# tmp_path / temp_path / temp_dir
-# ---------------------------------------------------------------------------
-
-
 def _make_tmp_path() -> object:
     """Create a temporary directory and return its resolved :class:`pathlib.Path`."""
     import pathlib
@@ -655,11 +616,6 @@ def temp_dir():  # type: ignore[no-untyped-def]
     yield _make_tmp_path()
 
 
-# ---------------------------------------------------------------------------
-# tmpdir
-# ---------------------------------------------------------------------------
-
-
 def _get_local_path_class() -> type | None:
     """Return the ``py.path.local`` class, or ``None`` if unavailable."""
     try:
@@ -685,11 +641,6 @@ def tmpdir():  # type: ignore[no-untyped-def]
     path = pathlib.Path(tempfile.mkdtemp(prefix="karva-")).resolve()
     local_cls = _get_local_path_class()
     yield local_cls(str(path)) if local_cls is not None else path
-
-
-# ---------------------------------------------------------------------------
-# tmp_path_factory / tmpdir_factory (session-scoped)
-# ---------------------------------------------------------------------------
 
 
 @fixture(scope="session")
@@ -754,11 +705,6 @@ def tmpdir_factory():  # type: ignore[no-untyped-def]
             return f"<TmpDirFactory basetemp={base}>"
 
     yield _TmpDirFactory()
-
-
-# ---------------------------------------------------------------------------
-# recwarn
-# ---------------------------------------------------------------------------
 
 
 @fixture
