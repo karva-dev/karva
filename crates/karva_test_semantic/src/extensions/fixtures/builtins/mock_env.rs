@@ -144,13 +144,17 @@ impl MockEnv {
         "<MockEnv object>".to_string()
     }
 
-    /// Context manager that returns a new Mock object which undoes any patching
-    /// done inside the with block upon exit.
+    /// Context manager that returns a new `MockEnv` instance which undoes any
+    /// patching done inside the `with` block upon exit, independent of the
+    /// outer fixture's teardown.
+    ///
+    /// Accessible both as a classmethod (`MockEnv.context()`) and as an
+    /// instance method (`monkeypatch.context()`), matching the pytest API.
     #[classmethod]
-    fn context(_cls: &Bound<'_, PyType>) -> MockEnvContext {
-        MockEnvContext {
-            mock_env: Self::new(),
-        }
+    fn context(_cls: &Bound<'_, PyType>, py: Python<'_>) -> PyResult<MockEnvContext> {
+        Ok(MockEnvContext {
+            mock_env: Py::new(py, Self::new())?,
+        })
     }
 
     /// Set attribute value on target, memorising the old value.
@@ -503,18 +507,20 @@ impl MockEnv {
     }
 }
 
-/// Context manager wrapper for `MockEnv`
+/// Context manager wrapper for `MockEnv`.
+///
+/// Holds a `Py<MockEnv>` so that `__enter__` returns the exact same instance
+/// that `__exit__` calls `undo()` on.
 #[pyclass]
 struct MockEnvContext {
-    mock_env: MockEnv,
+    mock_env: Py<MockEnv>,
 }
 
 #[pymethods]
 impl MockEnvContext {
     #[expect(clippy::needless_pass_by_value)]
-    fn __enter__(slf: PyRef<'_, Self>) -> PyResult<Py<MockEnv>> {
-        let py = slf.py();
-        Py::new(py, MockEnv::new())
+    fn __enter__(slf: PyRef<'_, Self>) -> Py<MockEnv> {
+        slf.mock_env.clone_ref(slf.py())
     }
 
     fn __exit__(
@@ -524,7 +530,7 @@ impl MockEnvContext {
         _exc_val: Py<PyAny>,
         _exc_tb: Py<PyAny>,
     ) -> PyResult<bool> {
-        self.mock_env.undo(py)?;
+        self.mock_env.bind(py).borrow_mut().undo(py)?;
         Ok(false)
     }
 }
