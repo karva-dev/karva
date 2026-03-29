@@ -204,6 +204,10 @@ PROJECTS: list[Project] = [
 ]
 
 
+_ANSI_ESCAPE = re.compile(r"\x1b\[[0-9;]*m")
+_TEST_RESULT_LINE = re.compile(r"\s+(PASS|FAIL|SKIP)\s+\[.*?\]\s+(\S+)")
+
+
 class TestStats(NamedTuple):
     passed: int
     failed: int
@@ -226,9 +230,23 @@ def parse_summary_line(line: str) -> TestStats | None:
     )
 
 
+def parse_test_results(output: str) -> dict[str, str]:
+    """Parse individual PASS/FAIL/SKIP lines from karva output.
+
+    Returns a mapping of test id to status string.
+    """
+    results: dict[str, str] = {}
+    for line in output.splitlines():
+        clean = _ANSI_ESCAPE.sub("", line)
+        if m := _TEST_RESULT_LINE.search(clean):
+            results[m.group(2)] = m.group(1)
+    return results
+
+
 class KarvaResult(NamedTuple):
     exit_code: int
     test_stats: TestStats | None
+    test_results: dict[str, str]
 
 
 class ProjectRunStatus(StrEnum):
@@ -255,6 +273,7 @@ class ProjectRunResult:
     exit_code: int | None = None
     error: str | None = None
     test_stats: TestStats | None = None
+    test_results: dict[str, str] = field(default_factory=dict)
 
     def is_ok(self) -> bool:
         return self.status in (ProjectRunStatus.PASS, ProjectRunStatus.SETUP_OK)
@@ -283,8 +302,31 @@ class ProjectDiff:
         )
 
     @property
+    def newly_failing(self) -> list[str]:
+        """Tests that passed in the baseline but fail in the current run."""
+        return sorted(
+            t
+            for t, s in self.current.test_results.items()
+            if s == "FAIL" and self.baseline.test_results.get(t) == "PASS"
+        )
+
+    @property
+    def newly_passing(self) -> list[str]:
+        """Tests that failed in the baseline but pass in the current run."""
+        return sorted(
+            t
+            for t, s in self.current.test_results.items()
+            if s == "PASS" and self.baseline.test_results.get(t) == "FAIL"
+        )
+
+    @property
     def has_change(self) -> bool:
-        return self.baseline.status != self.current.status or self.test_counts_changed
+        return (
+            self.baseline.status != self.current.status
+            or self.test_counts_changed
+            or bool(self.newly_failing)
+            or bool(self.newly_passing)
+        )
 
 
 def compute_diff(
@@ -360,6 +402,16 @@ def show_diff_table(diffs: list[ProjectDiff]) -> None:
         parts.append(f"{count_changes} count change{'s' if count_changes > 1 else ''}")
     if parts:
         console.print("  " + ", ".join(parts))
+
+    for d in diffs:
+        if d.newly_failing:
+            console.print(f"\n  [bold]{d.project}[/bold] — newly failing tests:")
+            for t in d.newly_failing:
+                console.print(f"    [red]✗[/red] {t}")
+        if d.newly_passing:
+            console.print(f"\n  [bold]{d.project}[/bold] — newly passing tests:")
+            for t in d.newly_passing:
+                console.print(f"    [green]✓[/green] {t}")
 
 
 def _result_md(r: ProjectRunResult) -> str:
@@ -439,6 +491,24 @@ def write_markdown_comment(
                     f"| {d.project} | {b_icon} {_result_md(d.baseline)}"
                     f" | {c_icon} {_result_md(d.current)} | {change} |"
                 )
+
+            flaky_sections = [d for d in diffs if d.newly_failing or d.newly_passing]
+            if flaky_sections:
+                lines.append("")
+                lines.append("<details>")
+                lines.append("<summary>Test-level changes</summary>\n")
+                for d in flaky_sections:
+                    if d.newly_failing:
+                        lines.append(f"**{d.project} — newly failing**\n")
+                        for t in d.newly_failing:
+                            lines.append(f"- `{t}`")
+                        lines.append("")
+                    if d.newly_passing:
+                        lines.append(f"**{d.project} — newly passing**\n")
+                        for t in d.newly_passing:
+                            lines.append(f"- `{t}`")
+                        lines.append("")
+                lines.append("</details>")
 
     path.write_text("\n".join(lines) + "\n")
 
@@ -630,10 +700,14 @@ def run_karva(project: Project, project_dir: Path, verbosity: Verbosity) -> Karv
             test_stats = parse_summary_line(line.strip())
             if test_stats is not None:
                 break
-        return KarvaResult(exit_code=result.returncode, test_stats=test_stats)
+        return KarvaResult(
+            exit_code=result.returncode,
+            test_stats=test_stats,
+            test_results=parse_test_results(result.stdout),
+        )
     except subprocess.TimeoutExpired:
         console.print(f"  [yellow][karva] timed out after {KARVA_TIMEOUT}s[/yellow]")
-        return KarvaResult(exit_code=-1, test_stats=None)
+        return KarvaResult(exit_code=-1, test_stats=None, test_results={})
 
 
 def run_project(
@@ -691,6 +765,7 @@ def run_project(
         status,
         exit_code=karva_result.exit_code,
         test_stats=karva_result.test_stats,
+        test_results=karva_result.test_results,
     )
 
 
