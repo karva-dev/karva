@@ -46,7 +46,7 @@ PRIMER_DIR = ROOT / "target" / "primer_projects"
 KARVA_TIMEOUT = 120
 
 # Number of times karva retries a failed test to reduce flakiness noise.
-KARVA_RETRY = 3
+KARVA_RETRY = 10
 
 
 class Verbosity(enum.Enum):
