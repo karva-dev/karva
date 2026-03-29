@@ -846,6 +846,41 @@ def test_setattr_missing_attr(monkeypatch):
 }
 
 #[test]
+fn test_monkeypatch_setattr_dotted_string() {
+    let context = TestContext::with_file(
+        "test.py",
+        r#"
+import os
+
+def test_setattr_dotted_none(monkeypatch):
+    monkeypatch.setattr("os.sep", None)
+    assert os.sep is None
+
+def test_setattr_dotted_none_undo(monkeypatch):
+    original = os.sep
+    monkeypatch.setattr("os.sep", None)
+    assert os.sep is None
+    monkeypatch.undo()
+    assert os.sep == original
+        "#,
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+        Starting 2 tests across 1 worker
+            PASS [TIME] test::test_setattr_dotted_none(monkeypatch=<MockEnv object>)
+            PASS [TIME] test::test_setattr_dotted_none_undo(monkeypatch=<MockEnv object>)
+
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
 fn test_monkeypatch_chdir_with_tmp_path() {
     let context = TestContext::with_file(
         "test.py",
