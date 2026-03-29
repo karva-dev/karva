@@ -948,3 +948,226 @@ def test_setitem_none_value_undo(monkeypatch):
     ----- stderr -----
     ");
 }
+
+#[test]
+fn test_caplog_records() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+import logging
+
+def test_caplog_records(caplog):
+    with caplog.at_level(logging.WARNING):
+        logging.warning('something happened')
+    assert len(caplog.records) == 1
+    assert caplog.records[0].levelname == 'WARNING'
+    assert caplog.records[0].getMessage() == 'something happened'
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command().arg("-q"), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_caplog_text() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+import logging
+
+def test_caplog_text(caplog):
+    with caplog.at_level(logging.WARNING):
+        logging.warning('text check')
+    assert 'text check' in caplog.text
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command().arg("-q"), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_caplog_messages() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+import logging
+
+def test_caplog_messages(caplog):
+    with caplog.at_level(logging.INFO):
+        logging.info('first')
+        logging.info('second')
+    assert caplog.messages == ['first', 'second']
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command().arg("-q"), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_caplog_at_level_filters() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+import logging
+
+def test_caplog_at_level_filters(caplog):
+    with caplog.at_level(logging.WARNING):
+        logging.debug('debug message')
+        logging.info('info message')
+        logging.warning('warning message')
+    assert len(caplog.records) == 1
+    assert caplog.records[0].levelname == 'WARNING'
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command().arg("-q"), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_caplog_clear() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+import logging
+
+def test_caplog_clear(caplog):
+    with caplog.at_level(logging.WARNING):
+        logging.warning('before clear')
+    assert len(caplog.records) == 1
+    caplog.clear()
+    assert len(caplog.records) == 0
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command().arg("-q"), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_caplog_set_level() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+import logging
+
+def test_caplog_set_level(caplog):
+    caplog.set_level(logging.DEBUG)
+    logging.debug('debug msg')
+    logging.info('info msg')
+    assert len(caplog.records) == 2
+    assert caplog.records[0].levelname == 'DEBUG'
+    assert caplog.records[1].levelname == 'INFO'
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command().arg("-q"), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_caplog_finalizer_cleans_up() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+import logging
+
+def test_first(caplog):
+    with caplog.at_level(logging.WARNING):
+        logging.warning('test one')
+    assert len(caplog.records) == 1
+
+def test_second(caplog):
+    assert len(caplog.records) == 0
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-q"), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+/// Verify that `set_level()` changes are undone after the test completes so a
+/// subsequent test without `caplog` sees the original root logger level.
+#[test]
+fn test_caplog_set_level_restored_after_teardown() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+import logging
+
+def test_sets_debug(caplog):
+    caplog.set_level(logging.DEBUG)
+    logging.debug('should be captured')
+    assert len(caplog.records) == 1
+
+def test_level_restored():
+    # Root logger level must be back to WARNING (default) after the previous
+    # test's caplog fixture is torn down, so a bare debug call emits nothing.
+    import logging
+    root = logging.getLogger()
+    assert root.level == logging.WARNING, f'Expected WARNING, got {root.level}'
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-q"), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
