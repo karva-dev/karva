@@ -70,6 +70,12 @@ Karva uses a **main-process + worker-subprocess** execution model. When you run 
 
 Karva is written in Rust. You can install the [Rust Toolchain](https://www.rust-lang.org/tools/install) to get started.
 
+You will also need to install [maturin](https://github.com/PyO3/maturin) to build the Python wheel:
+
+```bash
+uv tool install maturin
+```
+
 You can optionally install prek hooks to automatically run the validation checks when making a commit:
 
 ```bash
