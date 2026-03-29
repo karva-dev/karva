@@ -1,10 +1,10 @@
 """Karva is a Python test runner, written in Rust."""
 
+from karva._builtins import MockEnv
 from karva._karva import (
     Command,
     ExceptionInfo,
     FailError,
-    MockEnv,
     RaisesContext,
     SkipError,
     SnapshotMismatchError,

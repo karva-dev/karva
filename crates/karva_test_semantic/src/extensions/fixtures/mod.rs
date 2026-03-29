@@ -5,7 +5,6 @@ use pyo3::exceptions::PyAttributeError;
 use pyo3::prelude::*;
 use ruff_python_ast::StmtFunctionDef;
 
-mod builtins;
 mod finalizer;
 mod normalized_fixture;
 pub mod python;
@@ -13,9 +12,8 @@ mod scope;
 mod traits;
 mod utils;
 
-pub use builtins::{MockEnv, create_fixture_with_finalizer, get_builtin_fixture};
 pub use finalizer::Finalizer;
-pub use normalized_fixture::{NormalizedFixture, UserDefinedFixture};
+pub use normalized_fixture::NormalizedFixture;
 pub use scope::FixtureScope;
 pub use traits::{HasFixtures, RequiresFixtures};
 pub use utils::missing_arguments_from_error;

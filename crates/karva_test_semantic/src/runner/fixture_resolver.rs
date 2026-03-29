@@ -6,7 +6,7 @@ use pyo3::prelude::*;
 use crate::discovery::{DiscoveredModule, DiscoveredPackage};
 use crate::extensions::fixtures::{
     DiscoveredFixture, FixtureScope, HasFixtures, NormalizedFixture, RequiresFixtures,
-    UserDefinedFixture, get_auto_use_fixtures, get_builtin_fixture,
+    get_auto_use_fixtures,
 };
 use crate::utils::iter_with_ancestors;
 
@@ -17,6 +17,9 @@ use crate::utils::iter_with_ancestors;
 pub(super) struct RuntimeFixtureResolver<'a> {
     parents: &'a [&'a DiscoveredPackage],
     current_module: &'a DiscoveredModule,
+    /// Framework fixtures discovered from `karva._builtins`, used as a fallback
+    /// when a fixture is not found in user code.
+    framework_fixtures: &'a [DiscoveredFixture],
     fixture_cache: HashMap<String, Rc<NormalizedFixture>>,
 }
 
@@ -24,10 +27,12 @@ impl<'a> RuntimeFixtureResolver<'a> {
     pub(super) fn new(
         parents: &'a [&'a DiscoveredPackage],
         current_module: &'a DiscoveredModule,
+        framework_fixtures: &'a [DiscoveredFixture],
     ) -> Self {
         Self {
             parents,
             current_module,
+            framework_fixtures,
             fixture_cache: HashMap::new(),
         }
     }
@@ -54,14 +59,14 @@ impl<'a> RuntimeFixtureResolver<'a> {
         let required_fixtures: Vec<String> = fixture.required_fixtures(py);
         let dependent_fixtures = self.get_dependent_fixtures(py, Some(fixture), &required_fixtures);
 
-        let result = Rc::new(NormalizedFixture::UserDefined(UserDefinedFixture {
+        let result = Rc::new(NormalizedFixture {
             name: fixture.name().clone(),
             dependencies: dependent_fixtures,
             scope: fixture.scope(),
             is_generator: fixture.is_generator(),
             py_function: Rc::new(fixture.function().clone_ref(py)),
             stmt_function_def: Rc::clone(fixture.stmt_function_def()),
-        }));
+        });
 
         if fixture.scope() != FixtureScope::Function {
             self.fixture_cache.insert(cache_key, Rc::clone(&result));
@@ -119,10 +124,15 @@ impl<'a> RuntimeFixtureResolver<'a> {
         let mut normalized_fixtures = Vec::with_capacity(fixture_names.len());
 
         for dep_name in fixture_names {
-            if let Some(builtin_fixture) = get_builtin_fixture(py, dep_name) {
-                normalized_fixtures.push(Rc::new(builtin_fixture));
-            } else if let Some(fixture) =
+            if let Some(fixture) =
                 find_fixture(current_fixture, dep_name, self.parents, self.current_module)
+            {
+                let normalized = self.normalize_fixture(py, fixture);
+                normalized_fixtures.push(normalized);
+            } else if let Some(fixture) = self
+                .framework_fixtures
+                .iter()
+                .find(|f| f.name().function_name() == dep_name)
             {
                 let normalized = self.normalize_fixture(py, fixture);
                 normalized_fixtures.push(normalized);

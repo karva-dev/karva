@@ -1,11 +1,19 @@
+use std::path::Path;
+use std::rc::Rc;
+
+use camino::Utf8Path;
 use karva_collector::{CollectedModule, CollectedPackage};
 use karva_project::path::{TestPath, TestPathError};
+use karva_python_semantic::ModulePath;
 use pyo3::prelude::*;
+use ruff_python_ast::{PythonVersion, Stmt};
+use ruff_python_parser::{Mode, ParseOptions, parse_unchecked};
 
 use crate::Context;
 use crate::collection::TestFunctionCollector;
-use crate::discovery::visitor::discover;
+use crate::discovery::visitor::{discover, is_generator};
 use crate::discovery::{DiscoveredModule, DiscoveredPackage};
+use crate::extensions::fixtures::DiscoveredFixture;
 use crate::utils::add_to_sys_path;
 
 /// Discovers test functions and fixtures from Python source files.
@@ -110,4 +118,60 @@ impl<'ctx, 'a> StandardDiscoverer<'ctx, 'a> {
 
         module
     }
+}
+
+/// Discovers all fixtures defined in `karva._builtins` by importing the module at
+/// runtime and parsing its source file.
+///
+/// Returns an empty list if the module cannot be imported or parsed, so callers
+/// always have a valid (possibly empty) slice to work with.
+pub fn discover_framework_fixtures(
+    py: Python<'_>,
+    python_version: PythonVersion,
+) -> Vec<DiscoveredFixture> {
+    let Ok(builtins_module) = py.import("karva._builtins") else {
+        return vec![];
+    };
+
+    let Ok(file_path_obj) = builtins_module.getattr("__file__") else {
+        return vec![];
+    };
+    let Ok(file_path_str) = file_path_obj.extract::<String>() else {
+        return vec![];
+    };
+    let Some(utf8_path) = Utf8Path::from_path(Path::new(&file_path_str)) else {
+        return vec![];
+    };
+
+    let Ok(source_text) = std::fs::read_to_string(utf8_path) else {
+        return vec![];
+    };
+
+    let module_path = ModulePath::new_with_name(utf8_path, "karva._builtins".to_string());
+
+    let mut parse_options = ParseOptions::from(Mode::Module);
+    parse_options = parse_options.with_target_version(python_version);
+    let Some(parsed) = parse_unchecked(&source_text, parse_options).try_into_module() else {
+        return vec![];
+    };
+
+    let mut fixtures = Vec::new();
+    for stmt in parsed.into_syntax().body {
+        let Stmt::FunctionDef(function_def) = stmt else {
+            continue;
+        };
+        let is_gen = is_generator(&function_def);
+        let stmt_rc = Rc::new(function_def);
+        if let Ok(fixture) = DiscoveredFixture::try_from_function(
+            py,
+            stmt_rc,
+            &builtins_module,
+            &module_path,
+            is_gen,
+        ) {
+            fixtures.push(fixture);
+        }
+    }
+
+    fixtures
 }
