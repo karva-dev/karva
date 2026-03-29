@@ -373,15 +373,6 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
             return result;
         }
 
-        // Snapshot os.environ before test setup so that any direct mutations to
-        // os.environ (without monkeypatch) don't bleed into the next test.
-        let env_snapshot: Option<Py<PyAny>> = py
-            .import("os")
-            .and_then(|os| os.getattr("environ"))
-            .and_then(|environ| environ.call_method0("copy"))
-            .ok()
-            .map(pyo3::Bound::unbind);
-
         let start_time = std::time::Instant::now();
 
         let expect_fail_tag = tags.expect_fail_tag();
@@ -463,16 +454,6 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
 
         for finalizer in test_finalizers.into_iter().rev() {
             finalizer.run(self.context, py);
-        }
-
-        // Restore os.environ to the pre-test snapshot, undoing any direct mutations
-        // that bypassed monkeypatch (e.g. `os.environ['X'] = 'y'` without cleanup).
-        if let Some(snapshot) = env_snapshot
-            && let Ok(os) = py.import("os")
-            && let Ok(environ) = os.getattr("environ")
-        {
-            let _ = environ.call_method0("clear");
-            let _ = environ.call_method1("update", (&snapshot,));
         }
 
         self.clean_up_scope(py, FixtureScope::Function);
