@@ -100,7 +100,7 @@ pub fn test(args: TestCommand) -> Result<ExitStatus> {
         durations,
     )?;
 
-    if result.stats.is_success() && result.discovery_diagnostics.is_empty() {
+    if result.stats.is_success() {
         Ok(ExitStatus::Success)
     } else {
         Ok(ExitStatus::Failure)
@@ -139,26 +139,25 @@ pub fn print_test_output(
     Ok(())
 }
 
-/// Print discovery diagnostics and regular diagnostics, with concise-mode spacing.
+/// Print all diagnostics (collection errors and test failures), with concise-mode spacing.
 fn print_diagnostics_section(
     stdout: &mut Stdout,
     result: &AggregatedResults,
     is_concise: bool,
 ) -> Result<()> {
-    if !result.discovery_diagnostics.is_empty() {
-        writeln!(stdout, "discovery diagnostics:")?;
-        writeln!(stdout)?;
-        write!(stdout, "{}", result.discovery_diagnostics)?;
+    let has_any = !result.discovery_diagnostics.is_empty() || !result.diagnostics.is_empty();
 
-        if is_concise {
-            writeln!(stdout)?;
-        }
-    }
-
-    if !result.diagnostics.is_empty() {
+    if has_any {
         writeln!(stdout, "diagnostics:")?;
         writeln!(stdout)?;
-        write!(stdout, "{}", result.diagnostics)?;
+
+        if !result.discovery_diagnostics.is_empty() {
+            write!(stdout, "{}", result.discovery_diagnostics)?;
+        }
+
+        if !result.diagnostics.is_empty() {
+            write!(stdout, "{}", result.diagnostics)?;
+        }
 
         if is_concise {
             writeln!(stdout)?;

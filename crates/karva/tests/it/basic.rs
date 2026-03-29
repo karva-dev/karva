@@ -1392,16 +1392,55 @@ def test_pass():
     );
 
     assert_cmd_snapshot!(context.command_no_parallel().arg("--output-format=concise"), @"
-    success: false
-    exit_code: 1
+    success: true
+    exit_code: 0
     ----- stdout -----
         Starting 1 test across 1 worker
-    discovery diagnostics:
+    diagnostics:
 
     error[failed-to-import-module] Failed to import python module `test`: No module named 'nonexistent_module_xyz'
 
     ────────────
          Summary [TIME] 0 tests run: 0 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_collection_error_with_passing_tests_exits_zero() {
+    let context = TestContext::with_files([
+        (
+            "test_bad.py",
+            r"
+import nonexistent_module_xyz
+
+def test_unreachable():
+    assert True
+            ",
+        ),
+        (
+            "test_good.py",
+            r"
+def test_pass():
+    assert True
+            ",
+        ),
+    ]);
+
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+        Starting 2 tests across 1 worker
+            PASS [TIME] test_good::test_pass
+
+    diagnostics:
+
+    error[failed-to-import-module]: Failed to import python module `test_bad`: No module named 'nonexistent_module_xyz'
+
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");

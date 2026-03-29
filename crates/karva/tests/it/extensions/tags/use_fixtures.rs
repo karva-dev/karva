@@ -485,11 +485,11 @@ def test_1():
     );
 
     assert_cmd_snapshot!(test_context.command(), @"
-    success: false
-    exit_code: 1
+    success: true
+    exit_code: 0
     ----- stdout -----
         Starting 1 test across 1 worker
-    discovery diagnostics:
+    diagnostics:
 
     error[failed-to-import-module]: Failed to import python module `test`: Expected a string or a list of strings for fixture names
 

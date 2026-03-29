@@ -452,11 +452,11 @@ def test_1():
     );
 
     assert_cmd_snapshot!(context.command(), @"
-    success: false
-    exit_code: 1
+    success: true
+    exit_code: 0
     ----- stdout -----
         Starting 1 test across 1 worker
-    discovery diagnostics:
+    diagnostics:
 
     error[failed-to-import-module]: Failed to import python module `test`: Expected boolean values for conditions
 
@@ -481,11 +481,11 @@ def test_1():
     );
 
     assert_cmd_snapshot!(context.command(), @"
-    success: false
-    exit_code: 1
+    success: true
+    exit_code: 0
     ----- stdout -----
         Starting 1 test across 1 worker
-    discovery diagnostics:
+    diagnostics:
 
     error[failed-to-import-module]: Failed to import python module `test`: Expected boolean values for conditions
 
