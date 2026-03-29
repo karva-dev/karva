@@ -365,6 +365,70 @@ def test_second():
     "#);
 }
 
+/// Mirrors the cibuildwheel scenario exactly: multiple autouse fixtures in a subdirectory
+/// conftest, where one depends on a non-autouse fixture from the parent conftest.
+///
+/// Before the fix for #633/#635, only the first autouse fixture from each conftest
+/// was applied (due to a spurious `break`). The second autouse (`set_second`) would
+/// never run, and `fake_pkg` (which depends on a parent fixture) would also be missed.
+#[rstest]
+fn test_multiple_autouse_fixtures_in_subdirectory_conftest(
+    #[values("pytest", "karva")] framework: &str,
+) {
+    let parent_conftest = format!(
+        r#"
+import {framework}
+
+@{framework}.fixture
+def parent_value():
+    return "from_parent"
+"#
+    );
+    let sub_conftest = format!(
+        r#"
+import {framework}
+
+@{framework}.fixture({auto_use_kw}=True)
+def first_autouse(monkeypatch):
+    monkeypatch.setenv("FIRST_SET", "yes")
+
+@{framework}.fixture({auto_use_kw}=True)
+def second_autouse(monkeypatch, parent_value):
+    monkeypatch.setenv("SECOND_SET", parent_value)
+"#,
+        auto_use_kw = get_auto_use_kw(framework)
+    );
+    let context = TestContext::with_files([
+        ("unit_test/conftest.py", parent_conftest.as_str()),
+        ("unit_test/main_tests/conftest.py", sub_conftest.as_str()),
+        (
+            "unit_test/main_tests/test_something.py",
+            "
+import os
+
+def test_both_autouse_ran():
+    assert os.environ.get('FIRST_SET') == 'yes', os.environ.get('FIRST_SET')
+    assert os.environ.get('SECOND_SET') == 'from_parent', os.environ.get('SECOND_SET')
+",
+        ),
+    ]);
+
+    allow_duplicates! {
+        assert_cmd_snapshot!(context.command_no_parallel(), @"
+        success: true
+        exit_code: 0
+        ----- stdout -----
+            Starting 1 test across 1 worker
+                PASS [TIME] unit_test.main_tests.test_something::test_both_autouse_ran
+
+        ────────────
+             Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+        ----- stderr -----
+        ");
+    }
+}
+
 /// All autouse fixtures in a module must be applied, not just the first one.
 #[rstest]
 fn test_multiple_auto_use_fixtures(#[values("pytest", "karva")] framework: &str) {
