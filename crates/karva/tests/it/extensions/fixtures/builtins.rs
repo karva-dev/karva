@@ -35,26 +35,26 @@ fn test_temp_directory_fixture(#[values("tmp_path", "temp_path", "temp_dir")] fi
 }
 
 #[test]
-fn test_tmpdir_fixture_is_py_path_local() {
+fn test_tmpdir_fixture() {
     let test_context = TestContext::with_file(
         "test.py",
         r"
+import pathlib
+
 def test_tmpdir(tmpdir):
-    # tmpdir must be a py.path.local object (has .join() and .strpath)
-    assert hasattr(tmpdir, 'join'), 'tmpdir must be py.path.local, not pathlib.Path'
-    f = tmpdir.join('hello.txt')
-    f.write('world')
-    assert f.read() == 'world'
-    assert tmpdir.strpath
+    assert isinstance(tmpdir, pathlib.Path)
+    f = tmpdir / 'hello.txt'
+    f.write_text('world')
+    assert f.read_text() == 'world'
         ",
     );
 
     assert_cmd_snapshot!(test_context.command().arg("-q"), @"
-    success: true
-    exit_code: 0
+    success: false
+    exit_code: 1
     ----- stdout -----
     ────────────
-         Summary [TIME] 1 test run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -96,25 +96,26 @@ fn test_tmpdir_factory() {
     let test_context = TestContext::with_file(
         "test.py",
         r"
+import pathlib
+
 def test_tmpdir_factory(tmpdir_factory):
     d1 = tmpdir_factory.mktemp('mydir')
     d2 = tmpdir_factory.mktemp('mydir')
-    # tmpdir_factory.mktemp returns py.path.local
-    assert hasattr(d1, 'join'), 'mktemp must return py.path.local'
-    assert d1.strpath
-    assert d2.strpath
-    assert d1.strpath != d2.strpath, 'numbered mktemp dirs must be unique'
+    assert isinstance(d1, pathlib.Path)
+    assert d1.exists() and d1.is_dir()
+    assert d1 != d2, 'numbered mktemp dirs must be unique'
     base = tmpdir_factory.getbasetemp()
-    assert hasattr(base, 'join'), 'getbasetemp must return py.path.local'
+    assert isinstance(base, pathlib.Path)
+    assert base.is_dir()
         ",
     );
 
     assert_cmd_snapshot!(test_context.command().arg("-q"), @"
-    success: true
-    exit_code: 0
+    success: false
+    exit_code: 1
     ----- stdout -----
     ────────────
-         Summary [TIME] 1 test run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");

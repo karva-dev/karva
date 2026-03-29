@@ -616,27 +616,10 @@ def temp_dir():  # type: ignore[no-untyped-def]
     yield _make_tmp_path()
 
 
-def _get_local_path_class() -> type | None:
-    """Return the ``py.path.local`` class, or ``None`` if the ``py`` package is unavailable."""
-    try:
-        from py.path import (  # ty: ignore[unresolved-import]
-            local,  # type: ignore[import-untyped]
-        )
-
-        return local
-    except ImportError:
-        return None
-
-
 @fixture
 def tmpdir():  # type: ignore[no-untyped-def]
-    """Provide a temporary directory as a ``py.path.local`` object (or :class:`pathlib.Path` fallback)."""
-    import pathlib
-    import tempfile
-
-    path = pathlib.Path(tempfile.mkdtemp(prefix="karva-")).resolve()
-    local_cls = _get_local_path_class()
-    yield local_cls(str(path)) if local_cls is not None else path
+    """Provide a temporary directory as a :class:`pathlib.Path`."""
+    yield _make_tmp_path()
 
 
 @fixture(scope="session")
@@ -672,16 +655,15 @@ def tmp_path_factory():  # type: ignore[no-untyped-def]
 
 @fixture(scope="session")
 def tmpdir_factory():  # type: ignore[no-untyped-def]
-    """Session-scoped factory for creating numbered ``py.path.local`` temporary directories."""
+    """Session-scoped factory for creating numbered temporary directories."""
     import pathlib
     import tempfile
 
     base = pathlib.Path(tempfile.mkdtemp(prefix="karva-")).resolve()
     counter = [0]
-    local_cls = _get_local_path_class()
 
     class _TmpDirFactory:
-        def mktemp(self, basename: str, numbered: bool = True) -> object:
+        def mktemp(self, basename: str, numbered: bool = True) -> pathlib.Path:
             """Create and return a new temporary subdirectory."""
             if numbered:
                 name = f"{basename}{counter[0]}"
@@ -690,14 +672,11 @@ def tmpdir_factory():  # type: ignore[no-untyped-def]
                 name = basename
             path = base / name
             path.mkdir(parents=True, exist_ok=True)
-            path_str = str(path)
-            return (
-                local_cls(path_str) if local_cls is not None else pathlib.Path(path_str)
-            )
+            return path
 
-        def getbasetemp(self) -> object:
+        def getbasetemp(self) -> pathlib.Path:
             """Return the base temporary directory."""
-            return local_cls(str(base)) if local_cls is not None else base
+            return base
 
         def __repr__(self) -> str:
             return f"<TmpDirFactory basetemp={base}>"
