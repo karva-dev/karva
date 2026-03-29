@@ -1210,6 +1210,40 @@ def test_setattr_none_as_new_value(monkeypatch):
     ");
 }
 
+/// Regression test for issue #620: `setattr(module, attr, None)` must not fail.
+/// The reproduce case from the issue uses a real module and sets a dunder attribute to `None`,
+/// which is the exact pattern that failed (e.g. `monkeypatch.setattr(i18n, "__spec__", None)`
+/// in humanize and `monkeypatch.setattr(..., "__file__", None)` in structlog).
+#[test]
+fn test_monkeypatch_setattr_module_attr_none() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+import sys
+
+def test_setattr_module_spec_none(monkeypatch):
+    original = sys.__spec__
+    monkeypatch.setattr(sys, '__spec__', None)
+    assert sys.__spec__ is None
+    monkeypatch.undo()
+    assert sys.__spec__ is original
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_setattr_module_spec_none(monkeypatch=<MockEnv object>)
+
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
 #[test]
 fn test_caplog_records() {
     let context = TestContext::with_file(
