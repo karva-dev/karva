@@ -53,7 +53,7 @@ jobs:
 
       - name: "Run primer"
         run: |
-          uv run --script scripts/primer.py \
+          uv run --script scripts/primer.py -v \
             --wheel "$(ls target/wheels-pr/*.whl)" \
             --baseline-wheel "$(ls target/wheels-main/*.whl)" \
             --markdown-output primer-comment.md

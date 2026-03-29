@@ -44,7 +44,7 @@ ROOT = Path(__file__).parent.parent
 PRIMER_DIR = ROOT / "target" / "primer_projects"
 
 # Per-project karva run timeout in seconds.
-KARVA_TIMEOUT = 120
+KARVA_TIMEOUT = 240
 
 # Number of times karva retries a failed test to reduce flakiness noise.
 KARVA_RETRY = 10
@@ -273,6 +273,7 @@ PROJECTS: list[Project] = [
         repo="https://github.com/tqdm/tqdm",
         commit="75bdb6c379bcfc6c592b6342dc791a092b5d6ae0",
         test_paths=["tests/"],
+        extra_deps=["numpy", "pandas"],
         pip_only=True,
     ),
     Project(
