@@ -1878,3 +1878,32 @@ def test_capfdbinary_stderr(capfdbinary):
     ----- stderr -----
     ");
 }
+
+/// Regression test: `redirect_python_output` was calling `logging.disable(CRITICAL)` before
+/// each test, silently suppressing all log messages below `CRITICAL` for the entire test run.
+/// A test using `capsys` to assert on warning or info log output would always capture an empty
+/// string because the records were dropped before reaching any handler.
+#[test]
+fn test_capsys_captures_logging_warning() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+import logging
+
+def test_capsys_logging_warning(capsys):
+    logging.warning('regression check')
+    captured = capsys.readouterr()
+    assert 'regression check' in captured.err, f'Expected log output in stderr, got: {captured.err!r}'
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command().arg("-q"), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}

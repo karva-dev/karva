@@ -110,7 +110,6 @@ fn redirect_python_output(
     let sys = py.import("sys")?;
     let os = py.import("os")?;
     let builtins = py.import("builtins")?;
-    let logging = py.import("logging")?;
 
     let devnull = os.getattr("devnull")?;
     let open_file_function = builtins.getattr("open")?;
@@ -119,8 +118,6 @@ fn redirect_python_output(
     for output in ["stdout", "stderr"] {
         sys.setattr(output, null_file.clone())?;
     }
-
-    logging.call_method1("disable", (logging.getattr("CRITICAL")?,))?;
 
     Ok(Some(null_file))
 }
@@ -131,7 +128,6 @@ fn redirect_python_output(
 /// handles and restoring normal output streams.
 fn restore_python_output<'py>(py: Python<'py>, null_file: &Bound<'py, PyAny>) -> PyResult<()> {
     let sys = py.import("sys")?;
-    let logging = py.import("logging")?;
 
     for output in ["stdout", "stderr"] {
         let current_output = sys.getattr(output)?;
@@ -140,7 +136,6 @@ fn restore_python_output<'py>(py: Python<'py>, null_file: &Bound<'py, PyAny>) ->
         sys.setattr(output, null_file.clone())?;
     }
 
-    logging.call_method1("disable", (logging.getattr("CRITICAL")?,))?;
     Ok(())
 }
 
