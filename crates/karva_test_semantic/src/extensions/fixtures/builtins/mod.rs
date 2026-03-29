@@ -7,6 +7,7 @@ use crate::extensions::fixtures::NormalizedFixture;
 mod caplog;
 mod capsys;
 mod mock_env;
+mod recwarn;
 mod temp_path;
 
 pub fn get_builtin_fixture(py: Python<'_>, fixture_name: &str) -> Option<NormalizedFixture> {
@@ -42,6 +43,15 @@ pub fn get_builtin_fixture(py: Python<'_>, fixture_name: &str) -> Option<Normali
                 return Some(NormalizedFixture::built_in_with_finalizer(
                     fixture_name.to_string(),
                     capsys_instance,
+                    finalizer,
+                ));
+            }
+        }
+        _ if recwarn::is_recwarn_fixture_name(fixture_name) => {
+            if let Some((recwarn_instance, finalizer)) = recwarn::create_recwarn_fixture(py) {
+                return Some(NormalizedFixture::built_in_with_finalizer(
+                    fixture_name.to_string(),
+                    recwarn_instance,
                     finalizer,
                 ));
             }
