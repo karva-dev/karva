@@ -28,6 +28,7 @@ import shutil
 import subprocess
 import sys
 from dataclasses import dataclass, field
+from enum import StrEnum
 from pathlib import Path
 from typing import Annotated, NamedTuple
 
@@ -230,16 +231,24 @@ class KarvaResult(NamedTuple):
     test_stats: TestStats | None
 
 
+class ProjectStatus(StrEnum):
+    PASS = "PASS"
+    FAIL = "FAIL"
+    TIMEOUT = "TIMEOUT"
+    SETUP_OK = "SETUP_OK"
+    SETUP_FAIL = "SETUP_FAIL"
+
+
 @dataclass
 class ProjectRunResult:
     project: str
-    status: str  # PASS, FAIL, TIMEOUT, SETUP_OK, SETUP_FAIL
+    status: ProjectStatus
     exit_code: int | None = None
     error: str | None = None
     test_stats: TestStats | None = None
 
     def is_ok(self) -> bool:
-        return self.status in ("PASS", "SETUP_OK")
+        return self.status in (ProjectStatus.PASS, ProjectStatus.SETUP_OK)
 
 
 @dataclass
@@ -364,7 +373,13 @@ def write_markdown_comment(
     ]
     for r in current:
         icon = (
-            "✅" if r.is_ok() else ("❌" if r.status in ("FAIL", "SETUP_FAIL") else "⏱️")
+            "✅"
+            if r.is_ok()
+            else (
+                "❌"
+                if r.status in (ProjectStatus.FAIL, ProjectStatus.SETUP_FAIL)
+                else "⏱️"
+            )
         )
         passed = str(r.test_stats.passed) if r.test_stats else ""
         failed = str(r.test_stats.failed) if r.test_stats else ""
@@ -641,21 +656,25 @@ def run_project(
         except Exception as exc:
             if not silent:
                 console.print(f"  [red][ERROR][/red] {exc}")
-            return ProjectRunResult(project.name, "SETUP_FAIL", error=str(exc))
+            return ProjectRunResult(
+                project.name, ProjectStatus.SETUP_FAIL, error=str(exc)
+            )
     else:
         try:
             install_wheel(project_dir, wheel, project.extra_deps)
         except Exception as exc:
-            return ProjectRunResult(project.name, "SETUP_FAIL", error=str(exc))
+            return ProjectRunResult(
+                project.name, ProjectStatus.SETUP_FAIL, error=str(exc)
+            )
 
     if setup_only:
-        return ProjectRunResult(project.name, "SETUP_OK")
+        return ProjectRunResult(project.name, ProjectStatus.SETUP_OK)
 
     run_verbosity = Verbosity.NORMAL if silent else verbosity
     karva_result = run_karva(project, project_dir, run_verbosity)
     if karva_result.exit_code == -1:
-        return ProjectRunResult(project.name, "TIMEOUT")
-    status = "PASS" if karva_result.exit_code == 0 else "FAIL"
+        return ProjectRunResult(project.name, ProjectStatus.TIMEOUT)
+    status = ProjectStatus.PASS if karva_result.exit_code == 0 else ProjectStatus.FAIL
     return ProjectRunResult(
         project.name,
         status,
@@ -750,7 +769,9 @@ def main(
     results: list[ProjectRunResult] = []
     for proj in projects_to_run:
         baseline_r = baseline_map.get(proj.name)
-        skip_setup = baseline_r is not None and baseline_r.status != "SETUP_FAIL"
+        skip_setup = (
+            baseline_r is not None and baseline_r.status != ProjectStatus.SETUP_FAIL
+        )
         result = run_project(
             proj,
             current_wheel,
@@ -770,11 +791,11 @@ def main(
     table.add_column("Skipped", justify="right", style="yellow")
 
     status_styles = {
-        "PASS": "green",
-        "SETUP_OK": "green",
-        "FAIL": "red",
-        "TIMEOUT": "yellow",
-        "SETUP_FAIL": "red",
+        ProjectStatus.PASS: "green",
+        ProjectStatus.SETUP_OK: "green",
+        ProjectStatus.FAIL: "red",
+        ProjectStatus.TIMEOUT: "yellow",
+        ProjectStatus.SETUP_FAIL: "red",
     }
 
     for r in results:
@@ -787,10 +808,12 @@ def main(
 
     console.print(table)
 
-    passes = sum(1 for r in results if r.status in ("PASS", "SETUP_OK"))
-    fails = sum(1 for r in results if r.status == "FAIL")
-    timeouts = sum(1 for r in results if r.status == "TIMEOUT")
-    setup_fails = sum(1 for r in results if r.status == "SETUP_FAIL")
+    passes = sum(
+        1 for r in results if r.status in (ProjectStatus.PASS, ProjectStatus.SETUP_OK)
+    )
+    fails = sum(1 for r in results if r.status == ProjectStatus.FAIL)
+    timeouts = sum(1 for r in results if r.status == ProjectStatus.TIMEOUT)
+    setup_fails = sum(1 for r in results if r.status == ProjectStatus.SETUP_FAIL)
     console.print(
         f"  [green]{passes} passed[/green], [red]{fails} failed[/red], "
         f"[yellow]{timeouts} timed out[/yellow], [red]{setup_fails} setup errors[/red]"
@@ -809,7 +832,11 @@ def main(
         # Pre-existing failures and minor count fluctuations are not actionable here.
         if any(d.is_regression for d in diffs):
             raise typer.Exit(1)
-    elif any(r.status in ("FAIL", "TIMEOUT", "SETUP_FAIL") for r in results):
+    elif any(
+        r.status
+        in (ProjectStatus.FAIL, ProjectStatus.TIMEOUT, ProjectStatus.SETUP_FAIL)
+        for r in results
+    ):
         raise typer.Exit(1)
 
 
