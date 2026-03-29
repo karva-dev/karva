@@ -239,13 +239,13 @@ class ProjectRunStatus(StrEnum):
     SETUP_FAIL = "SETUP_FAIL"
 
     def style(self) -> str:
-        return {
-            ProjectRunStatus.PASS: "green",
-            ProjectRunStatus.SETUP_OK: "green",
-            ProjectRunStatus.FAIL: "red",
-            ProjectRunStatus.TIMEOUT: "yellow",
-            ProjectRunStatus.SETUP_FAIL: "red",
-        }[self]
+        match self:
+            case ProjectRunStatus.PASS | ProjectRunStatus.SETUP_OK:
+                return "green"
+            case ProjectRunStatus.FAIL | ProjectRunStatus.SETUP_FAIL:
+                return "red"
+            case ProjectRunStatus.TIMEOUT:
+                return "yellow"
 
 
 @dataclass
