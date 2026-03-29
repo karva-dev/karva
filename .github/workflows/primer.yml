@@ -2,9 +2,6 @@ name: Primer
 
 on:
   pull_request:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 permissions: {}
@@ -54,20 +51,15 @@ jobs:
           cd "$GITHUB_WORKSPACE"
           git worktree remove /tmp/karva-main
 
-      - name: "Run primer (PR — with diff)"
-        if: github.event_name == 'pull_request'
+      - name: "Run primer"
         run: |
           uv run --script scripts/primer.py \
             --wheel "$(ls target/wheels-pr/*.whl)" \
             --baseline-wheel "$(ls target/wheels-main/*.whl)" \
             --markdown-output primer-comment.md
 
-      - name: "Run primer"
-        if: github.event_name != 'pull_request'
-        run: uv run --script scripts/primer.py --wheel "$(ls target/wheels-pr/*.whl)"
-
       - name: "Post PR comment"
-        if: ${{ !cancelled() && github.event_name == 'pull_request' }}
+        if: ${{ !cancelled() }}
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
         with:
           script: |
