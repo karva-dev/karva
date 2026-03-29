@@ -269,12 +269,6 @@ PROJECTS: list[Project] = [
         test_paths=["tests/"],
     ),
     Project(
-        name="tenacity",
-        repo="https://github.com/jd/tenacity",
-        commit="8779333a4759e56427b5d7ba23cacd3fe6054d61",
-        test_paths=["tests/"],
-    ),
-    Project(
         name="tqdm",
         repo="https://github.com/tqdm/tqdm",
         commit="75bdb6c379bcfc6c592b6342dc791a092b5d6ae0",
