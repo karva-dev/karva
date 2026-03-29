@@ -16,4 +16,5 @@
 - AVOID useless inline comments in tests (e.g., `// Run tests`, `// Accept remaining`, `// Review again`). The code should speak for itself. Only add comments when the intent is non-obvious.
 - PREFER function comments over inline comments.
 - ALWAYS add labels to PRs.
+- ALWAYS use the pull request template when writing PR descriptions.
 - ALWAYS write human-readable PR descriptions using paragraphs and code examples instead of bullet points.
