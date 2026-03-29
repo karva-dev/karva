@@ -83,6 +83,8 @@ class Project:
     # Needed for projects whose dependency groups can't be resolved by uv
     # (e.g. requires-python range wider than what some groups support).
     pip_only: bool = False
+    # Run `git submodule update --init --recursive` after checkout.
+    submodules: bool = False
 
 
 PROJECTS: list[Project] = [
@@ -144,18 +146,12 @@ PROJECTS: list[Project] = [
         name="more-itertools",
         repo="https://github.com/more-itertools/more-itertools",
         commit="9210d54527ddfa63ebe75cd5b5daa0201902c674",
-        test_paths=["more_itertools/tests/"],
+        test_paths=["tests/"],
     ),
     Project(
         name="boltons",
         repo="https://github.com/mahmoud/boltons",
         commit="207651ee6055aabd0d9cdeac2e00140cdc208d44",
-        test_paths=["tests/"],
-    ),
-    Project(
-        name="toolz",
-        repo="https://github.com/pytoolz/toolz",
-        commit="568c2b8393973cd172a466546c9d95779c452438",
         test_paths=["tests/"],
     ),
     Project(
@@ -215,13 +211,6 @@ PROJECTS: list[Project] = [
         test_paths=["mypy/test/"],
     ),
     Project(
-        name="pyflakes",
-        repo="https://github.com/PyCQA/pyflakes",
-        commit="59ec4593efd4c69ce00fdb13c40fcf5f3212ab10",
-        test_paths=["pyflakes/test/"],
-        pip_only=True,
-    ),
-    Project(
         name="isort",
         repo="https://github.com/PyCQA/isort",
         commit="2fb94e188f3c0d8b3a593d437d58b0ce8bde4fca",
@@ -258,6 +247,7 @@ PROJECTS: list[Project] = [
         repo="https://github.com/sdispater/tomlkit",
         commit="dd05eebc8ed9e30fc6c223088a5a450cb54c1cab",
         test_paths=["tests/"],
+        submodules=True,
     ),
     Project(
         name="jsonschema",
@@ -271,12 +261,6 @@ PROJECTS: list[Project] = [
         commit="d3a8d4950e7f1c1cfcabc819e4b85f0bba61e26d",
         test_paths=["test/"],
         pip_only=True,
-    ),
-    Project(
-        name="peewee",
-        repo="https://github.com/coleifer/peewee",
-        commit="f8ff6af96cd8b0d3a303a5ec1d514b59837178d6",
-        test_paths=["tests/"],
     ),
     Project(
         name="pyjwt",
@@ -294,7 +278,7 @@ PROJECTS: list[Project] = [
         name="mkdocs",
         repo="https://github.com/mkdocs/mkdocs",
         commit="2862536793b3c67d9d83c33e0dd6d50a791928f8",
-        test_paths=["tests/"],
+        test_paths=["mkdocs/tests/"],
     ),
     Project(
         name="griffe",
@@ -327,19 +311,6 @@ PROJECTS: list[Project] = [
         test_paths=["tests/"],
     ),
     Project(
-        name="python-dateutil",
-        repo="https://github.com/dateutil/dateutil",
-        commit="c981f9c7aa91b83cc9bd33a09ecee9e751b06e8d",
-        test_paths=["dateutil/test/"],
-    ),
-    Project(
-        name="faker",
-        repo="https://github.com/joke2k/faker",
-        commit="db42f6477ea15d754889a9e030b3c3d29872d947",
-        test_paths=["tests/"],
-        pip_only=True,
-    ),
-    Project(
         name="tenacity",
         repo="https://github.com/jd/tenacity",
         commit="8779333a4759e56427b5d7ba23cacd3fe6054d61",
@@ -356,7 +327,7 @@ PROJECTS: list[Project] = [
         name="parse",
         repo="https://github.com/r1chardj0n3s/parse",
         commit="a285c6670773dcc3a2085b07fef281320a284a8e",
-        test_paths=["test_parse.py"],
+        test_paths=["tests/"],
     ),
     Project(
         name="python-dotenv",
@@ -768,6 +739,15 @@ def clone_or_update(project: Project, project_dir: Path) -> None:
         _clone(project, project_dir)
         subprocess.run(
             ["git", "checkout", project.commit],
+            cwd=project_dir,
+            check=True,
+            capture_output=True,
+        )
+
+    if project.submodules:
+        console.print("  [dim]\\[git] updating submodules...[/dim]")
+        subprocess.run(
+            ["git", "submodule", "update", "--init", "--recursive"],
             cwd=project_dir,
             check=True,
             capture_output=True,
