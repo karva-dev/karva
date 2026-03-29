@@ -85,13 +85,7 @@ class Project:
 
 
 PROJECTS: list[Project] = [
-    Project(
-        name="httpx",
-        repo="https://github.com/encode/httpx",
-        commit="b5addb64f0161ff6bfe94c124ef76f6a1fba5254",
-        test_paths=["tests/"],
-        extra_deps=["chardet"],
-    ),
+    # --- Web / Networking ---
     Project(
         name="starlette",
         repo="https://github.com/encode/starlette",
@@ -105,21 +99,52 @@ PROJECTS: list[Project] = [
         test_paths=["tests/"],
     ),
     Project(
+        name="flask",
+        repo="https://github.com/pallets/flask",
+        commit="7ef2946fb5151b745df30201b8c27790cac53875",
+        test_paths=["tests/"],
+    ),
+    Project(
+        name="werkzeug",
+        repo="https://github.com/pallets/werkzeug",
+        commit="9029a1ec49170a0a1f2908b7732ae9e4390c2ce3",
+        test_paths=["tests/"],
+    ),
+    Project(
+        name="aiohttp",
+        repo="https://github.com/aio-libs/aiohttp",
+        commit="5ed2e129ce41214adb76976e7ec43b8e639846ef",
+        test_paths=["tests/"],
+    ),
+    Project(
+        name="requests",
+        repo="https://github.com/psf/requests",
+        commit="bc04dfd6dad4cb02cd92f5daa81eb562d280a761",
+        test_paths=["tests/"],
+    ),
+    Project(
+        name="httpcore",
+        repo="https://github.com/encode/httpcore",
+        commit="10a658221deb38a4c5b16db55ab554b0bf731707",
+        test_paths=["tests/"],
+    ),
+    Project(
+        name="websockets",
+        repo="https://github.com/python-websockets/websockets",
+        commit="ea164d2fe0cb699dd52d28bfbe98165fb35cb13c",
+        test_paths=["tests/"],
+    ),
+    Project(
+        name="trio",
+        repo="https://github.com/python-trio/trio",
+        commit="82af3abcaf250aacc797b281e6815891766410fd",
+        test_paths=["src/trio/_tests/"],
+    ),
+    # --- CLI / Terminal ---
+    Project(
         name="typer",
         repo="https://github.com/fastapi/typer",
         commit="2966e4c5e584476e324a847c05e6ba17412031a1",
-        test_paths=["tests/"],
-    ),
-    Project(
-        name="rich",
-        repo="https://github.com/Textualize/rich",
-        commit="fc41075a3206d2a5fd846c6f41c4d2becab814fa",
-        test_paths=["tests/"],
-    ),
-    Project(
-        name="griffe",
-        repo="https://github.com/mkdocstrings/griffe",
-        commit="97106e4f56c99146f23864c7777e5bfaec89bafe",
         test_paths=["tests/"],
     ),
     Project(
@@ -129,35 +154,60 @@ PROJECTS: list[Project] = [
         test_paths=["tests/"],
     ),
     Project(
-        name="flask",
-        repo="https://github.com/pallets/flask",
-        commit="7ef2946fb5151b745df30201b8c27790cac53875",
+        name="rich",
+        repo="https://github.com/Textualize/rich",
+        commit="fc41075a3206d2a5fd846c6f41c4d2becab814fa",
         test_paths=["tests/"],
     ),
     Project(
-        name="jinja",
-        repo="https://github.com/pallets/jinja",
-        commit="5ef70112a1ff19c05324ff889dd30405b1002044",
+        name="textual",
+        repo="https://github.com/Textualize/textual",
+        commit="04b03c8db64266a6a7811cc161bae9986e53b1a1",
         test_paths=["tests/"],
     ),
     Project(
-        name="attrs",
-        repo="https://github.com/python-attrs/attrs",
-        commit="4885c5b1af4e9fa4d97b6bffa2fb78a2efa5f047",
+        name="prompt-toolkit",
+        repo="https://github.com/prompt-toolkit/python-prompt-toolkit",
+        commit="940af53fa443073d9fdca26d5da6cfe6780f6ac9",
+        test_paths=["tests/"],
+    ),
+    # --- Data / Utilities ---
+    Project(
+        name="pydantic",
+        repo="https://github.com/pydantic/pydantic",
+        commit="ac249284616890d91c746dc890fb0f6407df2843",
         test_paths=["tests/"],
     ),
     Project(
-        name="cattrs",
-        repo="https://github.com/python-attrs/cattrs",
-        commit="2ebbe303d48b8a31582796b346bb14645f69cd83",
+        name="arrow",
+        repo="https://github.com/arrow-py/arrow",
+        commit="b423717da81aaf8117313b4b377efaa6413a9639",
         test_paths=["tests/"],
-        extra_deps=["hypothesis"],
     ),
     Project(
-        name="structlog",
-        repo="https://github.com/hynek/structlog",
-        commit="599fb22e271bbfa9c6951f26ea514b43ab7b2835",
+        name="more-itertools",
+        repo="https://github.com/more-itertools/more-itertools",
+        commit="9210d54527ddfa63ebe75cd5b5daa0201902c674",
+        test_paths=["more_itertools/tests/"],
+    ),
+    Project(
+        name="boltons",
+        repo="https://github.com/mahmoud/boltons",
+        commit="207651ee6055aabd0d9cdeac2e00140cdc208d44",
         test_paths=["tests/"],
+    ),
+    Project(
+        name="toolz",
+        repo="https://github.com/pytoolz/toolz",
+        commit="568c2b8393973cd172a466546c9d95779c452438",
+        test_paths=["tests/"],
+    ),
+    # --- Testing / Build / Packaging ---
+    Project(
+        name="pytest",
+        repo="https://github.com/pytest-dev/pytest",
+        commit="d46fb403bb5169b1f91db53689379e28161b1eba",
+        test_paths=["testing/"],
     ),
     Project(
         name="packaging",
@@ -166,18 +216,39 @@ PROJECTS: list[Project] = [
         test_paths=["tests/"],
     ),
     Project(
-        name="black",
-        repo="https://github.com/psf/black",
-        commit="9e969ddc31863a5c353b3f4e8f69d2aca05e36ae",
+        name="pip",
+        repo="https://github.com/pypa/pip",
+        commit="fc9550be97a09d3752b7ee77791418f17c27bb6e",
         test_paths=["tests/"],
-        # uv sync can't resolve: docs group pins sphinx==8.2.3 (Python>=3.11) but
-        # requires-python is >=3.10, causing uv to fail when resolving for 3.10.
-        pip_only=True,
     ),
     Project(
-        name="nox",
-        repo="https://github.com/wntrblm/nox",
-        commit="4ff681f169c4043ce3b3d19cba1eadd66720bf1d",
+        name="setuptools",
+        repo="https://github.com/pypa/setuptools",
+        commit="5a13876673a41e3cd21d4d6e587f53d0fb4fd8e5",
+        test_paths=["setuptools/tests/"],
+    ),
+    Project(
+        name="virtualenv",
+        repo="https://github.com/pypa/virtualenv",
+        commit="1bbeb9045b7075ba55684f9f601f64d8844fbf12",
+        test_paths=["tests/"],
+    ),
+    Project(
+        name="flit",
+        repo="https://github.com/pypa/flit",
+        commit="53634707f58358b94a80614f16b212f8df4c8f38",
+        test_paths=["tests/"],
+    ),
+    Project(
+        name="hatch",
+        repo="https://github.com/pypa/hatch",
+        commit="1e8f73c577c903436fc58d96c3de0fccae83a705",
+        test_paths=["tests/backend/"],
+    ),
+    Project(
+        name="tox",
+        repo="https://github.com/tox-dev/tox",
+        commit="0eda3a2840460521e8a0aeb45199fa890b7bba20",
         test_paths=["tests/"],
     ),
     Project(
@@ -191,14 +262,227 @@ PROJECTS: list[Project] = [
         repo="https://github.com/pypa/build",
         commit="7b7ae078aa1dabff33ea72d07ed15dd298acf80a",
         test_paths=["tests/"],
-        # uv sync can't resolve: docs group requires proselint>=0.16 (Python>=3.10) but
-        # requires-python is >=3.9, causing uv to fail when resolving for 3.9.
         pip_only=True,
+    ),
+    # --- Type Checking / Code Analysis ---
+    Project(
+        name="black",
+        repo="https://github.com/psf/black",
+        commit="9e969ddc31863a5c353b3f4e8f69d2aca05e36ae",
+        test_paths=["tests/"],
+        pip_only=True,
+    ),
+    Project(
+        name="mypy",
+        repo="https://github.com/python/mypy",
+        commit="9790459eb33901e32ac9f0f2e2e332965bf4cad5",
+        test_paths=["mypy/test/"],
+    ),
+    Project(
+        name="pyflakes",
+        repo="https://github.com/PyCQA/pyflakes",
+        commit="59ec4593efd4c69ce00fdb13c40fcf5f3212ab10",
+        test_paths=["pyflakes/test/"],
+    ),
+    Project(
+        name="isort",
+        repo="https://github.com/PyCQA/isort",
+        commit="2fb94e188f3c0d8b3a593d437d58b0ce8bde4fca",
+        test_paths=["tests/"],
+    ),
+    Project(
+        name="pylint",
+        repo="https://github.com/pylint-dev/pylint",
+        commit="e039e7ba1c1ac1eed30e9067f434f30ac58189c8",
+        test_paths=["tests/"],
+    ),
+    # --- Async ---
+    Project(
+        name="anyio",
+        repo="https://github.com/agronholm/anyio",
+        commit="96f0cf3cb9cd40c04b8effb2c4e14f67ff49a62c",
+        test_paths=["tests/"],
+    ),
+    # --- Parsing / Serialization ---
+    Project(
+        name="jinja",
+        repo="https://github.com/pallets/jinja",
+        commit="5ef70112a1ff19c05324ff889dd30405b1002044",
+        test_paths=["tests/"],
+    ),
+    Project(
+        name="marshmallow",
+        repo="https://github.com/marshmallow-code/marshmallow",
+        commit="5d78e243f04d9cc07149e6ecdb9b987718ad480b",
+        test_paths=["tests/"],
+    ),
+    Project(
+        name="pyyaml",
+        repo="https://github.com/yaml/pyyaml",
+        commit="d51d8a138f7230834fc6e95635ff09ebd329185f",
+        test_paths=["tests/lib/"],
+    ),
+    Project(
+        name="tomlkit",
+        repo="https://github.com/sdispater/tomlkit",
+        commit="dd05eebc8ed9e30fc6c223088a5a450cb54c1cab",
+        test_paths=["tests/"],
+    ),
+    Project(
+        name="jsonschema",
+        repo="https://github.com/python-jsonschema/jsonschema",
+        commit="b747e59151ce8652e7860fc9e0639aa78676a5b1",
+        test_paths=["tests/"],
+    ),
+    # --- Database / ORM ---
+    Project(
+        name="sqlalchemy",
+        repo="https://github.com/sqlalchemy/sqlalchemy",
+        commit="d3a8d4950e7f1c1cfcabc819e4b85f0bba61e26d",
+        test_paths=["test/"],
+    ),
+    Project(
+        name="peewee",
+        repo="https://github.com/coleifer/peewee",
+        commit="f8ff6af96cd8b0d3a303a5ec1d514b59837178d6",
+        test_paths=["tests/"],
+    ),
+    Project(
+        name="alembic",
+        repo="https://github.com/sqlalchemy/alembic",
+        commit="7b510dc52c7e931f393b6387f183bf888a08dee9",
+        test_paths=["tests/"],
+    ),
+    # --- Security ---
+    Project(
+        name="pyjwt",
+        repo="https://github.com/jpadilla/pyjwt",
+        commit="40e3147eb5f790d8d041772e5fc00728a176c812",
+        test_paths=["tests/"],
+    ),
+    Project(
+        name="itsdangerous",
+        repo="https://github.com/pallets/itsdangerous",
+        commit="672971d66a2ef9f85151e53283113f33d642dabd",
+        test_paths=["tests/"],
+    ),
+    # --- Documentation ---
+    Project(
+        name="mkdocs",
+        repo="https://github.com/mkdocs/mkdocs",
+        commit="2862536793b3c67d9d83c33e0dd6d50a791928f8",
+        test_paths=["tests/"],
+    ),
+    Project(
+        name="griffe",
+        repo="https://github.com/mkdocstrings/griffe",
+        commit="97106e4f56c99146f23864c7777e5bfaec89bafe",
+        test_paths=["tests/"],
+    ),
+    # --- Data Classes / Structured Data ---
+    Project(
+        name="attrs",
+        repo="https://github.com/python-attrs/attrs",
+        commit="4885c5b1af4e9fa4d97b6bffa2fb78a2efa5f047",
+        test_paths=["tests/"],
+    ),
+    Project(
+        name="cattrs",
+        repo="https://github.com/python-attrs/cattrs",
+        commit="2ebbe303d48b8a31582796b346bb14645f69cd83",
+        test_paths=["tests/"],
+        extra_deps=["hypothesis"],
+    ),
+    # --- Logging / Observability ---
+    Project(
+        name="structlog",
+        repo="https://github.com/hynek/structlog",
+        commit="599fb22e271bbfa9c6951f26ea514b43ab7b2835",
+        test_paths=["tests/"],
+    ),
+    Project(
+        name="loguru",
+        repo="https://github.com/Delgan/loguru",
+        commit="2abeb0fa6d7be4b0455c6e0b580b1e9dab19005e",
+        test_paths=["tests/"],
     ),
     Project(
         name="svcs",
         repo="https://github.com/hynek/svcs",
         commit="bfdc0b0fd960414d31948be1869daadaec45aefe",
+        test_paths=["tests/"],
+    ),
+    # --- Miscellaneous / Utilities ---
+    Project(
+        name="humanize",
+        repo="https://github.com/python-humanize/humanize",
+        commit="ad74ae2ea0b51fa8613a44b5bc1859df7385c3db",
+        test_paths=["tests/"],
+    ),
+    Project(
+        name="python-dateutil",
+        repo="https://github.com/dateutil/dateutil",
+        commit="c981f9c7aa91b83cc9bd33a09ecee9e751b06e8d",
+        test_paths=["dateutil/test/"],
+    ),
+    Project(
+        name="faker",
+        repo="https://github.com/joke2k/faker",
+        commit="db42f6477ea15d754889a9e030b3c3d29872d947",
+        test_paths=["tests/"],
+    ),
+    Project(
+        name="tenacity",
+        repo="https://github.com/jd/tenacity",
+        commit="8779333a4759e56427b5d7ba23cacd3fe6054d61",
+        test_paths=["tests/"],
+    ),
+    Project(
+        name="cachetools",
+        repo="https://github.com/tkem/cachetools",
+        commit="5dce86fc5c9c565c6e9c912e2be5d6abb9586a1d",
+        test_paths=["tests/"],
+    ),
+    Project(
+        name="tqdm",
+        repo="https://github.com/tqdm/tqdm",
+        commit="75bdb6c379bcfc6c592b6342dc791a092b5d6ae0",
+        test_paths=["tests/"],
+    ),
+    Project(
+        name="tabulate",
+        repo="https://github.com/astanin/python-tabulate",
+        commit="268615a5c27dc40e5c22454c07b44d5c50410da0",
+        test_paths=["test/"],
+    ),
+    Project(
+        name="parse",
+        repo="https://github.com/r1chardj0n3s/parse",
+        commit="a285c6670773dcc3a2085b07fef281320a284a8e",
+        test_paths=["test_parse.py"],
+    ),
+    Project(
+        name="schedule",
+        repo="https://github.com/dbader/schedule",
+        commit="82a43db1b938d8fdf60103bd41f329e06c8d3651",
+        test_paths=["test_schedule.py"],
+    ),
+    Project(
+        name="python-dotenv",
+        repo="https://github.com/theskumar/python-dotenv",
+        commit="fa4e6a90b45428212452afc6ee0d5c8103b9301d",
+        test_paths=["tests/"],
+    ),
+    Project(
+        name="click-extra",
+        repo="https://github.com/kdeldycke/click-extra",
+        commit="98e204a6d5391e23f15b247668bea58340be5e84",
+        test_paths=["tests/"],
+    ),
+    Project(
+        name="pendulum",
+        repo="https://github.com/sdispater/pendulum",
+        commit="ae4c4052dc1aaf2614aa68d7ab8a3ca4396ec6aa",
         test_paths=["tests/"],
     ),
 ]
