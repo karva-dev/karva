@@ -93,6 +93,11 @@ impl ProjectMetadata {
     /// 1. The closest `pyproject.toml` with a `tool.karva` section or `karva.toml`.
     /// 1. The closest `pyproject.toml`.
     /// 1. Fallback to use `path` as the root and use the default settings.
+    ///
+    /// The upward walk stops at the first directory that contains a `.git` entry.
+    /// This prevents karva from escaping the current repository and accidentally
+    /// picking up a parent project's configuration (e.g., in monorepos or primer
+    /// setups where projects are cloned inside another repo's working tree).
     pub fn discover(
         path: &Utf8Path,
         python_version: PythonVersion,
@@ -138,6 +143,16 @@ impl ProjectMetadata {
                 if closest_project.is_none() {
                     closest_project = Some(metadata);
                 }
+            }
+
+            // Stop walking up at a `.git` boundary to avoid escaping the current
+            // repository and picking up a parent project's configuration.
+            if project_root.join(".git").exists() {
+                tracing::debug!(
+                    "Stopping project discovery at git boundary '{}'",
+                    project_root
+                );
+                break;
             }
         }
 

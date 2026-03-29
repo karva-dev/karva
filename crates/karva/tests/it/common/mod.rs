@@ -163,6 +163,20 @@ impl TestContext {
         command
     }
 
+    /// Returns the base karva `Command` with its working directory set to `dir`.
+    ///
+    /// Useful when the test needs to invoke karva from a subdirectory of the
+    /// project root (e.g., to test project-discovery boundary behaviour).
+    /// `VIRTUAL_ENV` is always set so the worker binary can be located even
+    /// when the project `.venv` is not under `dir`.
+    pub fn karva_command_in(&self, dir: impl AsRef<Utf8Path>) -> Command {
+        let mut command = self.karva_command();
+        command
+            .current_dir(dir.as_ref())
+            .env("VIRTUAL_ENV", self.venv_path.as_str());
+        command
+    }
+
     pub fn command_no_parallel(&self) -> Command {
         let mut command = self.command();
         command.arg("--no-parallel");
