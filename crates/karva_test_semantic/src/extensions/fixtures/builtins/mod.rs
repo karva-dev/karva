@@ -30,6 +30,22 @@ pub fn get_builtin_fixture(py: Python<'_>, fixture_name: &str) -> Option<Normali
                 ));
             }
         }
+        _ if temp_path::is_tmp_path_factory_fixture_name(fixture_name) => {
+            if let Some(factory) = temp_path::create_tmp_path_factory_fixture(py) {
+                return Some(NormalizedFixture::built_in(
+                    fixture_name.to_string(),
+                    factory,
+                ));
+            }
+        }
+        _ if temp_path::is_tmpdir_factory_fixture_name(fixture_name) => {
+            if let Some(factory) = temp_path::create_tmpdir_factory_fixture(py) {
+                return Some(NormalizedFixture::built_in(
+                    fixture_name.to_string(),
+                    factory,
+                ));
+            }
+        }
         _ if mock_env::is_mock_env_fixture_name(fixture_name) => {
             if let Some((mock_instance, finalizer)) = mock_env::create_mock_env_fixture(py) {
                 return Some(NormalizedFixture::built_in_with_finalizer(
