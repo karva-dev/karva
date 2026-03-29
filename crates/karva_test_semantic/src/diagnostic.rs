@@ -31,7 +31,7 @@ declare_diagnostic_type! {
     /// Tests that were successfully collected still run and determine the exit code.
     pub static FAILED_TO_IMPORT_MODULE = {
         summary: "Failed to import python module",
-        severity: Severity::Warning,
+        severity: Severity::Error,
     }
 }
 

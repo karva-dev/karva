@@ -709,13 +709,13 @@ def test_invalid(x):
     );
 
     assert_cmd_snapshot!(context.command(), @"
-    success: true
-    exit_code: 0
+    success: false
+    exit_code: 1
     ----- stdout -----
         Starting 1 test across 1 worker
     diagnostics:
 
-    warning[failed-to-import-module]: Failed to import python module `test`: Expected a string or a list of strings for the arg_names, and a list of lists of objects for the arg_values
+    error[failed-to-import-module]: Failed to import python module `test`: Expected a string or a list of strings for the arg_names, and a list of lists of objects for the arg_values
 
     ────────────
          Summary [TIME] 0 tests run: 0 passed, 0 skipped
