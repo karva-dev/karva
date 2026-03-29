@@ -273,6 +273,7 @@ PROJECTS: list[Project] = [
         repo="https://github.com/tqdm/tqdm",
         commit="75bdb6c379bcfc6c592b6342dc791a092b5d6ae0",
         test_paths=["tests/"],
+        extra_deps=["numpy", "pandas"],
         pip_only=True,
     ),
     Project(
