@@ -516,8 +516,8 @@ def test_context_classmethod():
     with MockEnv.context() as mp:
         mp.setattr(A, 'x', 2)
         assert A.x == 2
-        mp.undo()
 
+    # patches are undone automatically on __exit__, no manual undo() needed
     assert A.x == 1
         ",
     );
@@ -531,6 +531,58 @@ def test_context_classmethod():
 
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_monkeypatch_context() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+import os
+
+def test_context_auto_undo(monkeypatch):
+    class A:
+        x = 1
+
+    with monkeypatch.context() as m:
+        m.setattr(A, 'x', 2)
+        assert A.x == 2
+    # patches are undone automatically on __exit__, no manual undo() needed
+    assert A.x == 1
+
+def test_context_env_auto_undo(monkeypatch):
+    with monkeypatch.context() as m:
+        m.setenv('_KARVA_CTX_TEST', 'hello')
+        assert os.environ['_KARVA_CTX_TEST'] == 'hello'
+    assert '_KARVA_CTX_TEST' not in os.environ
+
+def test_context_independent_of_outer(monkeypatch):
+    class B:
+        y = 10
+
+    monkeypatch.setattr(B, 'y', 20)
+    with monkeypatch.context() as m:
+        m.setattr(B, 'y', 30)
+        assert B.y == 30
+    # inner context undone, but outer monkeypatch patch remains active
+    assert B.y == 20
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+        Starting 3 tests across 1 worker
+            PASS [TIME] test::test_context_auto_undo(monkeypatch=<MockEnv object>)
+            PASS [TIME] test::test_context_env_auto_undo(monkeypatch=<MockEnv object>)
+            PASS [TIME] test::test_context_independent_of_outer(monkeypatch=<MockEnv object>)
+
+    ────────────
+         Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
     ----- stderr -----
     ");
