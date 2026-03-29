@@ -22,6 +22,20 @@ type SetItemEntry = (Py<PyAny>, Py<PyAny>, Py<PyAny>);
 type SetAttr = Arc<Mutex<Vec<SetAttrEntry>>>;
 type SetItem = Arc<Mutex<Vec<SetItemEntry>>>;
 
+/// Sentinel type used to represent "value was absent before patching". Using a
+/// dedicated Rust-backed type avoids the ambiguity of `None`, which is a
+/// legitimate Python value an attribute or dict entry might actually hold.
+#[pyclass]
+struct Missing;
+
+fn make_missing(py: Python<'_>) -> PyResult<Py<PyAny>> {
+    Ok(Py::new(py, Missing)?.into_any())
+}
+
+fn is_missing(value: &Bound<'_, PyAny>) -> bool {
+    value.is_instance_of::<Missing>()
+}
+
 /// Helper to conveniently monkeypatch attributes/items/environment variables/syspath.
 #[pyclass]
 pub struct MockEnv {
@@ -60,7 +74,7 @@ impl MockEnv {
     fn undo_setattr(&self, py: Python<'_>) -> PyResult<()> {
         let mut setattr_list = self.lock_setattr()?;
         for (obj, name, value) in setattr_list.drain(..).rev() {
-            if value.bind(py).is_none() {
+            if is_missing(value.bind(py)) {
                 let _ = obj.bind(py).delattr(&name);
             } else {
                 obj.bind(py).setattr(&name, value)?;
@@ -74,9 +88,8 @@ impl MockEnv {
         let mut setitem_list = self.lock_setitem()?;
         for (dictionary, key, value) in setitem_list.drain(..).rev() {
             let bound_dict = dictionary.bind(py);
-            let bound_value = value.bind(py);
 
-            if bound_value.is_none() {
+            if is_missing(value.bind(py)) {
                 let _ = bound_dict.del_item(&key);
             } else {
                 bound_dict.set_item(&key, value)?;
@@ -182,7 +195,7 @@ impl MockEnv {
                     "{actual_target:?} has no attribute {actual_name:?}"
                 )));
             }
-            py.None()
+            make_missing(py)?
         };
 
         // Handle class descriptors
@@ -190,12 +203,15 @@ impl MockEnv {
             .bind(py)
             .is_instance_of::<pyo3::types::PyType>()
         {
-            actual_target
+            match actual_target
                 .bind(py)
                 .getattr("__dict__")?
                 .get_item(&actual_name)
                 .ok()
-                .map_or_else(|| py.None(), std::convert::Into::into)
+            {
+                Some(v) => v.into(),
+                None => make_missing(py)?,
+            }
         } else {
             oldval
         };
@@ -258,17 +274,20 @@ impl MockEnv {
                 .bind(py)
                 .is_instance_of::<pyo3::types::PyType>()
             {
-                actual_target
+                match actual_target
                     .bind(py)
                     .getattr("__dict__")?
                     .get_item(&actual_name)
                     .ok()
-                    .map_or_else(|| py.None(), std::convert::Into::into)
+                {
+                    Some(v) => v.into(),
+                    None => make_missing(py)?,
+                }
             } else {
                 val.into()
             }
         } else {
-            py.None()
+            make_missing(py)?
         };
 
         // Store for undo
@@ -293,10 +312,10 @@ impl MockEnv {
         let bound_dic = dic.bind(py);
 
         // Get old value if it exists
-        let oldval = bound_dic
-            .get_item(&name)
-            .ok()
-            .map_or_else(|| py.None(), std::convert::Into::into);
+        let oldval = match bound_dic.get_item(&name).ok() {
+            Some(v) => v.into(),
+            None => make_missing(py)?,
+        };
 
         // Store for undo
         self.lock_setitem()?
@@ -366,9 +385,10 @@ impl MockEnv {
         let name_key = name.into_pyobject(py)?.into_any().unbind();
         let value_obj = final_value.into_pyobject(py)?.into_any().unbind();
 
-        let oldval = environ
-            .get_item(&name_key)
-            .map_or_else(|_| py.None(), Into::into);
+        let oldval = match environ.get_item(&name_key).ok() {
+            Some(v) => v.into(),
+            None => make_missing(py)?,
+        };
 
         self.lock_setitem()?
             .push((environ.clone().unbind(), name_key.clone_ref(py), oldval));
