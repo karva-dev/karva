@@ -33,6 +33,11 @@ impl<'a> RuntimeFixtureResolver<'a> {
     }
 
     /// Normalize a fixture and its dependencies recursively.
+    ///
+    /// Function-scoped fixtures are NOT cached because their built-in dependencies
+    /// (e.g. `tmp_path`) must be fresh for each test invocation. Broader-scoped
+    /// fixtures are cached so they are shared across tests within the appropriate
+    /// scope.
     fn normalize_fixture(
         &mut self,
         py: Python,
@@ -40,8 +45,10 @@ impl<'a> RuntimeFixtureResolver<'a> {
     ) -> Rc<NormalizedFixture> {
         let cache_key = fixture.name().to_string();
 
-        if let Some(cached) = self.fixture_cache.get(&cache_key) {
-            return Rc::clone(cached);
+        if fixture.scope() != FixtureScope::Function {
+            if let Some(cached) = self.fixture_cache.get(&cache_key) {
+                return Rc::clone(cached);
+            }
         }
 
         let required_fixtures: Vec<String> = fixture.required_fixtures(py);
@@ -56,7 +63,9 @@ impl<'a> RuntimeFixtureResolver<'a> {
             stmt_function_def: Rc::clone(fixture.stmt_function_def()),
         }));
 
-        self.fixture_cache.insert(cache_key, Rc::clone(&result));
+        if fixture.scope() != FixtureScope::Function {
+            self.fixture_cache.insert(cache_key, Rc::clone(&result));
+        }
 
         result
     }

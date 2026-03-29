@@ -11,7 +11,11 @@ pub fn is_temp_path_fixture_name(fixture_name: &str) -> bool {
 pub fn create_temp_dir_fixture(py: Python<'_>) -> Option<Py<PyAny>> {
     let temp_dir = TempDir::with_prefix("karva-").ok()?;
 
-    let path_str = temp_dir.path().to_str()?.to_string();
+    // Resolve symlinks so the path matches what `Path.resolve()` would return.
+    // On macOS, /var/folders/... is a symlink to /private/var/folders/..., which
+    // causes path equality checks to fail when test code calls Path.resolve().
+    let resolved = temp_dir.path().canonicalize().ok()?;
+    let path_str = resolved.to_str()?.to_string();
 
     let _ = temp_dir.keep();
 

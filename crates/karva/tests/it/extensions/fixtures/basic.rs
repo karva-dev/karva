@@ -680,3 +680,44 @@ def test_named_fixture(custom_name):
     ----- stderr -----
     ");
 }
+
+#[test]
+fn test_function_scoped_fixture_isolated_per_test() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+import karva
+
+@karva.fixture
+def make_subdir(tmp_path):
+    def _make(name):
+        d = tmp_path / name
+        d.mkdir()
+        return d
+    return _make
+
+def test_first(make_subdir):
+    d = make_subdir('subdir')
+    assert d.exists()
+
+def test_second(make_subdir):
+    # Fresh tmp_path per test — mkdir on same name must not raise FileExistsError
+    d = make_subdir('subdir')
+    assert d.exists()
+
+def test_third(make_subdir):
+    d = make_subdir('subdir')
+    assert d.exists()
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-q"), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    ────────────
+         Summary [TIME] 3 tests run: 3 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
