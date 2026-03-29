@@ -1644,3 +1644,34 @@ def test_creates_subdir(value, tmp_path):
     ----- stderr -----
     ");
 }
+
+#[test]
+fn test_capfd_captures_output() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+def test_capfd_stdout(capfd):
+    print('hello from capfd')
+    captured = capfd.readouterr()
+    assert captured.out == 'hello from capfd\n'
+    assert captured.err == ''
+
+def test_capfd_stderr(capfd):
+    import sys
+    print('error output', file=sys.stderr)
+    captured = capfd.readouterr()
+    assert captured.out == ''
+    assert captured.err == 'error output\n'
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-q"), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
