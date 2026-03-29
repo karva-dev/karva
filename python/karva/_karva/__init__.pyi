@@ -1,3 +1,4 @@
+import builtins
 import types
 from collections.abc import Callable, Sequence
 from typing import Generic, Literal, NoReturn, Self, TypeAlias, TypeVar, overload
@@ -76,7 +77,7 @@ class ExceptionInfo:
     """Stores information about a caught exception from `karva.raises`."""
 
     @property
-    def type(self) -> type[BaseException] | None:
+    def type(self) -> builtins.type[BaseException] | None:
         """The exception type."""
 
     @property
@@ -204,6 +205,9 @@ class SkipError(Exception):
 
 class FailError(Exception):
     """Raised when `karva.fail` is called."""
+
+class SnapshotMismatchError(Exception):
+    """Raised when a snapshot assertion fails."""
 
 class InvalidFixtureError(Exception):
     """Raised when an invalid fixture is encountered."""

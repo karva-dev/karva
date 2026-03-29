@@ -6,7 +6,9 @@ These fixtures are automatically available to all tests without any imports.
 from __future__ import annotations
 
 import contextlib
-from typing import Self
+import os
+from collections.abc import MutableMapping
+from typing import Any, Self
 
 from karva._karva import fixture
 
@@ -87,7 +89,7 @@ class MockEnv:
 
     def __init__(self) -> None:
         self._setattr_ops: list[tuple[object, str, object]] = []
-        self._setitem_ops: list[tuple[object, object, object]] = []
+        self._setitem_ops: list[tuple[MutableMapping[Any, Any], Any, Any]] = []
         self._saved_cwd: str | None = None
         self._saved_syspath: list[str] | None = None
 
@@ -190,33 +192,33 @@ class MockEnv:
         self._setattr_ops.append((actual_target, actual_attr, old_val))
         _builtin_delattr(actual_target, actual_attr)
 
-    def setitem(self, dic: object, name: object, value: object) -> None:
+    def setitem(self, dic: MutableMapping[Any, Any], name: Any, value: Any) -> None:
         """Set ``dic[name] = value``, remembering the old value for :meth:`undo`."""
-        old_val: object
+        old_val: Any
         try:
-            old_val = dic[name]  # type: ignore[index]
+            old_val = dic[name]
         except (KeyError, IndexError):
             old_val = _MISSING
 
         self._setitem_ops.append((dic, name, old_val))
-        dic[name] = value  # type: ignore[index]
+        dic[name] = value
 
-    def delitem(self, dic: object, name: object, raising: bool = True) -> None:
+    def delitem(
+        self, dic: MutableMapping[Any, Any], name: Any, raising: bool = True
+    ) -> None:
         """Delete ``dic[name]``, remembering it for :meth:`undo`."""
         try:
-            old_val = dic[name]  # type: ignore[index]
+            old_val = dic[name]
         except (KeyError, IndexError):
             if raising:
                 raise
             return
 
         self._setitem_ops.append((dic, name, old_val))
-        del dic[name]  # type: ignore[index]
+        del dic[name]
 
     def setenv(self, name: str, value: object, prepend: str | None = None) -> None:
         """Set the environment variable *name* to *value*, remembering the old value."""
-        import os
-
         value_str = str(value)
 
         if prepend is not None and name in os.environ:
@@ -230,8 +232,6 @@ class MockEnv:
 
     def delenv(self, name: str, raising: bool = True) -> None:
         """Delete environment variable *name*, remembering it for :meth:`undo`."""
-        import os
-
         environ = os.environ
         if name not in environ:
             if raising:
@@ -242,13 +242,12 @@ class MockEnv:
         self._setitem_ops.append((environ, name, old_val))
         del environ[name]
 
-    def syspath_prepend(self, path: object) -> None:
+    def syspath_prepend(self, path: str | os.PathLike[str]) -> None:
         """Prepend *path* to ``sys.path``, saving the original list for :meth:`undo`."""
         import importlib
-        import os
         import sys
 
-        path_str = os.fspath(path)  # type: ignore[arg-type]
+        path_str = os.fspath(path)
 
         if self._saved_syspath is None:
             self._saved_syspath = list(sys.path)
@@ -258,8 +257,6 @@ class MockEnv:
 
     def chdir(self, path: object) -> None:
         """Change the current working directory to *path*, saving the original for :meth:`undo`."""
-        import os
-
         if self._saved_cwd is None:
             self._saved_cwd = os.getcwd()
 
@@ -267,7 +264,6 @@ class MockEnv:
 
     def undo(self) -> None:
         """Undo all patches in reverse order."""
-        import os
         import sys
 
         for obj, name, old_val in reversed(self._setattr_ops):
@@ -281,9 +277,9 @@ class MockEnv:
         for dic, key, old_val in reversed(self._setitem_ops):
             if isinstance(old_val, _Missing):
                 with contextlib.suppress(KeyError, IndexError):
-                    del dic[key]  # type: ignore[index]
+                    del dic[key]
             else:
-                dic[key] = old_val  # type: ignore[index]
+                dic[key] = old_val
         self._setitem_ops.clear()
 
         if self._saved_syspath is not None:
@@ -621,17 +617,13 @@ def temp_dir():  # type: ignore[no-untyped-def]
 
 
 def _get_local_path_class() -> type | None:
-    """Return the ``py.path.local`` class, or ``None`` if unavailable."""
+    """Return the ``py.path.local`` class, or ``None`` if the ``py`` package is unavailable."""
     try:
-        from py.path import local  # type: ignore[import-untyped]
+        from py.path import (  # ty: ignore[unresolved-import]
+            local,  # type: ignore[import-untyped]
+        )
 
         return local
-    except ImportError:
-        pass
-    try:
-        from _pytest._py.path import LocalPath  # type: ignore[import-not-found]
-
-        return LocalPath
     except ImportError:
         return None
 
@@ -719,11 +711,11 @@ def recwarn():  # type: ignore[no-untyped-def]
     import warnings
 
     class _WarningsChecker:
-        def __init__(self, warning_list: list) -> None:
+        def __init__(self, warning_list: list) -> None:  # ty: ignore[invalid-type-form]
             self._list = warning_list
 
         @property
-        def list(self) -> list:
+        def list(self) -> list:  # ty: ignore[invalid-type-form]
             return self._list
 
         def __len__(self) -> int:

@@ -69,6 +69,13 @@ repos:
         types: [rust]
         pass_filenames: false
         priority: 1
+      - id: ty
+        name: ty
+        entry: uvx ty check python/
+        language: system
+        types: [python]
+        pass_filenames: false
+        priority: 2
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.15.0
