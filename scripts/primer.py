@@ -44,6 +44,9 @@ PRIMER_DIR = ROOT / "target" / "primer_projects"
 # Per-project karva run timeout in seconds.
 KARVA_TIMEOUT = 120
 
+# Number of times karva retries a failed test to reduce flakiness noise.
+KARVA_RETRY = 3
+
 
 class Verbosity(enum.Enum):
     NORMAL = "normal"
@@ -357,8 +360,8 @@ def write_markdown_comment(
     lines: list[str] = ["<!-- primer-results -->", "## Primer Results\n"]
 
     lines += [
-        "| Project | Status | Passed | Failed | Skipped | Exit Code |",
-        "|---------|--------|--------|--------|---------|-----------|",
+        "| Project | Status | Passed | Failed | Skipped |",
+        "|---------|--------|--------|--------|---------|",
     ]
     for r in current:
         icon = (
@@ -367,9 +370,8 @@ def write_markdown_comment(
         passed = str(r.test_stats.passed) if r.test_stats else ""
         failed = str(r.test_stats.failed) if r.test_stats else ""
         skipped = str(r.test_stats.skipped) if r.test_stats else ""
-        exit_code = str(r.exit_code) if r.exit_code is not None else ""
         lines.append(
-            f"| {r.project} | {icon} {r.status} | {passed} | {failed} | {skipped} | {exit_code} |"
+            f"| {r.project} | {icon} {r.status} | {passed} | {failed} | {skipped} |"
         )
 
     lines.append("")
@@ -581,7 +583,13 @@ def run_karva(project: Project, project_dir: Path, verbosity: Verbosity) -> Karv
     console.print(f"  [dim]\\[karva] running tests at {paths}...[/dim]")
     try:
         result = subprocess.run(
-            [str(karva_bin(project_dir)), "test", "--retry", "3", *project.test_paths],
+            [
+                str(karva_bin(project_dir)),
+                "test",
+                "--retry",
+                str(KARVA_RETRY),
+                *project.test_paths,
+            ],
             cwd=project_dir,
             env=clean_env(),
             timeout=KARVA_TIMEOUT,
@@ -761,7 +769,6 @@ def main(
     table.add_column("Passed", justify="right", style="green")
     table.add_column("Failed", justify="right", style="red")
     table.add_column("Skipped", justify="right", style="yellow")
-    table.add_column("Exit Code", justify="right")
 
     status_styles = {
         "PASS": "green",
@@ -774,11 +781,10 @@ def main(
     for r in results:
         style = status_styles.get(r.status, "")
         status_str = f"[{style}]{r.status}[/{style}]" if style else r.status
-        exit_code_str = str(r.exit_code) if r.exit_code is not None else ""
         passed = str(r.test_stats.passed) if r.test_stats else ""
         failed = str(r.test_stats.failed) if r.test_stats else ""
         skipped = str(r.test_stats.skipped) if r.test_stats else ""
-        table.add_row(r.project, status_str, passed, failed, skipped, exit_code_str)
+        table.add_row(r.project, status_str, passed, failed, skipped)
 
     console.print(table)
 
