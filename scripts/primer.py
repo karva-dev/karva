@@ -691,6 +691,36 @@ def write_markdown_comment(
     """Write a GitHub-flavoured markdown PR comment to *path*."""
     lines: list[str] = ["<!-- primer-results -->", "## Primer Results\n"]
 
+    # One-liner summary
+    if diffs is not None:
+        if not diffs:
+            lines.append("✅ No regressions — all projects match baseline.\n")
+        else:
+            regressions = [d for d in diffs if d.is_regression]
+            fixes = [d for d in diffs if d.is_fix]
+            count_changes = [d for d in diffs if not d.is_regression and not d.is_fix]
+            summary_parts: list[str] = []
+            if regressions:
+                summary_parts.append(
+                    f"{len(regressions)} regression{'s' if len(regressions) > 1 else ''}"
+                )
+            if fixes:
+                summary_parts.append(
+                    f"{len(fixes)} fix{'es' if len(fixes) > 1 else ''}"
+                )
+            if count_changes:
+                summary_parts.append(
+                    f"{len(count_changes)} count change{'s' if len(count_changes) > 1 else ''}"
+                )
+            icon = "⚠️" if regressions else "💡"
+            lines.append(f"{icon} {', '.join(summary_parts)} vs baseline.\n")
+
+    # Full results table (collapsed)
+    n_ok = sum(1 for r in current if r.is_ok())
+    n_fail = len(current) - n_ok
+    results_summary = f"{n_ok} passed" + (f", {n_fail} failed" if n_fail else "")
+    lines.append("<details>")
+    lines.append(f"<summary>All results ({results_summary})</summary>\n")
     lines += [
         "| Project | Status | Passed | Failed | Skipped |",
         "|---------|--------|--------|--------|---------|",
@@ -711,67 +741,49 @@ def write_markdown_comment(
         lines.append(
             f"| {r.project} | {icon} {r.status} | {passed} | {failed} | {skipped} |"
         )
+    lines.append("</details>\n")
 
-    lines.append("")
-
-    if diffs is not None:
-        if not diffs:
-            lines.append("### ✅ No changes from baseline\n")
-        else:
-            regressions = [d for d in diffs if d.is_regression]
-            fixes = [d for d in diffs if d.is_fix]
-            count_changes = [d for d in diffs if not d.is_regression and not d.is_fix]
-            heading_parts: list[str] = []
-            if regressions:
-                heading_parts.append(
-                    f"{len(regressions)} regression{'s' if len(regressions) > 1 else ''}"
-                )
-            if fixes:
-                heading_parts.append(
-                    f"{len(fixes)} fix{'es' if len(fixes) > 1 else ''}"
-                )
-            if count_changes:
-                heading_parts.append(
-                    f"{len(count_changes)} count change{'s' if len(count_changes) > 1 else ''}"
-                )
-            icon = "⚠️" if regressions else "💡"
+    if diffs is not None and diffs:
+        regressions = [d for d in diffs if d.is_regression]
+        # Diff table (collapsed)
+        lines.append("<details>")
+        lines.append(
+            f"<summary>Changes from baseline ({len(diffs)} project{'s' if len(diffs) != 1 else ''})</summary>\n"
+        )
+        lines += [
+            "| Project | Baseline | Current | Change |",
+            "|---------|---------|---------|--------|",
+        ]
+        for d in diffs:
+            b_icon = "✅" if d.baseline.is_ok() else "❌"
+            c_icon = "✅" if d.current.is_ok() else "❌"
+            change = _change_description(d)
+            if d.is_regression:
+                change = f"🔴 {change}"
+            elif d.is_fix:
+                change = f"🟢 {change}"
             lines.append(
-                f"### {icon} Changes from baseline: {', '.join(heading_parts)}\n"
+                f"| {d.project} | {b_icon} {_result_md(d.baseline)}"
+                f" | {c_icon} {_result_md(d.current)} | {change} |"
             )
-            lines += [
-                "| Project | Baseline | Current | Change |",
-                "|---------|---------|---------|--------|",
-            ]
-            for d in diffs:
-                b_icon = "✅" if d.baseline.is_ok() else "❌"
-                c_icon = "✅" if d.current.is_ok() else "❌"
-                change = _change_description(d)
-                if d.is_regression:
-                    change = f"🔴 {change}"
-                elif d.is_fix:
-                    change = f"🟢 {change}"
-                lines.append(
-                    f"| {d.project} | {b_icon} {_result_md(d.baseline)}"
-                    f" | {c_icon} {_result_md(d.current)} | {change} |"
-                )
+        lines.append("</details>\n")
 
-            flaky_sections = [d for d in diffs if d.newly_failing or d.newly_passing]
-            if flaky_sections:
-                lines.append("")
-                lines.append("<details>")
-                lines.append("<summary>Test-level changes</summary>\n")
-                for d in flaky_sections:
-                    if d.newly_failing:
-                        lines.append(f"**{d.project} — newly failing**\n")
-                        for t in d.newly_failing:
-                            lines.append(f"- `{t}`")
-                        lines.append("")
-                    if d.newly_passing:
-                        lines.append(f"**{d.project} — newly passing**\n")
-                        for t in d.newly_passing:
-                            lines.append(f"- `{t}`")
-                        lines.append("")
-                lines.append("</details>")
+        flaky_sections = [d for d in diffs if d.newly_failing or d.newly_passing]
+        if flaky_sections:
+            lines.append("<details>")
+            lines.append("<summary>Test-level changes</summary>\n")
+            for d in flaky_sections:
+                if d.newly_failing:
+                    lines.append(f"**{d.project} — newly failing**\n")
+                    for t in d.newly_failing:
+                        lines.append(f"- `{t}`")
+                    lines.append("")
+                if d.newly_passing:
+                    lines.append(f"**{d.project} — newly passing**\n")
+                    for t in d.newly_passing:
+                        lines.append(f"- `{t}`")
+                    lines.append("")
+            lines.append("</details>")
 
     path.write_text("\n".join(lines) + "\n")
 
