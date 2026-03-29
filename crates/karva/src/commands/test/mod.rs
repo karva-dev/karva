@@ -100,10 +100,12 @@ pub fn test(args: TestCommand) -> Result<ExitStatus> {
         durations,
     )?;
 
-    if result.stats.is_success() && result.discovery_diagnostics.is_empty() {
-        Ok(ExitStatus::Success)
-    } else {
+    if !result.stats.is_success() {
         Ok(ExitStatus::Failure)
+    } else if !result.discovery_diagnostics.is_empty() {
+        Ok(ExitStatus::CollectionError)
+    } else {
+        Ok(ExitStatus::Success)
     }
 }
 

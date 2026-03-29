@@ -14,7 +14,7 @@ fn test_tag_filter_unexpected_character() {
     let context = TestContext::with_file("test.py", MINIMAL_TEST_FILE);
     assert_cmd_snapshot!(context.command().arg("-t").arg("slow!"), @r"
     success: false
-    exit_code: 2
+    exit_code: 3
     ----- stdout -----
 
     ----- stderr -----
@@ -28,7 +28,7 @@ fn test_tag_filter_unclosed_parenthesis() {
     let context = TestContext::with_file("test.py", MINIMAL_TEST_FILE);
     assert_cmd_snapshot!(context.command().arg("-t").arg("(slow"), @r"
     success: false
-    exit_code: 2
+    exit_code: 3
     ----- stdout -----
 
     ----- stderr -----
@@ -42,7 +42,7 @@ fn test_tag_filter_trailing_operator() {
     let context = TestContext::with_file("test.py", MINIMAL_TEST_FILE);
     assert_cmd_snapshot!(context.command().arg("-t").arg("slow and"), @r"
     success: false
-    exit_code: 2
+    exit_code: 3
     ----- stdout -----
 
     ----- stderr -----
@@ -56,7 +56,7 @@ fn test_tag_filter_leading_operator() {
     let context = TestContext::with_file("test.py", MINIMAL_TEST_FILE);
     assert_cmd_snapshot!(context.command().arg("-t").arg("and slow"), @r"
     success: false
-    exit_code: 2
+    exit_code: 3
     ----- stdout -----
 
     ----- stderr -----
@@ -70,7 +70,7 @@ fn test_tag_filter_extra_closing_paren() {
     let context = TestContext::with_file("test.py", MINIMAL_TEST_FILE);
     assert_cmd_snapshot!(context.command().arg("-t").arg("slow)"), @r"
     success: false
-    exit_code: 2
+    exit_code: 3
     ----- stdout -----
 
     ----- stderr -----
@@ -84,7 +84,7 @@ fn test_tag_filter_empty_parentheses() {
     let context = TestContext::with_file("test.py", MINIMAL_TEST_FILE);
     assert_cmd_snapshot!(context.command().arg("-t").arg("()"), @r"
     success: false
-    exit_code: 2
+    exit_code: 3
     ----- stdout -----
 
     ----- stderr -----
@@ -98,7 +98,7 @@ fn test_tag_filter_double_operator() {
     let context = TestContext::with_file("test.py", MINIMAL_TEST_FILE);
     assert_cmd_snapshot!(context.command().arg("-t").arg("slow and and fast"), @r"
     success: false
-    exit_code: 2
+    exit_code: 3
     ----- stdout -----
 
     ----- stderr -----
@@ -112,7 +112,7 @@ fn test_tag_filter_whitespace_only() {
     let context = TestContext::with_file("test.py", MINIMAL_TEST_FILE);
     assert_cmd_snapshot!(context.command().arg("-t").arg(" "), @r"
     success: false
-    exit_code: 2
+    exit_code: 3
     ----- stdout -----
 
     ----- stderr -----

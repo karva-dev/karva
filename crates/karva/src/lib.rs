@@ -52,14 +52,17 @@ fn run(f: impl FnOnce(Vec<OsString>) -> Vec<OsString>) -> anyhow::Result<ExitSta
 
 #[derive(Copy, Clone)]
 pub enum ExitStatus {
-    /// Checking was successful and there were no errors.
+    /// All tests passed and no collection errors occurred.
     Success = 0,
 
-    /// Checking was successful but there were errors.
+    /// At least one test failed.
     Failure = 1,
 
-    /// Checking failed.
-    Error = 2,
+    /// Collection errors occurred (e.g. failed to import a module), but no tests failed.
+    CollectionError = 2,
+
+    /// Karva itself failed (internal error).
+    Error = 3,
 }
 
 impl Termination for ExitStatus {

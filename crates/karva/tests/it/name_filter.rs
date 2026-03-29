@@ -87,7 +87,7 @@ fn name_filter_invalid_regex() {
     let context = TestContext::with_file("test.py", TWO_TESTS);
     assert_cmd_snapshot!(context.command_no_parallel().arg("-m").arg("[invalid"), @r"
     success: false
-    exit_code: 2
+    exit_code: 3
     ----- stdout -----
 
     ----- stderr -----
@@ -408,7 +408,7 @@ fn name_filter_invalid_regex_unclosed_group() {
     let context = TestContext::with_file("test.py", TWO_TESTS);
     assert_cmd_snapshot!(context.command_no_parallel().arg("-m").arg("(unclosed"), @r"
     success: false
-    exit_code: 2
+    exit_code: 3
     ----- stdout -----
 
     ----- stderr -----
@@ -425,7 +425,7 @@ fn name_filter_invalid_regex_invalid_repetition() {
     let context = TestContext::with_file("test.py", TWO_TESTS);
     assert_cmd_snapshot!(context.command_no_parallel().arg("-m").arg("*invalid"), @r"
     success: false
-    exit_code: 2
+    exit_code: 3
     ----- stdout -----
 
     ----- stderr -----
@@ -442,7 +442,7 @@ fn name_filter_invalid_regex_bad_escape() {
     let context = TestContext::with_file("test.py", TWO_TESTS);
     assert_cmd_snapshot!(context.command_no_parallel().arg("-m").arg(r"\p{Invalid}"), @r"
     success: false
-    exit_code: 2
+    exit_code: 3
     ----- stdout -----
 
     ----- stderr -----

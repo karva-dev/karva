@@ -501,7 +501,7 @@ fn test_text_file() {
         context.command().args(["random.txt"]),
         @r"
     success: false
-    exit_code: 2
+    exit_code: 3
     ----- stdout -----
 
     ----- stderr -----
@@ -558,7 +558,7 @@ fn test_invalid_path() {
 
     assert_cmd_snapshot!(context.command().arg("non_existing_path.py"), @r"
     success: false
-    exit_code: 2
+    exit_code: 3
     ----- stdout -----
 
     ----- stderr -----
@@ -1393,7 +1393,7 @@ def test_pass():
 
     assert_cmd_snapshot!(context.command_no_parallel().arg("--output-format=concise"), @"
     success: false
-    exit_code: 1
+    exit_code: 2
     ----- stdout -----
         Starting 1 test across 1 worker
     discovery diagnostics:
@@ -1402,6 +1402,45 @@ def test_pass():
 
     ────────────
          Summary [TIME] 0 tests run: 0 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_collection_error_exit_code_when_other_tests_pass() {
+    let context = TestContext::with_files([
+        (
+            "test_good.py",
+            r"
+def test_pass():
+    assert True
+",
+        ),
+        (
+            "test_bad.py",
+            r"
+import nonexistent_module_xyz
+
+def test_unreachable():
+    assert True
+",
+        ),
+    ]);
+
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
+    success: false
+    exit_code: 2
+    ----- stdout -----
+        Starting 2 tests across 1 worker
+            PASS [TIME] test_good::test_pass
+
+    discovery diagnostics:
+
+    error[failed-to-import-module]: Failed to import python module `test_bad`: No module named 'nonexistent_module_xyz'
+
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");

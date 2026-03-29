@@ -8,7 +8,7 @@ fn test_watch_and_dry_run_conflict() {
 
     assert_cmd_snapshot!(context.command().args(["--watch", "--dry-run"]), @r"
     success: false
-    exit_code: 2
+    exit_code: 3
     ----- stdout -----
 
     ----- stderr -----

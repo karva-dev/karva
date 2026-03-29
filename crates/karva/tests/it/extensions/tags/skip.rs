@@ -453,7 +453,7 @@ def test_1():
 
     assert_cmd_snapshot!(context.command(), @"
     success: false
-    exit_code: 1
+    exit_code: 2
     ----- stdout -----
         Starting 1 test across 1 worker
     discovery diagnostics:
@@ -482,7 +482,7 @@ def test_1():
 
     assert_cmd_snapshot!(context.command(), @"
     success: false
-    exit_code: 1
+    exit_code: 2
     ----- stdout -----
         Starting 1 test across 1 worker
     discovery diagnostics:

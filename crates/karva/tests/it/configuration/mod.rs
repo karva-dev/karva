@@ -1307,7 +1307,7 @@ fn test_config_file_flag_nonexistent_unix() {
 
     assert_cmd_snapshot!(context.command().arg("--config-file").arg("nonexistent.toml"), @r"
     success: false
-    exit_code: 2
+    exit_code: 3
     ----- stdout -----
 
     ----- stderr -----
@@ -1325,7 +1325,7 @@ fn test_config_file_flag_nonexistent_windows() {
 
     assert_cmd_snapshot!(context.command().arg("--config-file").arg("nonexistent.toml"), @r"
     success: false
-    exit_code: 2
+    exit_code: 3
     ----- stdout -----
 
     ----- stderr -----
