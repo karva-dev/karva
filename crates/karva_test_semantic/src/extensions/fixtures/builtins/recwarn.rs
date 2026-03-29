@@ -3,7 +3,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyList;
 
 pub fn is_recwarn_fixture_name(fixture_name: &str) -> bool {
-    matches!(fixture_name, "recwarn")
+    fixture_name == "recwarn"
 }
 
 pub fn create_recwarn_fixture(py: Python<'_>) -> Option<(Py<PyAny>, Py<PyAny>)> {
@@ -64,6 +64,24 @@ impl WarningsChecker {
         self.warnings_list.bind(py).len()
     }
 
+    /// Return the warning at the given index.
+    fn __getitem__(&self, py: Python<'_>, index: isize) -> PyResult<Py<PyAny>> {
+        Ok(self
+            .warnings_list
+            .bind(py)
+            .call_method1("__getitem__", (index,))?
+            .unbind())
+    }
+
+    /// Iterate over the captured warnings.
+    fn __iter__(&self, py: Python<'_>) -> PyResult<Py<PyAny>> {
+        Ok(self
+            .warnings_list
+            .bind(py)
+            .call_method0("__iter__")?
+            .unbind())
+    }
+
     /// Remove and return the first warning whose category is a subclass of `category`.
     ///
     /// Raises `AssertionError` if no matching warning is found.
@@ -71,13 +89,13 @@ impl WarningsChecker {
     fn pop(&self, py: Python<'_>, category: Option<Py<PyAny>>) -> PyResult<Py<PyAny>> {
         let list = self.warnings_list.bind(py);
 
+        let builtins = py.import("builtins")?;
+
         let category: Py<PyAny> = if let Some(c) = category {
             c
         } else {
-            py.import("builtins")?.getattr("Warning")?.unbind()
+            builtins.getattr("Warning")?.unbind()
         };
-
-        let builtins = py.import("builtins")?;
 
         for i in 0..list.len() {
             let entry = list.get_item(i)?;
