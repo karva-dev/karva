@@ -21,6 +21,7 @@ Usage:
         --baseline-wheel main.whl --markdown-output out.md       # diff against baseline
 """
 
+import concurrent.futures
 import enum
 import os
 import re
@@ -85,7 +86,6 @@ class Project:
 
 
 PROJECTS: list[Project] = [
-    # --- Web / Networking ---
     Project(
         name="starlette",
         repo="https://github.com/encode/starlette",
@@ -140,7 +140,6 @@ PROJECTS: list[Project] = [
         commit="82af3abcaf250aacc797b281e6815891766410fd",
         test_paths=["src/trio/_tests/"],
     ),
-    # --- CLI / Terminal ---
     Project(
         name="typer",
         repo="https://github.com/fastapi/typer",
@@ -171,7 +170,6 @@ PROJECTS: list[Project] = [
         commit="940af53fa443073d9fdca26d5da6cfe6780f6ac9",
         test_paths=["tests/"],
     ),
-    # --- Data / Utilities ---
     Project(
         name="pydantic",
         repo="https://github.com/pydantic/pydantic",
@@ -202,7 +200,6 @@ PROJECTS: list[Project] = [
         commit="568c2b8393973cd172a466546c9d95779c452438",
         test_paths=["tests/"],
     ),
-    # --- Testing / Build / Packaging ---
     Project(
         name="pytest",
         repo="https://github.com/pytest-dev/pytest",
@@ -264,7 +261,6 @@ PROJECTS: list[Project] = [
         test_paths=["tests/"],
         pip_only=True,
     ),
-    # --- Type Checking / Code Analysis ---
     Project(
         name="black",
         repo="https://github.com/psf/black",
@@ -296,14 +292,12 @@ PROJECTS: list[Project] = [
         commit="e039e7ba1c1ac1eed30e9067f434f30ac58189c8",
         test_paths=["tests/"],
     ),
-    # --- Async ---
     Project(
         name="anyio",
         repo="https://github.com/agronholm/anyio",
         commit="96f0cf3cb9cd40c04b8effb2c4e14f67ff49a62c",
         test_paths=["tests/"],
     ),
-    # --- Parsing / Serialization ---
     Project(
         name="jinja",
         repo="https://github.com/pallets/jinja",
@@ -334,7 +328,6 @@ PROJECTS: list[Project] = [
         commit="b747e59151ce8652e7860fc9e0639aa78676a5b1",
         test_paths=["tests/"],
     ),
-    # --- Database / ORM ---
     Project(
         name="sqlalchemy",
         repo="https://github.com/sqlalchemy/sqlalchemy",
@@ -353,7 +346,6 @@ PROJECTS: list[Project] = [
         commit="7b510dc52c7e931f393b6387f183bf888a08dee9",
         test_paths=["tests/"],
     ),
-    # --- Security ---
     Project(
         name="pyjwt",
         repo="https://github.com/jpadilla/pyjwt",
@@ -366,7 +358,6 @@ PROJECTS: list[Project] = [
         commit="672971d66a2ef9f85151e53283113f33d642dabd",
         test_paths=["tests/"],
     ),
-    # --- Documentation ---
     Project(
         name="mkdocs",
         repo="https://github.com/mkdocs/mkdocs",
@@ -379,7 +370,6 @@ PROJECTS: list[Project] = [
         commit="97106e4f56c99146f23864c7777e5bfaec89bafe",
         test_paths=["tests/"],
     ),
-    # --- Data Classes / Structured Data ---
     Project(
         name="attrs",
         repo="https://github.com/python-attrs/attrs",
@@ -393,7 +383,6 @@ PROJECTS: list[Project] = [
         test_paths=["tests/"],
         extra_deps=["hypothesis"],
     ),
-    # --- Logging / Observability ---
     Project(
         name="structlog",
         repo="https://github.com/hynek/structlog",
@@ -412,7 +401,6 @@ PROJECTS: list[Project] = [
         commit="bfdc0b0fd960414d31948be1869daadaec45aefe",
         test_paths=["tests/"],
     ),
-    # --- Miscellaneous / Utilities ---
     Project(
         name="humanize",
         repo="https://github.com/python-humanize/humanize",
@@ -1099,6 +1087,13 @@ def main(
             "--markdown-output", help="Write PR-comment markdown to this path."
         ),
     ] = None,
+    workers: Annotated[
+        int,
+        typer.Option(
+            "--workers",
+            help="Number of projects to run in parallel.",
+        ),
+    ] = 4,
 ) -> None:
     verbosity = Verbosity.from_int(verbose)
 
@@ -1119,37 +1114,47 @@ def main(
 
     PRIMER_DIR.mkdir(parents=True, exist_ok=True)
 
+    n_workers = min(workers, len(projects_to_run))
+
+    def _run_baseline(proj: Project) -> ProjectRunResult:
+        return run_project(
+            proj,
+            baseline_wheel,
+            setup_only=False,
+            verbosity=verbosity,
+            silent=True,  # type: ignore[arg-type]
+        )
+
     # Optional baseline pass — runs each project with the baseline wheel so we
     # can diff the results at the end.
     baseline_results: list[ProjectRunResult] | None = None
     if baseline_wheel is not None:
         console.rule("[dim]Baseline pass[/dim]")
-        baseline_results = [
-            run_project(
-                proj, baseline_wheel, setup_only=False, verbosity=verbosity, silent=True
-            )
-            for proj in projects_to_run
-        ]
+        with concurrent.futures.ThreadPoolExecutor(max_workers=n_workers) as pool:
+            baseline_results = list(pool.map(_run_baseline, projects_to_run))
 
     # Main pass — skip clone/sync for projects that set up cleanly in the
     # baseline pass (they're already cloned and synced; we just swap the wheel).
     baseline_map = (
         {r.project: r for r in baseline_results} if baseline_results is not None else {}
     )
-    results: list[ProjectRunResult] = []
-    for proj in projects_to_run:
+
+    def _run_main(proj: Project) -> ProjectRunResult:
         baseline_r = baseline_map.get(proj.name)
         skip_setup = (
             baseline_r is not None and baseline_r.status != ProjectRunStatus.SETUP_FAIL
         )
-        result = run_project(
+        return run_project(
             proj,
             current_wheel,
             setup_only=setup_only,
             verbosity=verbosity,
             skip_setup=skip_setup,
+            silent=n_workers > 1,
         )
-        results.append(result)
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=n_workers) as pool:
+        results = list(pool.map(_run_main, projects_to_run))
 
     console.rule("[bold]Summary[/bold]")
 
