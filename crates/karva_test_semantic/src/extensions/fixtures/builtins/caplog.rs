@@ -25,6 +25,7 @@ class _CapLogHandler(logging.Handler):
         self._records = records
 
     def emit(self, record):
+        record.message = record.getMessage()
         self._records.append(record)
 ";
 

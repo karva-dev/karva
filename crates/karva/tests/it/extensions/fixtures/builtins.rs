@@ -950,6 +950,36 @@ def test_setitem_none_value_undo(monkeypatch):
 }
 
 #[test]
+fn test_monkeypatch_setattr_none_as_new_value() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+def test_setattr_none_as_new_value(monkeypatch):
+    class A:
+        x = 'original'
+
+    monkeypatch.setattr(A, 'x', None)
+    assert A.x is None
+    monkeypatch.undo()
+    assert A.x == 'original'
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_setattr_none_as_new_value(monkeypatch=<MockEnv object>)
+
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
 fn test_caplog_records() {
     let context = TestContext::with_file(
         "test.py",
@@ -962,6 +992,7 @@ def test_caplog_records(caplog):
     assert len(caplog.records) == 1
     assert caplog.records[0].levelname == 'WARNING'
     assert caplog.records[0].getMessage() == 'something happened'
+    assert caplog.records[0].message == 'something happened'
         ",
     );
 

@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex, MutexGuard};
 use pyo3::PyResult;
 use pyo3::exceptions::{PyAttributeError, PyRuntimeError, PyTypeError};
 use pyo3::prelude::*;
-use pyo3::types::{PyString, PyType};
+use pyo3::types::{PyString, PyTuple, PyType};
 
 pub fn is_mock_env_fixture_name(fixture_name: &str) -> bool {
     matches!(fixture_name, "monkeypatch")
@@ -154,36 +154,45 @@ impl MockEnv {
     }
 
     /// Set attribute value on target, memorising the old value.
-    #[pyo3(signature = (target, name, value = None, raising = true))]
+    ///
+    /// Accepts two call forms:
+    /// - `setattr(target, name, value)` — direct object + attribute name + new value
+    /// - `setattr("module.attr", value)` — dotted import string + new value
+    ///
+    /// Uses `*args` instead of named parameters so that an explicit `None` value
+    /// is distinguishable from "argument not provided".
+    #[pyo3(signature = (*args, raising = true))]
     fn setattr(
         &mut self,
         py: Python<'_>,
-        target: Py<PyAny>,
-        name: Py<PyAny>,
-        value: Option<Py<PyAny>>,
+        args: &Bound<'_, PyTuple>,
         raising: bool,
     ) -> PyResult<()> {
-        let (actual_target, actual_name, actual_value) = if target
-            .bind(py)
-            .is_instance_of::<PyString>()
-        {
-            // String target case - dotted import path
-            let target_str = target.extract::<String>(py)?;
-            let actual_value = value.map_or(name, |v| v);
-
-            let (attr_name, resolved_target) = derive_importpath(py, &target_str, raising)?;
-
-            (resolved_target, attr_name, actual_value)
-        } else {
-            // Object target case
-            let actual_name = name.extract::<String>(py)?;
-            let actual_value = value.ok_or_else(|| {
-                PyTypeError::new_err(
-                    "use setattr(target, name, value) or setattr(target, value) with target being a dotted import string"
-                )
-            })?;
-
-            (target, actual_name, actual_value)
+        let (actual_target, actual_name, actual_value) = match args.len() {
+            2 => {
+                // Dotted import string form: setattr("module.attr", value)
+                let target = args.get_item(0)?.unbind();
+                let value = args.get_item(1)?.unbind();
+                let target_str = target.extract::<String>(py).map_err(|_| {
+                    PyTypeError::new_err(
+                        "use setattr(target, name, value) or setattr(target, value) with target being a dotted import string"
+                    )
+                })?;
+                let (attr_name, resolved_target) = derive_importpath(py, &target_str, raising)?;
+                (resolved_target, attr_name, value)
+            }
+            3 => {
+                // Direct form: setattr(obj, "attr", value)
+                let target = args.get_item(0)?.unbind();
+                let name = args.get_item(1)?.extract::<String>()?;
+                let value = args.get_item(2)?.unbind();
+                (target, name, value)
+            }
+            n => {
+                return Err(PyTypeError::new_err(format!(
+                    "setattr() takes 2 or 3 positional arguments but {n} were given"
+                )));
+            }
         };
 
         // Get old value
