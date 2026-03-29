@@ -111,12 +111,6 @@ PROJECTS: list[Project] = [
         test_paths=["tests/"],
     ),
     Project(
-        name="websockets",
-        repo="https://github.com/python-websockets/websockets",
-        commit="ea164d2fe0cb699dd52d28bfbe98165fb35cb13c",
-        test_paths=["tests/"],
-    ),
-    Project(
         name="typer",
         repo="https://github.com/fastapi/typer",
         commit="2966e4c5e584476e324a847c05e6ba17412031a1",
@@ -144,12 +138,6 @@ PROJECTS: list[Project] = [
         name="prompt-toolkit",
         repo="https://github.com/prompt-toolkit/python-prompt-toolkit",
         commit="940af53fa443073d9fdca26d5da6cfe6780f6ac9",
-        test_paths=["tests/"],
-    ),
-    Project(
-        name="arrow",
-        repo="https://github.com/arrow-py/arrow",
-        commit="b423717da81aaf8117313b4b377efaa6413a9639",
         test_paths=["tests/"],
     ),
     Project(
@@ -291,12 +279,6 @@ PROJECTS: list[Project] = [
         test_paths=["tests/"],
     ),
     Project(
-        name="alembic",
-        repo="https://github.com/sqlalchemy/alembic",
-        commit="7b510dc52c7e931f393b6387f183bf888a08dee9",
-        test_paths=["tests/"],
-    ),
-    Project(
         name="pyjwt",
         repo="https://github.com/jpadilla/pyjwt",
         commit="40e3147eb5f790d8d041772e5fc00728a176c812",
@@ -364,12 +346,6 @@ PROJECTS: list[Project] = [
         test_paths=["tests/"],
     ),
     Project(
-        name="cachetools",
-        repo="https://github.com/tkem/cachetools",
-        commit="5dce86fc5c9c565c6e9c912e2be5d6abb9586a1d",
-        test_paths=["tests/"],
-    ),
-    Project(
         name="tqdm",
         repo="https://github.com/tqdm/tqdm",
         commit="75bdb6c379bcfc6c592b6342dc791a092b5d6ae0",
@@ -377,22 +353,10 @@ PROJECTS: list[Project] = [
         pip_only=True,
     ),
     Project(
-        name="tabulate",
-        repo="https://github.com/astanin/python-tabulate",
-        commit="268615a5c27dc40e5c22454c07b44d5c50410da0",
-        test_paths=["test/"],
-    ),
-    Project(
         name="parse",
         repo="https://github.com/r1chardj0n3s/parse",
         commit="a285c6670773dcc3a2085b07fef281320a284a8e",
         test_paths=["test_parse.py"],
-    ),
-    Project(
-        name="schedule",
-        repo="https://github.com/dbader/schedule",
-        commit="82a43db1b938d8fdf60103bd41f329e06c8d3651",
-        test_paths=["test_schedule.py"],
     ),
     Project(
         name="python-dotenv",
