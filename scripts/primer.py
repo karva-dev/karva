@@ -125,21 +125,9 @@ PROJECTS: list[Project] = [
         test_paths=["tests/"],
     ),
     Project(
-        name="textual",
-        repo="https://github.com/Textualize/textual",
-        commit="04b03c8db64266a6a7811cc161bae9986e53b1a1",
-        test_paths=["tests/"],
-    ),
-    Project(
         name="prompt-toolkit",
         repo="https://github.com/prompt-toolkit/python-prompt-toolkit",
         commit="940af53fa443073d9fdca26d5da6cfe6780f6ac9",
-        test_paths=["tests/"],
-    ),
-    Project(
-        name="more-itertools",
-        repo="https://github.com/more-itertools/more-itertools",
-        commit="9210d54527ddfa63ebe75cd5b5daa0201902c674",
         test_paths=["tests/"],
     ),
     Project(
@@ -199,12 +187,6 @@ PROJECTS: list[Project] = [
         test_paths=["unit_test/"],
     ),
     Project(
-        name="mypy",
-        repo="https://github.com/python/mypy",
-        commit="9790459eb33901e32ac9f0f2e2e332965bf4cad5",
-        test_paths=["mypy/test/"],
-    ),
-    Project(
         name="isort",
         repo="https://github.com/PyCQA/isort",
         commit="2fb94e188f3c0d8b3a593d437d58b0ce8bde4fca",
@@ -231,23 +213,11 @@ PROJECTS: list[Project] = [
         pip_only=True,
     ),
     Project(
-        name="pyyaml",
-        repo="https://github.com/yaml/pyyaml",
-        commit="d51d8a138f7230834fc6e95635ff09ebd329185f",
-        test_paths=["tests/lib/"],
-    ),
-    Project(
         name="tomlkit",
         repo="https://github.com/sdispater/tomlkit",
         commit="dd05eebc8ed9e30fc6c223088a5a450cb54c1cab",
         test_paths=["tests/"],
         submodules=True,
-    ),
-    Project(
-        name="jsonschema",
-        repo="https://github.com/python-jsonschema/jsonschema",
-        commit="b747e59151ce8652e7860fc9e0639aa78676a5b1",
-        test_paths=["tests/"],
     ),
     Project(
         name="sqlalchemy",
@@ -267,12 +237,6 @@ PROJECTS: list[Project] = [
         repo="https://github.com/pallets/itsdangerous",
         commit="672971d66a2ef9f85151e53283113f33d642dabd",
         test_paths=["tests/"],
-    ),
-    Project(
-        name="mkdocs",
-        repo="https://github.com/mkdocs/mkdocs",
-        commit="2862536793b3c67d9d83c33e0dd6d50a791928f8",
-        test_paths=["mkdocs/tests/"],
     ),
     Project(
         name="griffe",
@@ -302,12 +266,6 @@ PROJECTS: list[Project] = [
         name="humanize",
         repo="https://github.com/python-humanize/humanize",
         commit="ad74ae2ea0b51fa8613a44b5bc1859df7385c3db",
-        test_paths=["tests/"],
-    ),
-    Project(
-        name="tenacity",
-        repo="https://github.com/jd/tenacity",
-        commit="8779333a4759e56427b5d7ba23cacd3fe6054d61",
         test_paths=["tests/"],
     ),
     Project(
