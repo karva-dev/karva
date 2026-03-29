@@ -10,7 +10,7 @@ pub fn is_mock_env_fixture_name(fixture_name: &str) -> bool {
 }
 
 pub fn create_mock_env_fixture(py: Python<'_>) -> Option<(Py<PyAny>, Py<PyAny>)> {
-    let mock = Py::new(py, MockEnv::new()).ok()?;
+    let mock = Py::new(py, MockEnv::new(py)).ok()?;
     let undo_method = mock.getattr(py, "undo").ok()?;
 
     // Return both the mock instance and its undo method as the finalizer
@@ -22,6 +22,16 @@ type SetItemEntry = (Py<PyAny>, Py<PyAny>, Py<PyAny>);
 type SetAttr = Arc<Mutex<Vec<SetAttrEntry>>>;
 type SetItem = Arc<Mutex<Vec<SetItemEntry>>>;
 
+/// A sentinel object stored in place of an original attribute/item value to
+/// indicate that the attribute/item did not exist before patching. Using a
+/// dedicated sentinel avoids the ambiguity of `None`, which is a legitimate
+/// Python value that an attribute or dict entry might actually hold.
+fn make_missing_sentinel(py: Python<'_>) -> Py<PyAny> {
+    py.eval(pyo3::ffi::c_str!("object()"), None, None)
+        .expect("object() is always available")
+        .unbind()
+}
+
 /// Helper to conveniently monkeypatch attributes/items/environment variables/syspath.
 #[pyclass]
 pub struct MockEnv {
@@ -29,6 +39,8 @@ pub struct MockEnv {
     setitem: SetItem,
     cwd: Arc<Mutex<Option<String>>>,
     savesyspath: Arc<Mutex<Option<Vec<String>>>>,
+    /// Sentinel used to represent "value was absent before patching".
+    missing: Py<PyAny>,
 }
 
 impl MockEnv {
@@ -60,7 +72,7 @@ impl MockEnv {
     fn undo_setattr(&self, py: Python<'_>) -> PyResult<()> {
         let mut setattr_list = self.lock_setattr()?;
         for (obj, name, value) in setattr_list.drain(..).rev() {
-            if value.bind(py).is_none() {
+            if value.bind(py).is(self.missing.bind(py)) {
                 let _ = obj.bind(py).delattr(&name);
             } else {
                 obj.bind(py).setattr(&name, value)?;
@@ -74,9 +86,8 @@ impl MockEnv {
         let mut setitem_list = self.lock_setitem()?;
         for (dictionary, key, value) in setitem_list.drain(..).rev() {
             let bound_dict = dictionary.bind(py);
-            let bound_value = value.bind(py);
 
-            if bound_value.is_none() {
+            if value.bind(py).is(self.missing.bind(py)) {
                 let _ = bound_dict.del_item(&key);
             } else {
                 bound_dict.set_item(&key, value)?;
@@ -116,12 +127,13 @@ impl MockEnv {
 #[pymethods]
 impl MockEnv {
     #[new]
-    fn new() -> Self {
+    fn new(py: Python<'_>) -> Self {
         Self {
             setattr: Arc::new(Mutex::new(Vec::new())),
             setitem: Arc::new(Mutex::new(Vec::new())),
             cwd: Arc::new(Mutex::new(None)),
             savesyspath: Arc::new(Mutex::new(None)),
+            missing: make_missing_sentinel(py),
         }
     }
 
@@ -134,9 +146,9 @@ impl MockEnv {
     /// Context manager that returns a new Mock object which undoes any patching
     /// done inside the with block upon exit.
     #[classmethod]
-    fn context(_cls: &Bound<'_, PyType>) -> MockEnvContext {
+    fn context(_cls: &Bound<'_, PyType>, py: Python<'_>) -> MockEnvContext {
         MockEnvContext {
-            mock_env: Self::new(),
+            mock_env: Self::new(py),
         }
     }
 
@@ -182,7 +194,7 @@ impl MockEnv {
                     "{actual_target:?} has no attribute {actual_name:?}"
                 )));
             }
-            py.None()
+            self.missing.clone_ref(py)
         };
 
         // Handle class descriptors
@@ -195,7 +207,7 @@ impl MockEnv {
                 .getattr("__dict__")?
                 .get_item(&actual_name)
                 .ok()
-                .map_or_else(|| py.None(), std::convert::Into::into)
+                .map_or_else(|| self.missing.clone_ref(py), std::convert::Into::into)
         } else {
             oldval
         };
@@ -263,12 +275,12 @@ impl MockEnv {
                     .getattr("__dict__")?
                     .get_item(&actual_name)
                     .ok()
-                    .map_or_else(|| py.None(), std::convert::Into::into)
+                    .map_or_else(|| self.missing.clone_ref(py), std::convert::Into::into)
             } else {
                 val.into()
             }
         } else {
-            py.None()
+            self.missing.clone_ref(py)
         };
 
         // Store for undo
@@ -296,7 +308,7 @@ impl MockEnv {
         let oldval = bound_dic
             .get_item(&name)
             .ok()
-            .map_or_else(|| py.None(), std::convert::Into::into);
+            .map_or_else(|| self.missing.clone_ref(py), std::convert::Into::into);
 
         // Store for undo
         self.lock_setitem()?
@@ -368,7 +380,7 @@ impl MockEnv {
 
         let oldval = environ
             .get_item(&name_key)
-            .map_or_else(|_| py.None(), Into::into);
+            .map_or_else(|_| self.missing.clone_ref(py), Into::into);
 
         self.lock_setitem()?
             .push((environ.clone().unbind(), name_key.clone_ref(py), oldval));
@@ -479,7 +491,7 @@ impl MockEnvContext {
     #[expect(clippy::needless_pass_by_value)]
     fn __enter__(slf: PyRef<'_, Self>) -> PyResult<Py<MockEnv>> {
         let py = slf.py();
-        Py::new(py, MockEnv::new())
+        Py::new(py, MockEnv::new(py))
     }
 
     fn __exit__(

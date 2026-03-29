@@ -904,3 +904,47 @@ def test_chdir(monkeypatch, tmp_path):
     ----- stderr -----
     ");
 }
+
+/// Regression test: `undo` must restore `None` values rather than deleting the attribute.
+/// Previously, `None` was used as the sentinel meaning "attribute didn't exist", so
+/// patching an attribute whose original value was `None` would wrongly call `delattr`
+/// on undo instead of restoring `None`.
+#[test]
+fn test_monkeypatch_setattr_none_value_undo() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+def test_setattr_none_value_undo(monkeypatch):
+    class A:
+        x = None
+
+    monkeypatch.setattr(A, 'x', 42)
+    assert A.x == 42
+    monkeypatch.undo()
+    assert hasattr(A, 'x'), 'attribute should still exist after undo'
+    assert A.x is None
+
+def test_setitem_none_value_undo(monkeypatch):
+    d = {'key': None}
+    monkeypatch.setitem(d, 'key', 42)
+    assert d['key'] == 42
+    monkeypatch.undo()
+    assert 'key' in d, 'key should still be present after undo'
+    assert d['key'] is None
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+        Starting 2 tests across 1 worker
+            PASS [TIME] test::test_setattr_none_value_undo(monkeypatch=<MockEnv object>)
+            PASS [TIME] test::test_setitem_none_value_undo(monkeypatch=<MockEnv object>)
+
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
