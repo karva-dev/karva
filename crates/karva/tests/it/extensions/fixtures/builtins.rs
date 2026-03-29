@@ -233,6 +233,34 @@ def test_syspath_prepend_multiple(monkeypatch):
 }
 
 #[test]
+fn test_monkeypatch_syspath_prepend_path_object() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+import sys
+import pathlib
+
+def test_syspath_prepend_with_path(monkeypatch, tmp_path):
+    old_path = sys.path.copy()
+    monkeypatch.syspath_prepend(tmp_path)
+    assert sys.path[0] == str(tmp_path)
+    monkeypatch.undo()
+    assert sys.path == old_path
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-q"), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
 fn test_monkeypatch_delattr() {
     let context = TestContext::with_file(
         "test.py",

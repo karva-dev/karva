@@ -434,9 +434,15 @@ impl MockEnv {
     }
 
     /// Prepend path to sys.path list of import locations.
-    fn syspath_prepend(&mut self, py: Python<'_>, path: String) -> PyResult<()> {
+    ///
+    /// Accepts `str`, `bytes`, or any `os.PathLike` object (e.g. `pathlib.Path`).
+    fn syspath_prepend(&mut self, py: Python<'_>, path: &Bound<'_, PyAny>) -> PyResult<()> {
         let sys_module = py.import("sys")?;
         let sys_path = sys_module.getattr("path")?;
+
+        // Convert PathLike objects (e.g. pathlib.Path) to str via os.fspath.
+        let os_module = py.import("os")?;
+        let path_str = os_module.call_method1("fspath", (path,))?;
 
         // Save original sys.path if not already saved
         let mut save = self.lock_savesyspath()?;
@@ -445,7 +451,7 @@ impl MockEnv {
             *save = Some(saved);
         }
 
-        sys_path.call_method1("insert", (0, path))?;
+        sys_path.call_method1("insert", (0, path_str))?;
 
         let importlib = py.import("importlib")?;
         importlib.call_method0("invalidate_caches")?;
