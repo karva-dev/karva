@@ -1,0 +1,95 @@
+name: Primer
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  primer:
+    name: "primer"
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    permissions:
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+
+      - name: "Install Rust toolchain"
+        run: rustup show
+
+      - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
+        with:
+          python-version: "3.13"
+
+      - name: "Cache primer projects"
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: target/primer_projects
+          key: primer-${{ hashFiles('scripts/primer.py') }}
+          restore-keys: |
+            primer-
+
+      - name: "Build branch wheel"
+        run: uvx maturin build --out target/wheels-pr/
+
+      - name: "Build main baseline wheel"
+        if: github.event_name == 'pull_request'
+        run: |
+          git worktree add /tmp/karva-main origin/main
+          cd /tmp/karva-main
+          uvx maturin build --out "$GITHUB_WORKSPACE/target/wheels-main/"
+          cd "$GITHUB_WORKSPACE"
+          git worktree remove /tmp/karva-main
+
+      - name: "Run primer"
+        run: |
+          uv run --script scripts/primer.py \
+            --wheel "$(ls target/wheels-pr/*.whl)" \
+            --baseline-wheel "$(ls target/wheels-main/*.whl)" \
+            --markdown-output primer-comment.md
+
+      - name: "Post PR comment"
+        if: ${{ !cancelled() }}
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
+        with:
+          script: |
+            const fs = require('fs');
+            if (!fs.existsSync('primer-comment.md')) {
+              core.warning('primer-comment.md not found — primer may have crashed before writing output.');
+              return;
+            }
+            const body = fs.readFileSync('primer-comment.md', 'utf8');
+            const marker = '<!-- primer-results -->';
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const existing = comments.find(c => c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
