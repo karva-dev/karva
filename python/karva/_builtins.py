@@ -6,9 +6,15 @@ These fixtures are automatically available to all tests without any imports.
 from __future__ import annotations
 
 import contextlib
+import io
+import logging
 import os
-from collections.abc import MutableMapping
-from typing import Any, Self
+import pathlib
+import sys
+import tempfile
+import warnings
+from collections.abc import Generator, Iterator, MutableMapping
+from typing import Any, NamedTuple, Self, TextIO, TypeAlias, TypeVar, cast
 
 from karva._karva import fixture
 
@@ -28,6 +34,9 @@ _builtin_delattr = delattr
 _builtin_getattr = getattr
 _builtin_hasattr = hasattr
 
+_K = TypeVar("_K")
+_V = TypeVar("_V")
+
 
 def _resolve(name: str) -> object:
     """Import and return the object identified by the dotted *name*.
@@ -39,7 +48,7 @@ def _resolve(name: str) -> object:
 
     parts = name.split(".")
     current_path = parts[0]
-    obj = importlib.import_module(current_path)
+    obj: object = importlib.import_module(current_path)
 
     for i, part in enumerate(parts[1:], 1):
         current_path = ".".join(parts[: i + 1])
@@ -192,9 +201,9 @@ class MockEnv:
         self._setattr_ops.append((actual_target, actual_attr, old_val))
         _builtin_delattr(actual_target, actual_attr)
 
-    def setitem(self, dic: MutableMapping[Any, Any], name: Any, value: Any) -> None:
+    def setitem(self, dic: MutableMapping[_K, _V], name: _K, value: _V) -> None:
         """Set ``dic[name] = value``, remembering the old value for :meth:`undo`."""
-        old_val: Any
+        old_val: _V | _Missing
         try:
             old_val = dic[name]
         except (KeyError, IndexError):
@@ -204,11 +213,11 @@ class MockEnv:
         dic[name] = value
 
     def delitem(
-        self, dic: MutableMapping[Any, Any], name: Any, raising: bool = True
+        self, dic: MutableMapping[_K, _V], name: _K, raising: bool = True
     ) -> None:
         """Delete ``dic[name]``, remembering it for :meth:`undo`."""
         try:
-            old_val = dic[name]
+            old_val: _V = dic[name]
         except (KeyError, IndexError):
             if raising:
                 raise
@@ -245,7 +254,6 @@ class MockEnv:
     def syspath_prepend(self, path: str | os.PathLike[str]) -> None:
         """Prepend *path* to ``sys.path``, saving the original list for :meth:`undo`."""
         import importlib
-        import sys
 
         path_str = os.fspath(path)
 
@@ -264,8 +272,6 @@ class MockEnv:
 
     def undo(self) -> None:
         """Undo all patches in reverse order."""
-        import sys
-
         for obj, name, old_val in reversed(self._setattr_ops):
             if isinstance(old_val, _Missing):
                 with contextlib.suppress(AttributeError):
@@ -295,7 +301,7 @@ class _MockEnvContext:
     """Context manager that creates a :class:`MockEnv` and undoes it on exit."""
 
     def __init__(self) -> None:
-        self._mock_env = MockEnv()
+        self._mock_env: MockEnv = MockEnv()
 
     def __enter__(self) -> MockEnv:
         return self._mock_env
@@ -305,69 +311,363 @@ class _MockEnvContext:
         return False
 
 
+class CaptureResult(NamedTuple):
+    """Captured stdout and stderr from :fixture:`capsys` / :fixture:`capfd`."""
+
+    out: str
+    err: str
+
+
+class _CapsysDisabled:
+    """Context manager that temporarily restores real stdout/stderr during capture."""
+
+    def __init__(
+        self,
+        real_stdout: TextIO,
+        real_stderr: TextIO,
+        cur_out: io.StringIO,
+        cur_err: io.StringIO,
+    ) -> None:
+        self._real_stdout: TextIO = real_stdout
+        self._real_stderr: TextIO = real_stderr
+        self._cur_out: io.StringIO = cur_out
+        self._cur_err: io.StringIO = cur_err
+
+    def __enter__(self) -> Self:
+        sys.stdout = self._real_stdout
+        sys.stderr = self._real_stderr
+        return self
+
+    def __exit__(self, *args: object) -> bool:
+        sys.stdout = self._cur_out
+        sys.stderr = self._cur_err
+        return False
+
+
+class _CapsysFixture:
+    """Captures writes to ``sys.stdout`` and ``sys.stderr`` as strings."""
+
+    def __init__(self, real_stdout: TextIO, real_stderr: TextIO) -> None:
+        self._real_stdout: TextIO = real_stdout
+        self._real_stderr: TextIO = real_stderr
+        self._out: io.StringIO = io.StringIO()
+        self._err: io.StringIO = io.StringIO()
+        sys.stdout = self._out
+        sys.stderr = self._err
+
+    def readouterr(self) -> CaptureResult:
+        """Return captured output and reset the buffers."""
+        out = self._out.getvalue()
+        err = self._err.getvalue()
+        self._out = io.StringIO()
+        self._err = io.StringIO()
+        sys.stdout = self._out
+        sys.stderr = self._err
+        return CaptureResult(out, err)
+
+    def disabled(self) -> _CapsysDisabled:
+        """Context manager that temporarily restores real stdout/stderr."""
+        return _CapsysDisabled(
+            self._real_stdout, self._real_stderr, self._out, self._err
+        )
+
+    def __repr__(self) -> str:
+        return "<CapsysFixture object>"
+
+
+class BinaryCaptureResult(NamedTuple):
+    """Captured stdout and stderr from :fixture:`capsysbinary` / :fixture:`capfdbinary`."""
+
+    out: bytes
+    err: bytes
+
+
+class _BinaryCaptureStream:
+    """Accepts both str and bytes writes, stores raw bytes."""
+
+    def __init__(self) -> None:
+        self._data: bytearray = bytearray()
+
+    def write(self, obj: str | bytes | bytearray) -> int:
+        if isinstance(obj, str):
+            b = obj.encode("utf-8")
+        elif isinstance(obj, (bytes, bytearray)):
+            b = bytes(obj)
+        else:
+            raise TypeError("write() argument must be str or bytes-like object")
+        self._data += b
+        return len(b)
+
+    def flush(self) -> None:
+        pass
+
+    def getvalue(self) -> bytes:
+        return bytes(self._data)
+
+    @property
+    def encoding(self) -> str:
+        return "utf-8"
+
+
+class _CapsysBinaryDisabled:
+    """Context manager that temporarily restores real stdout/stderr during binary capture."""
+
+    def __init__(
+        self,
+        real_stdout: TextIO,
+        real_stderr: TextIO,
+        cur_out: _BinaryCaptureStream,
+        cur_err: _BinaryCaptureStream,
+    ) -> None:
+        self._real_stdout: TextIO = real_stdout
+        self._real_stderr: TextIO = real_stderr
+        self._cur_out: _BinaryCaptureStream = cur_out
+        self._cur_err: _BinaryCaptureStream = cur_err
+
+    def __enter__(self) -> Self:
+        sys.stdout = self._real_stdout
+        sys.stderr = self._real_stderr
+        return self
+
+    def __exit__(self, *args: object) -> bool:
+        sys.stdout = cast(TextIO, self._cur_out)
+        sys.stderr = cast(TextIO, self._cur_err)
+        return False
+
+
+class _CapsysBinaryFixture:
+    """Captures writes to ``sys.stdout`` and ``sys.stderr`` as bytes."""
+
+    def __init__(self, real_stdout: TextIO, real_stderr: TextIO) -> None:
+        self._real_stdout: TextIO = real_stdout
+        self._real_stderr: TextIO = real_stderr
+        self._out: _BinaryCaptureStream = _BinaryCaptureStream()
+        self._err: _BinaryCaptureStream = _BinaryCaptureStream()
+        sys.stdout = cast(TextIO, self._out)
+        sys.stderr = cast(TextIO, self._err)
+
+    def readouterr(self) -> BinaryCaptureResult:
+        """Return captured output as bytes and reset the buffers."""
+        out = self._out.getvalue()
+        err = self._err.getvalue()
+        self._out = _BinaryCaptureStream()
+        self._err = _BinaryCaptureStream()
+        sys.stdout = cast(TextIO, self._out)
+        sys.stderr = cast(TextIO, self._err)
+        return BinaryCaptureResult(out, err)
+
+    def disabled(self) -> _CapsysBinaryDisabled:
+        """Context manager that temporarily restores real stdout/stderr."""
+        return _CapsysBinaryDisabled(
+            self._real_stdout, self._real_stderr, self._out, self._err
+        )
+
+    def __repr__(self) -> str:
+        return "<CapsysBinaryFixture object>"
+
+
+class _CapLogHandler(logging.Handler):
+    """Logging handler that captures records into an owned list."""
+
+    def __init__(self) -> None:
+        super().__init__(0)
+        self.records: list[logging.LogRecord] = []
+
+    def emit(self, record: logging.LogRecord) -> None:
+        record.message = record.getMessage()
+        self.records.append(record)
+
+
+class _CapLogAtLevel:
+    """Context manager that temporarily sets the log capture level."""
+
+    def __init__(
+        self,
+        handler: _CapLogHandler,
+        level: int,
+        logger_name: str | None,
+    ) -> None:
+        self._handler: _CapLogHandler = handler
+        self._level: int = level
+        self._logger_name: str | None = logger_name
+        self._prev_handler_level: int = handler.level
+        self._prev_logger_level: int | None = None
+
+    def __enter__(self) -> Self:
+        logger = logging.getLogger(self._logger_name)
+        self._prev_logger_level = logger.level
+        logger.setLevel(self._level)
+        self._handler.setLevel(self._level)
+        return self
+
+    def __exit__(self, *args: object) -> bool:
+        logger = logging.getLogger(self._logger_name)
+        if self._prev_logger_level is not None:
+            logger.setLevel(self._prev_logger_level)
+        self._handler.setLevel(self._prev_handler_level)
+        return False
+
+
+class _CapLog:
+    """Exposes captured log records to the test."""
+
+    def __init__(self, handler: _CapLogHandler) -> None:
+        self._handler: _CapLogHandler = handler
+        self._saved_level: int | None = None
+        self._saved_level_logger: str | None = None
+
+    @property
+    def records(self) -> list[logging.LogRecord]:
+        return self._handler.records
+
+    @property
+    def handler(self) -> _CapLogHandler:
+        return self._handler
+
+    @property
+    def record_tuples(self) -> list[tuple[str, int, str]]:
+        return [(r.name, r.levelno, r.getMessage()) for r in self._handler.records]
+
+    @property
+    def messages(self) -> list[str]:
+        return [r.getMessage() for r in self._handler.records]
+
+    @property
+    def text(self) -> str:
+        formatter = logging.Formatter()
+        return "\n".join(formatter.format(r) for r in self._handler.records)
+
+    def set_level(self, level: int, logger: str | None = None) -> None:
+        """Set the capture level for the remainder of the test."""
+        target = logging.getLogger(logger)
+        if self._saved_level is None:
+            self._saved_level = target.level
+            self._saved_level_logger = logger
+        target.setLevel(level)
+        self._handler.setLevel(level)
+
+    def at_level(self, level: int, logger: str | None = None) -> _CapLogAtLevel:
+        """Context manager that temporarily sets the capture level."""
+        return _CapLogAtLevel(self._handler, level, logger)
+
+    def clear(self) -> None:
+        """Clear all captured records."""
+        self._handler.records.clear()
+
+    def __repr__(self) -> str:
+        return "<CapLog object>"
+
+
+class _TmpPathFactory:
+    """Session-scoped factory for creating numbered temporary directories."""
+
+    def __init__(self, base: pathlib.Path) -> None:
+        self._base: pathlib.Path = base
+        self._counter: int = 0
+
+    def mktemp(self, basename: str, numbered: bool = True) -> pathlib.Path:
+        """Create and return a new temporary subdirectory."""
+        if numbered:
+            name = f"{basename}{self._counter}"
+            self._counter += 1
+        else:
+            name = basename
+        path = self._base / name
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+
+    def getbasetemp(self) -> pathlib.Path:
+        """Return the base temporary directory."""
+        return self._base
+
+    def __repr__(self) -> str:
+        return f"<TmpPathFactory basetemp={self._base}>"
+
+
+class _TmpDirFactory:
+    """Session-scoped factory for creating numbered temporary directories."""
+
+    def __init__(self, base: pathlib.Path) -> None:
+        self._base: pathlib.Path = base
+        self._counter: int = 0
+
+    def mktemp(self, basename: str, numbered: bool = True) -> pathlib.Path:
+        """Create and return a new temporary subdirectory."""
+        if numbered:
+            name = f"{basename}{self._counter}"
+            self._counter += 1
+        else:
+            name = basename
+        path = self._base / name
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+
+    def getbasetemp(self) -> pathlib.Path:
+        """Return the base temporary directory."""
+        return self._base
+
+    def __repr__(self) -> str:
+        return f"<TmpDirFactory basetemp={self._base}>"
+
+
+_WarningList: TypeAlias = list[warnings.WarningMessage]
+
+
+class _WarningsChecker:
+    """Collects warnings captured during a test."""
+
+    def __init__(self, warning_list: _WarningList) -> None:
+        self._list: _WarningList = warning_list
+
+    @property
+    def list(self) -> _WarningList:
+        return self._list
+
+    def __len__(self) -> int:
+        return len(self._list)
+
+    def __getitem__(self, index: int) -> warnings.WarningMessage:
+        return self._list[index]
+
+    def __iter__(self) -> Iterator[warnings.WarningMessage]:
+        return iter(self._list)
+
+    def pop(self, category: type[Warning] = Warning) -> warnings.WarningMessage:
+        """Remove and return the first warning of the given *category*."""
+        for i, w in enumerate(self._list):
+            if issubclass(w.category, category):
+                return self._list.pop(i)
+        raise AssertionError(f"No warnings of type {category.__name__} were emitted.")
+
+    def clear(self) -> None:
+        """Clear all captured warnings."""
+        self._list.clear()
+
+    def __repr__(self) -> str:
+        return "<WarningsChecker object>"
+
+
+def _make_tmp_path() -> pathlib.Path:
+    """Create a temporary directory and return its resolved :class:`pathlib.Path`."""
+    # Use mkdtemp (no auto-cleanup) to match existing behaviour.
+    return pathlib.Path(tempfile.mkdtemp(prefix="karva-")).resolve()
+
+
 @fixture
-def monkeypatch():  # type: ignore[no-untyped-def]
+def monkeypatch() -> Generator[MockEnv, None, None]:
     """Fixture that provides a :class:`MockEnv` for patching during a test."""
     mp = MockEnv()
     yield mp
     mp.undo()
 
 
-def _capsys_impl():  # type: ignore[no-untyped-def]
+def _capsys_impl() -> Generator[_CapsysFixture, None, None]:
     """Shared generator for capsys and capfd."""
-    import io
-    import logging
-    import sys
-    from typing import NamedTuple
-
     real_stdout = sys.stdout
     real_stderr = sys.stderr
-    saved_disable = logging.root.manager.disable
-
-    class CaptureResult(NamedTuple):
-        out: str
-        err: str
-
-    class _CapsysFixture:
-        def __init__(self) -> None:
-            self._out: io.StringIO = io.StringIO()
-            self._err: io.StringIO = io.StringIO()
-            sys.stdout = self._out
-            sys.stderr = self._err
-            logging.disable(logging.NOTSET)
-
-        def readouterr(self) -> object:
-            """Return captured output and reset the buffers."""
-            out = self._out.getvalue()
-            err = self._err.getvalue()
-            self._out = io.StringIO()
-            self._err = io.StringIO()
-            sys.stdout = self._out
-            sys.stderr = self._err
-            return CaptureResult(out, err)
-
-        def disabled(self) -> object:
-            """Context manager that temporarily restores real stdout/stderr."""
-            cur_out = self._out
-            cur_err = self._err
-
-            class _Disabled:
-                def __enter__(inner_self) -> object:
-                    sys.stdout = real_stdout
-                    sys.stderr = real_stderr
-                    return inner_self
-
-                def __exit__(inner_self, *args: object) -> bool:
-                    sys.stdout = cur_out
-                    sys.stderr = cur_err
-                    return False
-
-            return _Disabled()
-
-        def __repr__(self) -> str:
-            return "<CapsysFixture object>"
-
-    f = _CapsysFixture()
+    saved_disable: int = logging.root.manager.disable
+    logging.disable(logging.NOTSET)
+    f = _CapsysFixture(real_stdout, real_stderr)
     yield f
     sys.stdout = real_stdout
     sys.stderr = real_stderr
@@ -375,97 +675,24 @@ def _capsys_impl():  # type: ignore[no-untyped-def]
 
 
 @fixture
-def capsys():  # type: ignore[no-untyped-def]
+def capsys() -> Generator[_CapsysFixture, None, None]:
     """Capture writes to ``sys.stdout`` and ``sys.stderr``."""
     yield from _capsys_impl()
 
 
 @fixture
-def capfd():  # type: ignore[no-untyped-def]
+def capfd() -> Generator[_CapsysFixture, None, None]:
     """Capture writes to ``sys.stdout`` and ``sys.stderr`` (fd-level alias of capsys)."""
     yield from _capsys_impl()
 
 
-def _capsysbinary_impl():  # type: ignore[no-untyped-def]
+def _capsysbinary_impl() -> Generator[_CapsysBinaryFixture, None, None]:
     """Shared generator for capsysbinary and capfdbinary."""
-    import logging
-    import sys
-    from typing import NamedTuple
-
     real_stdout = sys.stdout
     real_stderr = sys.stderr
-    saved_disable = logging.root.manager.disable
-
-    class CaptureResult(NamedTuple):
-        out: bytes
-        err: bytes
-
-    class _BinaryCaptureStream:
-        """Accepts both str and bytes writes, stores raw bytes."""
-
-        def __init__(self) -> None:
-            self._data = bytearray()
-
-        def write(self, obj: object) -> int:
-            if isinstance(obj, str):
-                b = obj.encode("utf-8")
-            elif isinstance(obj, (bytes, bytearray)):
-                b = bytes(obj)
-            else:
-                raise TypeError("write() argument must be str or bytes-like object")
-            self._data += b
-            return len(b)
-
-        def flush(self) -> None:
-            pass
-
-        def getvalue(self) -> bytes:
-            return bytes(self._data)
-
-        @property
-        def encoding(self) -> str:
-            return "utf-8"
-
-    class _CapsysBinaryFixture:
-        def __init__(self) -> None:
-            self._out = _BinaryCaptureStream()
-            self._err = _BinaryCaptureStream()
-            sys.stdout = self._out  # type: ignore[assignment]
-            sys.stderr = self._err  # type: ignore[assignment]
-            logging.disable(logging.NOTSET)
-
-        def readouterr(self) -> object:
-            """Return captured output as bytes and reset the buffers."""
-            out = self._out.getvalue()
-            err = self._err.getvalue()
-            self._out = _BinaryCaptureStream()
-            self._err = _BinaryCaptureStream()
-            sys.stdout = self._out  # type: ignore[assignment]
-            sys.stderr = self._err  # type: ignore[assignment]
-            return CaptureResult(out, err)
-
-        def disabled(self) -> object:
-            """Context manager that temporarily restores real stdout/stderr."""
-            cur_out = self._out
-            cur_err = self._err
-
-            class _Disabled:
-                def __enter__(inner_self) -> object:
-                    sys.stdout = real_stdout
-                    sys.stderr = real_stderr
-                    return inner_self
-
-                def __exit__(inner_self, *args: object) -> bool:
-                    sys.stdout = cur_out  # type: ignore[assignment]
-                    sys.stderr = cur_err  # type: ignore[assignment]
-                    return False
-
-            return _Disabled()
-
-        def __repr__(self) -> str:
-            return "<CapsysBinaryFixture object>"
-
-    f = _CapsysBinaryFixture()
+    saved_disable: int = logging.root.manager.disable
+    logging.disable(logging.NOTSET)
+    f = _CapsysBinaryFixture(real_stdout, real_stderr)
     yield f
     sys.stdout = real_stdout
     sys.stderr = real_stderr
@@ -473,114 +700,27 @@ def _capsysbinary_impl():  # type: ignore[no-untyped-def]
 
 
 @fixture
-def capsysbinary():  # type: ignore[no-untyped-def]
+def capsysbinary() -> Generator[_CapsysBinaryFixture, None, None]:
     """Capture writes to ``sys.stdout`` and ``sys.stderr`` as bytes."""
     yield from _capsysbinary_impl()
 
 
 @fixture
-def capfdbinary():  # type: ignore[no-untyped-def]
+def capfdbinary() -> Generator[_CapsysBinaryFixture, None, None]:
     """Capture writes to ``sys.stdout`` and ``sys.stderr`` as bytes (fd-level alias)."""
     yield from _capsysbinary_impl()
 
 
 @fixture
-def caplog():  # type: ignore[no-untyped-def]
+def caplog() -> Generator[_CapLog, None, None]:
     """Capture log records emitted during a test."""
-    import logging
-
-    saved_disable = logging.root.manager.disable
-
-    records: list[logging.LogRecord] = []
-
-    class _CapLogHandler(logging.Handler):
-        def __init__(self) -> None:
-            super().__init__(0)
-
-        def emit(self, record: logging.LogRecord) -> None:
-            record.message = record.getMessage()
-            records.append(record)
-
-    class _CapLogAtLevel:
-        def __init__(
-            self,
-            handler: logging.Handler,
-            level: int,
-            logger_name: str | None,
-        ) -> None:
-            self._handler = handler
-            self._level = level
-            self._logger_name = logger_name
-            self._prev_handler_level = handler.level
-            self._prev_logger_level: int | None = None
-
-        def __enter__(self) -> Self:
-            logger = logging.getLogger(self._logger_name)
-            self._prev_logger_level = logger.level
-            logger.setLevel(self._level)
-            self._handler.setLevel(self._level)
-            return self
-
-        def __exit__(self, *args: object) -> bool:
-            logger = logging.getLogger(self._logger_name)
-            if self._prev_logger_level is not None:
-                logger.setLevel(self._prev_logger_level)
-            self._handler.setLevel(self._prev_handler_level)
-            return False
-
-    class _CapLog:
-        def __init__(self, handler: logging.Handler) -> None:
-            self._handler = handler
-            self._saved_level: int | None = None
-            self._saved_level_logger: str | None = None
-
-        @property
-        def records(self) -> list[logging.LogRecord]:
-            return records
-
-        @property
-        def handler(self) -> logging.Handler:
-            return self._handler
-
-        @property
-        def record_tuples(self) -> list[tuple[str, int, str]]:
-            return [(r.name, r.levelno, r.getMessage()) for r in records]
-
-        @property
-        def messages(self) -> list[str]:
-            return [r.getMessage() for r in records]
-
-        @property
-        def text(self) -> str:
-            formatter = logging.Formatter()
-            return "\n".join(formatter.format(r) for r in records)
-
-        def set_level(self, level: int, logger: str | None = None) -> None:
-            """Set the capture level for the remainder of the test."""
-            target = logging.getLogger(logger)
-            if self._saved_level is None:
-                self._saved_level = target.level
-                self._saved_level_logger = logger
-            target.setLevel(level)
-            self._handler.setLevel(level)
-
-        def at_level(self, level: int, logger: str | None = None) -> _CapLogAtLevel:
-            """Context manager that temporarily sets the capture level."""
-            return _CapLogAtLevel(self._handler, level, logger)
-
-        def clear(self) -> None:
-            """Clear all captured records."""
-            records.clear()
-
-        def __repr__(self) -> str:
-            return "<CapLog object>"
-
+    saved_disable: int = logging.root.manager.disable
     handler = _CapLogHandler()
+    cap = _CapLog(handler)
     root_logger = logging.getLogger()
     root_logger.addHandler(handler)
     logging.disable(logging.NOTSET)
 
-    cap = _CapLog(handler)
     yield cap
 
     root_logger.removeHandler(handler)
@@ -589,139 +729,47 @@ def caplog():  # type: ignore[no-untyped-def]
         logging.getLogger(cap._saved_level_logger).setLevel(cap._saved_level)
 
 
-def _make_tmp_path() -> object:
-    """Create a temporary directory and return its resolved :class:`pathlib.Path`."""
-    import pathlib
-    import tempfile
-
-    # Use mkdtemp (no auto-cleanup) to match existing behaviour.
-    return pathlib.Path(tempfile.mkdtemp(prefix="karva-")).resolve()
-
-
 @fixture
-def tmp_path():  # type: ignore[no-untyped-def]
+def tmp_path() -> Generator[pathlib.Path, None, None]:
     """Provide a temporary directory as a :class:`pathlib.Path` object."""
     yield _make_tmp_path()
 
 
 @fixture
-def temp_path():  # type: ignore[no-untyped-def]
+def temp_path() -> Generator[pathlib.Path, None, None]:
     """Alias for :fixture:`tmp_path`."""
     yield _make_tmp_path()
 
 
 @fixture
-def temp_dir():  # type: ignore[no-untyped-def]
+def temp_dir() -> Generator[pathlib.Path, None, None]:
     """Alias for :fixture:`tmp_path`."""
     yield _make_tmp_path()
 
 
 @fixture
-def tmpdir():  # type: ignore[no-untyped-def]
+def tmpdir() -> Generator[pathlib.Path, None, None]:
     """Provide a temporary directory as a :class:`pathlib.Path`."""
     yield _make_tmp_path()
 
 
 @fixture(scope="session")
-def tmp_path_factory():  # type: ignore[no-untyped-def]
+def tmp_path_factory() -> Generator[_TmpPathFactory, None, None]:
     """Session-scoped factory for creating numbered temporary directories."""
-    import pathlib
-    import tempfile
-
     base = pathlib.Path(tempfile.mkdtemp(prefix="karva-")).resolve()
-    counter = [0]
-
-    class _TmpPathFactory:
-        def mktemp(self, basename: str, numbered: bool = True) -> pathlib.Path:
-            """Create and return a new temporary subdirectory."""
-            if numbered:
-                name = f"{basename}{counter[0]}"
-                counter[0] += 1
-            else:
-                name = basename
-            path = base / name
-            path.mkdir(parents=True, exist_ok=True)
-            return path
-
-        def getbasetemp(self) -> pathlib.Path:
-            """Return the base temporary directory."""
-            return base
-
-        def __repr__(self) -> str:
-            return f"<TmpPathFactory basetemp={base}>"
-
-    yield _TmpPathFactory()
+    yield _TmpPathFactory(base)
 
 
 @fixture(scope="session")
-def tmpdir_factory():  # type: ignore[no-untyped-def]
+def tmpdir_factory() -> Generator[_TmpDirFactory, None, None]:
     """Session-scoped factory for creating numbered temporary directories."""
-    import pathlib
-    import tempfile
-
     base = pathlib.Path(tempfile.mkdtemp(prefix="karva-")).resolve()
-    counter = [0]
-
-    class _TmpDirFactory:
-        def mktemp(self, basename: str, numbered: bool = True) -> pathlib.Path:
-            """Create and return a new temporary subdirectory."""
-            if numbered:
-                name = f"{basename}{counter[0]}"
-                counter[0] += 1
-            else:
-                name = basename
-            path = base / name
-            path.mkdir(parents=True, exist_ok=True)
-            return path
-
-        def getbasetemp(self) -> pathlib.Path:
-            """Return the base temporary directory."""
-            return base
-
-        def __repr__(self) -> str:
-            return f"<TmpDirFactory basetemp={base}>"
-
-    yield _TmpDirFactory()
+    yield _TmpDirFactory(base)
 
 
 @fixture
-def recwarn():  # type: ignore[no-untyped-def]
+def recwarn() -> Generator[_WarningsChecker, None, None]:
     """Record warnings raised during a test."""
-    import warnings
-
-    class _WarningsChecker:
-        def __init__(self, warning_list: list) -> None:  # ty: ignore[invalid-type-form]
-            self._list = warning_list
-
-        @property
-        def list(self) -> list:  # ty: ignore[invalid-type-form]
-            return self._list
-
-        def __len__(self) -> int:
-            return len(self._list)
-
-        def __getitem__(self, index: int) -> object:
-            return self._list[index]
-
-        def __iter__(self) -> object:
-            return iter(self._list)
-
-        def pop(self, category: type = Warning) -> object:
-            """Remove and return the first warning of the given *category*."""
-            for i, w in enumerate(self._list):
-                if issubclass(w.category, category):
-                    return self._list.pop(i)
-            raise AssertionError(
-                f"No warnings of type {category.__name__} were emitted."
-            )
-
-        def clear(self) -> None:
-            """Clear all captured warnings."""
-            self._list.clear()
-
-        def __repr__(self) -> str:
-            return "<WarningsChecker object>"
-
     with warnings.catch_warnings(record=True) as warning_list:
         warnings.simplefilter("always")
         yield _WarningsChecker(warning_list)
