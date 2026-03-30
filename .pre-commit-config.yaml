@@ -71,8 +71,9 @@ repos:
         priority: 1
       - id: ty
         name: ty
-        entry: uvx ty check python/
-        language: system
+        entry: ty check python/
+        language: python
+        additional_dependencies: ["ty"]
         types: [python]
         pass_filenames: false
         priority: 2
