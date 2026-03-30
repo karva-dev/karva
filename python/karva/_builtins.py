@@ -14,7 +14,10 @@ import sys
 import tempfile
 import warnings
 from collections.abc import Generator, Iterator, MutableMapping
-from typing import Any, NamedTuple, Self, TextIO, TypeAlias, TypeVar, cast
+from typing import TYPE_CHECKING, Any, NamedTuple, TextIO, TypeAlias, TypeVar, cast
+
+if TYPE_CHECKING:
+    from typing import Self
 
 from karva._karva import fixture
 
