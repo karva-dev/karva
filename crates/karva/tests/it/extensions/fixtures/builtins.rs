@@ -50,11 +50,11 @@ def test_tmpdir(tmpdir):
     );
 
     assert_cmd_snapshot!(test_context.command().arg("-q"), @"
-    success: false
-    exit_code: 1
+    success: true
+    exit_code: 0
     ----- stdout -----
     ────────────
-         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
@@ -111,11 +111,11 @@ def test_tmpdir_factory(tmpdir_factory):
     );
 
     assert_cmd_snapshot!(test_context.command().arg("-q"), @"
-    success: false
-    exit_code: 1
+    success: true
+    exit_code: 0
     ----- stdout -----
     ────────────
-         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");

@@ -160,6 +160,9 @@ pub fn discover_framework_fixtures(
         let Stmt::FunctionDef(function_def) = stmt else {
             continue;
         };
+        if function_def.name.starts_with('_') {
+            continue;
+        }
         let is_gen = is_generator(&function_def);
         let stmt_rc = Rc::new(function_def);
         if let Ok(fixture) = DiscoveredFixture::try_from_function(

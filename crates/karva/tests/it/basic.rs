@@ -1628,33 +1628,15 @@ def test_2(): pass
     [DATETIME] INFO Spawning 1 workers
     [DATETIME] INFO Worker 0 spawned with 2 tests
     [DATETIME] INFO Waiting for 1 workers to complete (Ctrl+C to cancel)
-    [DATETIME] DEBUG Trying to parse `_resolve` as a fixture
-    [DATETIME] DEBUG Failed to create fixture from Karva function: TypeError: 'function' object is not an instance of 'FixtureFunctionDefinition'
-    [DATETIME] DEBUG Failed to create fixture from Pytest function: AttributeError: Could not find fixture information
-    [DATETIME] DEBUG Trying to parse `_derive_importpath` as a fixture
-    [DATETIME] DEBUG Failed to create fixture from Karva function: TypeError: 'function' object is not an instance of 'FixtureFunctionDefinition'
-    [DATETIME] DEBUG Failed to create fixture from Pytest function: AttributeError: Could not find fixture information
     [DATETIME] DEBUG Trying to parse `monkeypatch` as a fixture
-    [DATETIME] DEBUG Trying to parse `_capsys_impl` as a fixture
-    [DATETIME] DEBUG Failed to create fixture from Karva function: TypeError: 'function' object is not an instance of 'FixtureFunctionDefinition'
-    [DATETIME] DEBUG Failed to create fixture from Pytest function: AttributeError: Could not find fixture information
     [DATETIME] DEBUG Trying to parse `capsys` as a fixture
     [DATETIME] DEBUG Trying to parse `capfd` as a fixture
-    [DATETIME] DEBUG Trying to parse `_capsysbinary_impl` as a fixture
-    [DATETIME] DEBUG Failed to create fixture from Karva function: TypeError: 'function' object is not an instance of 'FixtureFunctionDefinition'
-    [DATETIME] DEBUG Failed to create fixture from Pytest function: AttributeError: Could not find fixture information
     [DATETIME] DEBUG Trying to parse `capsysbinary` as a fixture
     [DATETIME] DEBUG Trying to parse `capfdbinary` as a fixture
     [DATETIME] DEBUG Trying to parse `caplog` as a fixture
-    [DATETIME] DEBUG Trying to parse `_make_tmp_path` as a fixture
-    [DATETIME] DEBUG Failed to create fixture from Karva function: TypeError: 'function' object is not an instance of 'FixtureFunctionDefinition'
-    [DATETIME] DEBUG Failed to create fixture from Pytest function: AttributeError: Could not find fixture information
     [DATETIME] DEBUG Trying to parse `tmp_path` as a fixture
     [DATETIME] DEBUG Trying to parse `temp_path` as a fixture
     [DATETIME] DEBUG Trying to parse `temp_dir` as a fixture
-    [DATETIME] DEBUG Trying to parse `_get_local_path_class` as a fixture
-    [DATETIME] DEBUG Failed to create fixture from Karva function: TypeError: 'function' object is not an instance of 'FixtureFunctionDefinition'
-    [DATETIME] DEBUG Failed to create fixture from Pytest function: AttributeError: Could not find fixture information
     [DATETIME] DEBUG Trying to parse `tmpdir` as a fixture
     [DATETIME] DEBUG Trying to parse `tmp_path_factory` as a fixture
     [DATETIME] DEBUG Trying to parse `tmpdir_factory` as a fixture
@@ -1695,33 +1677,15 @@ def test_1(): pass
     1   [TIME] INFO karva_runner::orchestration Spawning 1 workers
     1   [TIME] INFO karva_runner::orchestration Worker 0 spawned with 1 tests
     1   [TIME] INFO karva_runner::orchestration Waiting for 1 workers to complete (Ctrl+C to cancel)
-    1   [TIME] DEBUG karva_test_semantic::extensions::fixtures Trying to parse `_resolve` as a fixture
-    1   [TIME] DEBUG karva_test_semantic::extensions::fixtures Failed to create fixture from Karva function: TypeError: 'function' object is not an instance of 'FixtureFunctionDefinition'
-    1   [TIME] DEBUG karva_test_semantic::extensions::fixtures Failed to create fixture from Pytest function: AttributeError: Could not find fixture information
-    1   [TIME] DEBUG karva_test_semantic::extensions::fixtures Trying to parse `_derive_importpath` as a fixture
-    1   [TIME] DEBUG karva_test_semantic::extensions::fixtures Failed to create fixture from Karva function: TypeError: 'function' object is not an instance of 'FixtureFunctionDefinition'
-    1   [TIME] DEBUG karva_test_semantic::extensions::fixtures Failed to create fixture from Pytest function: AttributeError: Could not find fixture information
     1   [TIME] DEBUG karva_test_semantic::extensions::fixtures Trying to parse `monkeypatch` as a fixture
-    1   [TIME] DEBUG karva_test_semantic::extensions::fixtures Trying to parse `_capsys_impl` as a fixture
-    1   [TIME] DEBUG karva_test_semantic::extensions::fixtures Failed to create fixture from Karva function: TypeError: 'function' object is not an instance of 'FixtureFunctionDefinition'
-    1   [TIME] DEBUG karva_test_semantic::extensions::fixtures Failed to create fixture from Pytest function: AttributeError: Could not find fixture information
     1   [TIME] DEBUG karva_test_semantic::extensions::fixtures Trying to parse `capsys` as a fixture
     1   [TIME] DEBUG karva_test_semantic::extensions::fixtures Trying to parse `capfd` as a fixture
-    1   [TIME] DEBUG karva_test_semantic::extensions::fixtures Trying to parse `_capsysbinary_impl` as a fixture
-    1   [TIME] DEBUG karva_test_semantic::extensions::fixtures Failed to create fixture from Karva function: TypeError: 'function' object is not an instance of 'FixtureFunctionDefinition'
-    1   [TIME] DEBUG karva_test_semantic::extensions::fixtures Failed to create fixture from Pytest function: AttributeError: Could not find fixture information
     1   [TIME] DEBUG karva_test_semantic::extensions::fixtures Trying to parse `capsysbinary` as a fixture
     1   [TIME] DEBUG karva_test_semantic::extensions::fixtures Trying to parse `capfdbinary` as a fixture
     1   [TIME] DEBUG karva_test_semantic::extensions::fixtures Trying to parse `caplog` as a fixture
-    1   [TIME] DEBUG karva_test_semantic::extensions::fixtures Trying to parse `_make_tmp_path` as a fixture
-    1   [TIME] DEBUG karva_test_semantic::extensions::fixtures Failed to create fixture from Karva function: TypeError: 'function' object is not an instance of 'FixtureFunctionDefinition'
-    1   [TIME] DEBUG karva_test_semantic::extensions::fixtures Failed to create fixture from Pytest function: AttributeError: Could not find fixture information
     1   [TIME] DEBUG karva_test_semantic::extensions::fixtures Trying to parse `tmp_path` as a fixture
     1   [TIME] DEBUG karva_test_semantic::extensions::fixtures Trying to parse `temp_path` as a fixture
     1   [TIME] DEBUG karva_test_semantic::extensions::fixtures Trying to parse `temp_dir` as a fixture
-    1   [TIME] DEBUG karva_test_semantic::extensions::fixtures Trying to parse `_get_local_path_class` as a fixture
-    1   [TIME] DEBUG karva_test_semantic::extensions::fixtures Failed to create fixture from Karva function: TypeError: 'function' object is not an instance of 'FixtureFunctionDefinition'
-    1   [TIME] DEBUG karva_test_semantic::extensions::fixtures Failed to create fixture from Pytest function: AttributeError: Could not find fixture information
     1   [TIME] DEBUG karva_test_semantic::extensions::fixtures Trying to parse `tmpdir` as a fixture
     1   [TIME] DEBUG karva_test_semantic::extensions::fixtures Trying to parse `tmp_path_factory` as a fixture
     1   [TIME] DEBUG karva_test_semantic::extensions::fixtures Trying to parse `tmpdir_factory` as a fixture
