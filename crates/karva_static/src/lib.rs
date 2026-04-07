@@ -15,18 +15,6 @@ impl EnvVars {
     /// When set to "1" or "true", snapshot assertions write directly to `.snap`
     /// instead of creating `.snap.new` pending files.
     pub const KARVA_SNAPSHOT_UPDATE: &'static str = "KARVA_SNAPSHOT_UPDATE";
-
-    /// Override the path to the `karva-worker` binary.
-    /// Used for coverage instrumentation where the cargo-built binary
-    /// should be used instead of the venv-installed console script.
-    pub const KARVA_WORKER_BINARY: &'static str = "KARVA_WORKER_BINARY";
-
-    /// Private env var that activates venv support for the embedded Python
-    /// interpreter. Set by `just coverage-full` so the cargo-built worker
-    /// can find pytest, karva, etc. from the venv's site-packages.
-    /// The double-underscore prefix signals this is an internal implementation detail.
-    #[doc(hidden)]
-    pub const KARVA_COVERAGE_INTERNAL: &'static str = "__KARVA_COVERAGE";
 }
 
 pub fn max_parallelism() -> NonZeroUsize {
