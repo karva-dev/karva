@@ -66,6 +66,9 @@ karva test [OPTIONS] [PATH]...
 <li><code>concise</code>:  Print diagnostics concisely, one per line</li>
 </ul></dd><dt id="karva-test--quiet"><a href="#karva-test--quiet"><code>--quiet</code></a>, <code>-q</code></dt><dd><p>Use quiet output (or <code>-qq</code> for silent output)</p>
 </dd><dt id="karva-test--retry"><a href="#karva-test--retry"><code>--retry</code></a> <i>retry</i></dt><dd><p>When set, the test will retry failed tests up to this number of times</p>
+</dd><dt id="karva-test--skip"><a href="#karva-test--skip"><code>--skip</code></a> <i>skip-patterns</i></dt><dd><p>Exclude tests by name using a regular expression.</p>
+<p>Tests whose fully qualified name matches the pattern will be skipped. Uses partial matching (the pattern can match anywhere in the name). When specified multiple times, a test is skipped if it matches any of the patterns.</p>
+<p>Examples: <code>--skip slow_</code>, <code>--skip '^test::test_integration'</code>.</p>
 </dd><dt id="karva-test--snapshot-update"><a href="#karva-test--snapshot-update"><code>--snapshot-update</code></a></dt><dd><p>Update snapshots directly instead of creating pending <code>.snap.new</code> files.</p>
 <p>When set, <code>karva.assert_snapshot()</code> will write directly to <code>.snap</code> files, accepting any changes automatically.</p>
 </dd><dt id="karva-test--tag"><a href="#karva-test--tag"><code>--tag</code></a>, <code>-t</code> <i>tag-expressions</i></dt><dd><p>Filter tests by tag expression. Only tests with matching custom tags will run.</p>
