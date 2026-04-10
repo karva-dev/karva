@@ -3,6 +3,11 @@ rules:
     config:
       policies:
         dtolnay/rust-toolchain: any
+  dangerous-triggers:
+    # primer-comment.yml only downloads an artifact and posts a PR comment;
+    # it never checks out or executes repository code.
+    ignore:
+      - primer-comment.yml
   excessive-permissions:
     # it's hard to test what the impact of removing these ignores would be
     # without actually running the release workflow...
