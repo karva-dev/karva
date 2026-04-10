@@ -21,6 +21,11 @@ jobs:
       pull-requests: write
 
     steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+          sparse-checkout: .github/actions/post-primer-comment
+
       - name: "Download primer results"
         id: download
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
@@ -30,39 +35,13 @@ jobs:
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: "Read PR number"
+        id: pr
+        if: steps.download.outcome == 'success'
+        run: echo "number=$(cat pr-number.txt)" >> "$GITHUB_OUTPUT"
+
       - name: "Post PR comment"
         if: steps.download.outcome == 'success'
-        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
+        uses: ./.github/actions/post-primer-comment
         with:
-          script: |
-            const fs = require('fs');
-            if (!fs.existsSync('primer-comment.md')) {
-              core.warning('primer-comment.md not found — primer may have crashed before writing output.');
-              return;
-            }
-            const prNumber = parseInt(fs.readFileSync('pr-number.txt', 'utf8').trim(), 10);
-            const body = fs.readFileSync('primer-comment.md', 'utf8');
-            const marker = '<!-- primer-results -->';
-
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: prNumber,
-            });
-
-            const existing = comments.find(c => c.body.includes(marker));
-            if (existing) {
-              await github.rest.issues.updateComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: existing.id,
-                body,
-              });
-            } else {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: prNumber,
-                body,
-              });
-            }
+          pr-number: ${{ steps.pr.outputs.number }}

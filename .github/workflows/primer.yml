@@ -13,7 +13,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
 
-    permissions: {}
+    permissions:
+      # Granted for same-repo PRs so we can post the comment directly.
+      # Forks get this downgraded to read-only by GitHub regardless, and
+      # fall back to the primer-comment.yml workflow_run path.
+      pull-requests: write
 
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
@@ -57,12 +61,29 @@ jobs:
             --baseline-wheel "$(ls target/wheels-main/*.whl)" \
             --markdown-output primer-comment.md
 
+      - name: "Post PR comment"
+        if: >
+          !cancelled()
+          && github.event_name == 'pull_request'
+          && github.event.pull_request.head.repo.full_name == github.repository
+        uses: ./.github/actions/post-primer-comment
+        with:
+          pr-number: ${{ github.event.number }}
+
       - name: "Save PR number"
-        if: ${{ !cancelled() && github.event_name == 'pull_request' }}
-        run: echo "${{ github.event.number }}" > pr-number.txt
+        if: >
+          !cancelled()
+          && github.event_name == 'pull_request'
+          && github.event.pull_request.head.repo.full_name != github.repository
+        env:
+          PR_NUMBER: ${{ github.event.number }}
+        run: echo "$PR_NUMBER" > pr-number.txt
 
       - name: "Upload primer results"
-        if: ${{ !cancelled() && github.event_name == 'pull_request' }}
+        if: >
+          !cancelled()
+          && github.event_name == 'pull_request'
+          && github.event.pull_request.head.repo.full_name != github.repository
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: primer-result
