@@ -1,3 +1,14 @@
+# Runs the primer script on each PR and posts the results as a comment.
+#
+# Posting the comment is split based on where the PR comes from. For PRs
+# from branches in this repo, the GITHUB_TOKEN already has write access,
+# so we post the comment directly from this workflow. For PRs from forks,
+# GitHub forces the token to read-only regardless of the permissions block,
+# so we instead upload the results as an artifact and let primer-comment.yml
+# (triggered by workflow_run, which always runs in the base repo context
+# with full permissions) post the comment. Both paths share the same
+# comment-posting logic via the post-primer-comment composite action.
+
 name: Primer
 
 on:
