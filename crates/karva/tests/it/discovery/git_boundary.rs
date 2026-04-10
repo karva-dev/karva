@@ -4,11 +4,10 @@ use crate::common::TestContext;
 
 /// Karva must not walk past a `.git` directory when searching for `pyproject.toml`.
 ///
-/// The scenario mirrors the primer setup where projects are cloned into a
-/// subdirectory of another git repo: the inner project has its own `.git` and
-/// no `pyproject.toml`, but the outer repo has one. Without the `.git` boundary
-/// check, karva would find the outer `pyproject.toml` and resolve test paths
-/// relative to the wrong root.
+/// The scenario mirrors a project cloned into a subdirectory of another git
+/// repo: the inner project has its own `.git` and no `pyproject.toml`, but the
+/// outer repo has one. Without the `.git` boundary check, karva would find the
+/// outer `pyproject.toml` and resolve test paths relative to the wrong root.
 #[test]
 fn test_discovery_stops_at_git_boundary() {
     // Layout:
