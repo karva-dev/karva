@@ -13,8 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
 
-    permissions:
-      pull-requests: write
+    permissions: {}
 
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
@@ -58,38 +57,15 @@ jobs:
             --baseline-wheel "$(ls target/wheels-main/*.whl)" \
             --markdown-output primer-comment.md
 
-      - name: "Post PR comment"
-        if: ${{ !cancelled() }}
-        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
+      - name: "Save PR number"
+        if: ${{ !cancelled() && github.event_name == 'pull_request' }}
+        run: echo "${{ github.event.number }}" > pr-number.txt
+
+      - name: "Upload primer results"
+        if: ${{ !cancelled() && github.event_name == 'pull_request' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          script: |
-            const fs = require('fs');
-            if (!fs.existsSync('primer-comment.md')) {
-              core.warning('primer-comment.md not found — primer may have crashed before writing output.');
-              return;
-            }
-            const body = fs.readFileSync('primer-comment.md', 'utf8');
-            const marker = '<!-- primer-results -->';
-
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-            });
-
-            const existing = comments.find(c => c.body.includes(marker));
-            if (existing) {
-              await github.rest.issues.updateComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: existing.id,
-                body,
-              });
-            } else {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                body,
-              });
-            }
+          name: primer-result
+          path: |
+            primer-comment.md
+            pr-number.txt
