@@ -131,7 +131,7 @@ pub mod tags {
     }
 
     #[pyfunction]
-    pub fn parametrize(
+    fn parametrize(
         arg_names: &Bound<'_, PyAny>,
         arg_values: &Bound<'_, PyAny>,
     ) -> PyResult<PyTags> {
@@ -154,7 +154,7 @@ pub mod tags {
 
     #[pyfunction]
     #[pyo3(signature = (*fixture_names))]
-    pub fn use_fixtures(fixture_names: &Bound<'_, PyTuple>) -> PyResult<PyTags> {
+    fn use_fixtures(fixture_names: &Bound<'_, PyTuple>) -> PyResult<PyTags> {
         let mut names = Vec::new();
         for item in fixture_names.iter() {
             if let Ok(name) = item.extract::<String>() {
@@ -220,7 +220,7 @@ pub mod tags {
 
     #[pyfunction]
     #[pyo3(signature = (*conditions, reason = None))]
-    pub fn skip(
+    fn skip(
         py: Python<'_>,
         conditions: &Bound<'_, PyTuple>,
         reason: Option<String>,
@@ -233,7 +233,7 @@ pub mod tags {
 
     #[pyfunction]
     #[pyo3(signature = (*conditions, reason = None))]
-    pub fn expect_fail(
+    fn expect_fail(
         py: Python<'_>,
         conditions: &Bound<'_, PyTuple>,
         reason: Option<String>,

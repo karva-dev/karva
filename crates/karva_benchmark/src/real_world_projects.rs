@@ -366,7 +366,3 @@ pub static KARVA_BENCHMARK_PROJECT: RealWorldProject<'static> = RealWorldProject
     try_import_fixtures: false,
     retry: None,
 };
-
-pub fn all_projects() -> Vec<&'static RealWorldProject<'static>> {
-    vec![&KARVA_BENCHMARK_PROJECT]
-}
