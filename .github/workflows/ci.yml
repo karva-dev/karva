@@ -241,42 +241,13 @@ jobs:
       - name: Build docs
         run: uv run --isolated --only-group docs zensical build
 
-  generate-walltime-benchmarks-matrix:
-    name: "prepare walltime benchmarks"
-
-    runs-on: ubuntu-latest
-
-    needs: determine_changes
-    if: ${{ (needs.determine_changes.outputs.code == 'true' || github.ref == 'refs/heads/main') }}
-
-    outputs:
-      projects: ${{ steps.list-projects.outputs.projects }}
-
-    steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
-        with:
-          persist-credentials: false
-
-      - name: List walltime benchmark projects
-        id: list-projects
-        run: |
-          projects=$(find crates/karva_benchmark/benches -name '*walltime*.rs' -type f -print0 | \
-            xargs -0 -n 1 basename -s .rs | \
-            jq -R -s -c 'split("\n")[:-1]')
-          echo "projects=${projects}" >> "$GITHUB_OUTPUT"
-
   benchmarks-walltime:
-    name: "walltime benchmarks (${{ matrix.project }})"
+    name: "walltime benchmarks"
 
     runs-on: ubuntu-latest # should be codspeed-macro
 
-    needs: [determine_changes, generate-walltime-benchmarks-matrix]
+    needs: determine_changes
     if: ${{ (needs.determine_changes.outputs.code == 'true' || github.ref == 'refs/heads/main') }}
-
-    strategy:
-      fail-fast: false
-      matrix:
-        project: ${{ fromJson(needs.generate-walltime-benchmarks-matrix.outputs.projects) }}
 
     steps:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
@@ -318,5 +289,5 @@ jobs:
           PYO3_PYTHON: ${{ steps.setup-python.outputs.python-path }}
         with:
           token: ${{ secrets.CODSPEED_TOKEN }}
-          run: cargo codspeed run --bench ${{ matrix.project }}
+          run: cargo codspeed run --bench karva_benchmark_walltime
           mode: walltime

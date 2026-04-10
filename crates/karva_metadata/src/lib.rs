@@ -96,8 +96,8 @@ impl ProjectMetadata {
     ///
     /// The upward walk stops at the first directory that contains a `.git` entry.
     /// This prevents karva from escaping the current repository and accidentally
-    /// picking up a parent project's configuration (e.g., in monorepos or primer
-    /// setups where projects are cloned inside another repo's working tree).
+    /// picking up a parent project's configuration (e.g., in monorepos or when
+    /// a project is cloned inside another repo's working tree).
     pub fn discover(
         path: &Utf8Path,
         python_version: PythonVersion,
