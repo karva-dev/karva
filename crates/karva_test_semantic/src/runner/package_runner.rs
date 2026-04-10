@@ -194,9 +194,12 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
         }
 
         let name_filter = &self.context.settings().test().name_filter;
-        if !name_filter.is_empty() {
+        let skip_filter = &self.context.settings().test().skip_filter;
+        if !name_filter.is_empty() || !skip_filter.is_empty() {
             let display_name = QualifiedTestName::new(name.clone(), None).to_string();
-            if !name_filter.matches(&display_name) {
+            if (!name_filter.is_empty() && !name_filter.matches(&display_name))
+                || (!skip_filter.is_empty() && skip_filter.matches(&display_name))
+            {
                 return Some(self.context.register_test_case_result(
                     &QualifiedTestName::new(name.clone(), None),
                     IndividualTestResultKind::Skipped { reason: None },

@@ -137,10 +137,12 @@ fn run(f: impl FnOnce(Vec<OsString>) -> Vec<OsString>) -> anyhow::Result<ExitSta
     let tag_filter = TagFilterSet::new(&args.sub_command.tag_expressions)?;
 
     let name_filter = NameFilterSet::new(&args.sub_command.name_patterns)?;
+    let skip_filter = NameFilterSet::new(&args.sub_command.skip_patterns)?;
 
     let mut settings = args.sub_command.into_options().to_settings();
     settings.set_tag_filter(tag_filter);
     settings.set_name_filter(name_filter);
+    settings.set_skip_filter(skip_filter);
 
     let run_hash = RunHash::from_existing(&args.run_hash);
 

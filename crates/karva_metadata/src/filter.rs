@@ -41,6 +41,10 @@ impl NameFilterSet {
         self.filters.is_empty()
     }
 
+    pub fn is_match(&self, name: &str) -> bool {
+        self.matches(name)
+    }
+
     pub fn matches(&self, name: &str) -> bool {
         self.filters.is_empty() || self.filters.iter().any(|f| f.matches(name))
     }

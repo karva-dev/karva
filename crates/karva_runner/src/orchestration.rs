@@ -439,6 +439,11 @@ fn inner_cli_args(settings: &ProjectSettings, args: &SubTestCommand) -> Vec<Stri
         cli_args.push(pattern);
     }
 
+    for pattern in &args.skip_patterns {
+        cli_args.push("--skip");
+        cli_args.push(pattern);
+    }
+
     cli_args.iter().map(ToString::to_string).collect()
 }
 

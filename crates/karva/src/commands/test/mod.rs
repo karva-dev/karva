@@ -75,6 +75,7 @@ pub fn test(args: TestCommand) -> Result<ExitStatus> {
 
     TagFilterSet::new(&sub_command.tag_expressions)?;
     NameFilterSet::new(&sub_command.name_patterns)?;
+    NameFilterSet::new(&sub_command.skip_patterns)?;
 
     let config = karva_runner::ParallelTestConfig {
         num_workers,

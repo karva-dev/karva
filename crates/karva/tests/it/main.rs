@@ -9,5 +9,6 @@ mod durations;
 mod extensions;
 mod last_failed;
 mod name_filter;
+mod skip_filter;
 mod version;
 mod watch;

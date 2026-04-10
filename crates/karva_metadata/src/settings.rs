@@ -32,6 +32,10 @@ impl ProjectSettings {
     pub fn set_name_filter(&mut self, name_filter: NameFilterSet) {
         self.test.name_filter = name_filter;
     }
+
+    pub fn set_skip_filter(&mut self, skip_filter: NameFilterSet) {
+        self.test.skip_filter = skip_filter;
+    }
 }
 
 #[derive(Default, Debug, Clone)]
@@ -54,4 +58,5 @@ pub struct TestSettings {
     pub retry: u32,
     pub tag_filter: TagFilterSet,
     pub name_filter: NameFilterSet,
+    pub skip_filter: NameFilterSet,
 }

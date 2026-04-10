@@ -204,6 +204,7 @@ impl TestOptions {
             retry: self.retry.unwrap_or_default(),
             tag_filter: TagFilterSet::default(),
             name_filter: NameFilterSet::default(),
+            skip_filter: NameFilterSet::default(),
         }
     }
 }

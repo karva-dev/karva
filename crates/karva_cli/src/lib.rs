@@ -218,6 +218,16 @@ pub struct SubTestCommand {
     #[clap(short = 'm', long = "match")]
     pub name_patterns: Vec<String>,
 
+    /// Exclude tests by name using a regular expression.
+    ///
+    /// Tests whose fully qualified name matches the pattern will be skipped.
+    /// Uses partial matching (the pattern can match anywhere in the name).
+    /// When specified multiple times, a test is skipped if it matches any of the patterns.
+    ///
+    /// Examples: `--skip slow_`, `--skip '^test::test_integration'`.
+    #[clap(long = "skip")]
+    pub skip_patterns: Vec<String>,
+
     /// Update snapshots directly instead of creating pending `.snap.new` files.
     ///
     /// When set, `karva.assert_snapshot()` will write directly to `.snap` files,
