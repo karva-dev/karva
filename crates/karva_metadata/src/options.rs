@@ -301,17 +301,26 @@ impl Combine for OutputFormat {
 mod tests {
     use std::num::NonZeroU32;
 
+    use insta::{assert_debug_snapshot, assert_snapshot};
     use karva_combine::Combine;
 
     use super::*;
 
     #[test]
     fn to_settings_defaults_when_empty() {
-        let settings = TestOptions::default().to_settings();
-        assert_eq!(settings.test_function_prefix, "test");
-        assert_eq!(settings.max_fail, MaxFail::unlimited());
-        assert!(!settings.try_import_fixtures);
-        assert_eq!(settings.retry, 0);
+        assert_debug_snapshot!(TestOptions::default().to_settings(), @r#"
+        TestSettings {
+            test_function_prefix: "test",
+            max_fail: MaxFail(
+                None,
+            ),
+            try_import_fixtures: false,
+            retry: 0,
+            filter: FiltersetSet {
+                filters: [],
+            },
+        }
+        "#);
     }
 
     #[test]
@@ -320,7 +329,13 @@ mod tests {
             fail_fast: Some(true),
             ..TestOptions::default()
         };
-        assert_eq!(options.to_settings().max_fail, MaxFail::from_count(1));
+        assert_debug_snapshot!(options.to_settings().max_fail, @"
+        MaxFail(
+            Some(
+                1,
+            ),
+        )
+        ");
     }
 
     #[test]
@@ -329,7 +344,11 @@ mod tests {
             fail_fast: Some(false),
             ..TestOptions::default()
         };
-        assert_eq!(options.to_settings().max_fail, MaxFail::unlimited());
+        assert_debug_snapshot!(options.to_settings().max_fail, @"
+        MaxFail(
+            None,
+        )
+        ");
     }
 
     #[test]
@@ -339,7 +358,13 @@ mod tests {
             max_fail: Some(MaxFail::from(NonZeroU32::new(5).expect("non-zero"))),
             ..TestOptions::default()
         };
-        assert_eq!(options.to_settings().max_fail, MaxFail::from_count(5));
+        assert_debug_snapshot!(options.to_settings().max_fail, @"
+        MaxFail(
+            Some(
+                5,
+            ),
+        )
+        ");
     }
 
     #[test]
@@ -359,14 +384,34 @@ respect-ignore-files = false
 include = ["tests", "more"]
 "#;
         let options = Options::from_toml_str(toml).expect("parse");
-        let settings = options.to_settings();
-        assert_eq!(settings.test().test_function_prefix, "check");
-        assert_eq!(settings.test().max_fail, MaxFail::from_count(3));
-        assert_eq!(settings.test().retry, 2);
-        assert_eq!(settings.terminal().output_format, OutputFormat::Concise);
-        assert!(settings.terminal().show_python_output);
-        assert!(!settings.src().respect_ignore_files);
-        assert_eq!(settings.src().include_paths, vec!["tests", "more"]);
+        assert_debug_snapshot!(options.to_settings(), @r#"
+        ProjectSettings {
+            terminal: TerminalSettings {
+                output_format: Concise,
+                show_python_output: true,
+            },
+            src: SrcSettings {
+                respect_ignore_files: false,
+                include_paths: [
+                    "tests",
+                    "more",
+                ],
+            },
+            test: TestSettings {
+                test_function_prefix: "check",
+                max_fail: MaxFail(
+                    Some(
+                        3,
+                    ),
+                ),
+                try_import_fixtures: false,
+                retry: 2,
+                filter: FiltersetSet {
+                    filters: [],
+                },
+            },
+        }
+        "#);
     }
 
     #[test]
@@ -376,8 +421,16 @@ include = ["tests", "more"]
 fail-fast = true
 nonsense = 42
 ";
-        let err = Options::from_toml_str(toml).expect_err("unknown field");
-        assert!(matches!(err, KarvaTomlError::TomlSyntax(_)));
+        assert_snapshot!(
+            Options::from_toml_str(toml).expect_err("unknown field"),
+            @"
+        TOML parse error at line 4, column 1
+          |
+        4 | nonsense = 42
+          | ^^^^^^^^
+        unknown field `nonsense`, expected one of `test-function-prefix`, `fail-fast`, `max-fail`, `try-import-fixtures`, `retry`
+        "
+        );
     }
 
     #[test]
@@ -386,30 +439,47 @@ nonsense = 42
 [bogus]
 foo = 1
 ";
-        assert!(matches!(
-            Options::from_toml_str(toml),
-            Err(KarvaTomlError::TomlSyntax(_))
-        ));
+        assert_snapshot!(
+            Options::from_toml_str(toml).expect_err("unknown section"),
+            @"
+        TOML parse error at line 2, column 2
+          |
+        2 | [bogus]
+          |  ^^^^^
+        unknown field `bogus`, expected one of `src`, `terminal`, `test`
+        "
+        );
     }
 
     #[test]
     fn from_toml_str_empty_is_default() {
-        let options = Options::from_toml_str("").expect("parse");
-        assert_eq!(options, Options::default());
+        assert_debug_snapshot!(Options::from_toml_str("").expect("parse"), @"
+        Options {
+            src: None,
+            terminal: None,
+            test: None,
+        }
+        ");
     }
 
+    /// `MaxFail` wraps `NonZeroU32`, so raw `0` must be rejected by the
+    /// deserializer rather than silently producing `unlimited`.
     #[test]
     fn from_toml_str_rejects_max_fail_zero() {
-        // MaxFail wraps NonZeroU32 so the raw integer 0 must be rejected by the
-        // deserializer rather than silently producing `unlimited`.
         let toml = r"
 [test]
 max-fail = 0
 ";
-        assert!(matches!(
-            Options::from_toml_str(toml),
-            Err(KarvaTomlError::TomlSyntax(_))
-        ));
+        assert_snapshot!(
+            Options::from_toml_str(toml).expect_err("zero rejected"),
+            @"
+        TOML parse error at line 3, column 12
+          |
+        3 | max-fail = 0
+          |            ^
+        invalid value: integer `0`, expected a nonzero u32
+        "
+        );
     }
 
     #[test]
@@ -425,10 +495,21 @@ max-fail = 0
             try_import_fixtures: Some(true),
             ..TestOptions::default()
         };
-        let merged = cli.combine(file);
-        assert_eq!(merged.test_function_prefix.as_deref(), Some("cli_prefix"));
-        assert_eq!(merged.retry, Some(5));
-        assert_eq!(merged.try_import_fixtures, Some(true));
+        assert_debug_snapshot!(cli.combine(file), @r#"
+        TestOptions {
+            test_function_prefix: Some(
+                "cli_prefix",
+            ),
+            fail_fast: None,
+            max_fail: None,
+            try_import_fixtures: Some(
+                true,
+            ),
+            retry: Some(
+                5,
+            ),
+        }
+        "#);
     }
 
     #[test]
@@ -440,12 +521,25 @@ max-fail = 0
             retry: Some(3),
             ..TestOptions::default()
         };
-        let merged = cli.combine(file);
-        assert_eq!(merged.test_function_prefix.as_deref(), Some("from_file"));
-        assert_eq!(merged.fail_fast, Some(true));
-        assert_eq!(merged.retry, Some(3));
+        assert_debug_snapshot!(cli.combine(file), @r#"
+        TestOptions {
+            test_function_prefix: Some(
+                "from_file",
+            ),
+            fail_fast: Some(
+                true,
+            ),
+            max_fail: None,
+            try_import_fixtures: None,
+            retry: Some(
+                3,
+            ),
+        }
+        "#);
     }
 
+    /// `Vec::combine` appends `self` after `other`, so CLI entries take
+    /// precedence at the tail.
     #[test]
     fn combine_merges_include_paths_with_cli_taking_precedence() {
         let cli = SrcOptions {
@@ -456,11 +550,19 @@ max-fail = 0
             include: Some(vec!["file_only".to_string()]),
             respect_ignore_files: Some(false),
         };
-        let merged = cli.combine(file);
-        // Vec combine appends `self` after `other`, so CLI entries take precedence at the tail.
-        let include = merged.include.expect("include set");
-        assert_eq!(include, vec!["file_only", "cli_only"]);
-        assert_eq!(merged.respect_ignore_files, Some(false));
+        assert_debug_snapshot!(cli.combine(file), @r#"
+        SrcOptions {
+            respect_ignore_files: Some(
+                false,
+            ),
+            include: Some(
+                [
+                    "file_only",
+                    "cli_only",
+                ],
+            ),
+        }
+        "#);
     }
 
     #[test]
@@ -481,10 +583,21 @@ max-fail = 0
             ..Options::default()
         };
         let overrides = ProjectOptionsOverrides::new(None, cli_options);
-        let merged = overrides.apply_to(file_options);
-        let test = merged.test.expect("test section set");
-        assert_eq!(test.test_function_prefix.as_deref(), Some("cli"));
-        assert_eq!(test.retry, Some(2));
+        assert_debug_snapshot!(overrides.apply_to(file_options).test, @r#"
+        Some(
+            TestOptions {
+                test_function_prefix: Some(
+                    "cli",
+                ),
+                fail_fast: None,
+                max_fail: None,
+                try_import_fixtures: None,
+                retry: Some(
+                    2,
+                ),
+            },
+        )
+        "#);
     }
 }
 

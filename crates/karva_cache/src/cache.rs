@@ -319,6 +319,7 @@ mod tests {
     use std::fs;
 
     use camino::Utf8PathBuf;
+    use insta::{assert_debug_snapshot, assert_snapshot};
 
     use super::*;
 
@@ -385,9 +386,16 @@ mod tests {
         let cache = Cache::new(&cache_dir, &run_hash);
         let results = cache.aggregate_results().unwrap();
 
-        assert_eq!(results.stats.passed(), 5);
-        assert_eq!(results.stats.failed(), 1);
-        assert_eq!(results.stats.skipped(), 1);
+        assert_debug_snapshot!(
+            (results.stats.passed(), results.stats.failed(), results.stats.skipped()),
+            @r"
+        (
+            5,
+            1,
+            1,
+        )
+        "
+        );
     }
 
     #[test]
@@ -402,8 +410,8 @@ mod tests {
         let cache = Cache::new(&cache_dir, &run_hash);
         let results = cache.aggregate_results().unwrap();
 
-        assert_eq!(results.stats.total(), 0);
-        assert!(results.diagnostics.is_empty());
+        assert_debug_snapshot!(results.stats.total(), @"0");
+        assert_snapshot!(results.diagnostics, @"");
     }
 
     #[test]
@@ -414,8 +422,12 @@ mod tests {
         let failed = vec!["mod::test_a".to_string(), "mod::test_b".to_string()];
         write_last_failed(&cache_dir, &failed).unwrap();
 
-        let read = read_last_failed(&cache_dir).unwrap();
-        assert_eq!(read, failed);
+        assert_debug_snapshot!(read_last_failed(&cache_dir).unwrap(), @r#"
+        [
+            "mod::test_a",
+            "mod::test_b",
+        ]
+        "#);
     }
 
     #[test]
@@ -435,8 +447,11 @@ mod tests {
         write_last_failed(&cache_dir, &["old".to_string()]).unwrap();
         write_last_failed(&cache_dir, &["new".to_string()]).unwrap();
 
-        let read = read_last_failed(&cache_dir).unwrap();
-        assert_eq!(read, vec!["new".to_string()]);
+        assert_debug_snapshot!(read_last_failed(&cache_dir).unwrap(), @r#"
+        [
+            "new",
+        ]
+        "#);
     }
 
     #[test]
@@ -448,7 +463,11 @@ mod tests {
         write_last_failed(&cache_dir, &["x".to_string()]).unwrap();
 
         assert!(cache_dir.exists());
-        assert_eq!(read_last_failed(&cache_dir).unwrap(), vec!["x".to_string()]);
+        assert_debug_snapshot!(read_last_failed(&cache_dir).unwrap(), @r#"
+        [
+            "x",
+        ]
+        "#);
     }
 
     #[test]
@@ -469,10 +488,14 @@ mod tests {
             fs::create_dir_all(tmp.path().join(ts)).unwrap();
         }
 
-        let result = prune_cache(&cache_dir).unwrap();
-        assert_eq!(result.removed.len(), 2);
-        assert!(result.removed.contains(&"run-100".to_string()));
-        assert!(result.removed.contains(&"run-200".to_string()));
+        let mut removed = prune_cache(&cache_dir).unwrap().removed;
+        removed.sort();
+        assert_debug_snapshot!(removed, @r#"
+        [
+            "run-100",
+            "run-200",
+        ]
+        "#);
         assert!(cache_dir.join("run-300").exists());
         assert!(!cache_dir.join("run-100").exists());
         assert!(!cache_dir.join("run-200").exists());
@@ -575,15 +598,27 @@ mod tests {
 
         let mut failed = results.failed_tests.clone();
         failed.sort();
-        assert_eq!(
-            failed,
-            vec!["mod::test_a".to_string(), "mod::test_b".to_string()]
-        );
-        assert_eq!(results.durations.len(), 2);
-        assert_eq!(
-            results.durations.get("mod::test_a"),
-            Some(&Duration::from_millis(10))
-        );
+        assert_debug_snapshot!(failed, @r#"
+        [
+            "mod::test_a",
+            "mod::test_b",
+        ]
+        "#);
+
+        let mut durations: Vec<(String, Duration)> = results.durations.into_iter().collect();
+        durations.sort();
+        assert_debug_snapshot!(durations, @r#"
+        [
+            (
+                "mod::test_a",
+                10ms,
+            ),
+            (
+                "mod::test_b",
+                20ms,
+            ),
+        ]
+        "#);
     }
 
     #[test]

@@ -18,5 +18,8 @@ tracing-flame = { workspace = true }
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 tracing-tree = { workspace = true }
 
+[dev-dependencies]
+insta = { workspace = true }
+
 [lints]
 workspace = true
