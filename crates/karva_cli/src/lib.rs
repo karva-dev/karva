@@ -44,8 +44,10 @@ impl Verbosity {
     /// Returns `None` if the user did not specify any verbosity flags.
     pub fn level(&self) -> VerbosityLevel {
         // `--quiet` and `--verbose` are mutually exclusive in Clap, so we can just check one first.
-        if self.quiet > 0 {
-            return VerbosityLevel::Quiet;
+        match self.quiet {
+            0 => {}
+            1 => return VerbosityLevel::Quiet,
+            _ => return VerbosityLevel::Silent,
         }
 
         match self.verbose {
