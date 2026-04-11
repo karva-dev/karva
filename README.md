@@ -14,7 +14,16 @@ A Python test framework, written in Rust.
 
 Karva aims to be an efficient alternative to `pytest` and `unittest`.
 
-While we do not yet support all of pytest's features, we aim to gradually add support for pytest alternatives as we add features.
+Though, we do not want to support all of the features these tools support.
+The main reason for this is that I don't believe all of the pytest features
+promote good test quality, I think that the Rust testing ecosystem supports
+writing high quality tests, some high quality Rust tests can be seen in the
+[uv](https://github.com/astral-sh/uv) and [ruff](https://github.com/astral-sh/ruff)
+repos. I believe that, with having a smaller set of testing features, we
+can have a good impact on the Python ecosystem.
+
+One example of a good test framework is [nextest](https://nexte.st), following
+standards set in this repo is an aim of this project.
 
 ## Getting started
 
