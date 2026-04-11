@@ -1920,3 +1920,24 @@ def test_2(): pass
     ----- stderr -----
     ");
 }
+
+/// `-qq` is silent: even the summary line emitted by `-q` must be suppressed,
+/// so a failing run under `-qq` produces no stdout at all.
+#[test]
+fn qq_is_silent_not_quiet() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+def test_pass(): pass
+def test_fail(): assert False
+",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-qq"), @"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+
+    ----- stderr -----
+    ");
+}
