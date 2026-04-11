@@ -1214,6 +1214,7 @@ name = "karva_metadata"
 version = "0.0.0"
 dependencies = [
  "camino",
+ "globset",
  "karva_combine",
  "karva_macros",
  "regex",

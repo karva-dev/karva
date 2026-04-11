@@ -49,11 +49,14 @@ karva test [OPTIONS] [PATH]...
 <p>May also be set with the <code>KARVA_CONFIG_FILE</code> environment variable.</p></dd><dt id="karva-test--dry-run"><a href="#karva-test--dry-run"><code>--dry-run</code></a></dt><dd><p>Print discovered tests without executing them</p>
 </dd><dt id="karva-test--durations"><a href="#karva-test--durations"><code>--durations</code></a> <i>n</i></dt><dd><p>Show the N slowest tests after the run completes</p>
 </dd><dt id="karva-test--fail-fast"><a href="#karva-test--fail-fast"><code>--fail-fast</code></a></dt><dd><p>When set, the test will fail immediately if any test fails</p>
+</dd><dt id="karva-test--filter"><a href="#karva-test--filter"><code>--filter</code></a>, <code>-E</code> <i>filter-expressions</i></dt><dd><p>Filter tests using a filterset expression.</p>
+<p>Predicates: <code>test(&lt;matcher&gt;)</code> matches the fully qualified test name; <code>tag(&lt;matcher&gt;)</code> matches any custom tag on the test.</p>
+<p>Matchers: <code>=exact</code>, <code>~substring</code>, <code>/regex/</code>, <code>#glob</code>. The default is substring for <code>test()</code> and exact for <code>tag()</code>. String bodies may be quoted (<code>&quot;...&quot;</code>) to allow spaces or reserved characters.</p>
+<p>Operators: <code>&amp;</code> / <code>and</code>, <code>|</code> / <code>or</code>, <code>not</code> / <code>!</code>, and <code>-</code> as shorthand for &quot;and not&quot;. Use parentheses for grouping. <code>and</code> binds tighter than <code>or</code>.</p>
+<p>When specified multiple times, a test runs if it matches any of the expressions (OR semantics across flags).</p>
+<p>Examples: <code>-E 'tag(slow)'</code>, <code>-E 'test(/^mod::test_login$/)'</code>, <code>-E 'tag(slow) &amp; test(~login)'</code>, <code>-E '(tag(fast) | tag(unit)) - tag(flaky)'</code>.</p>
 </dd><dt id="karva-test--help"><a href="#karva-test--help"><code>--help</code></a>, <code>-h</code></dt><dd><p>Print help (see a summary with '-h')</p>
 </dd><dt id="karva-test--last-failed"><a href="#karva-test--last-failed"><code>--last-failed</code></a>, <code>--lf</code></dt><dd><p>Re-run only the tests that failed in the previous run</p>
-</dd><dt id="karva-test--match"><a href="#karva-test--match"><code>--match</code></a>, <code>-m</code> <i>name-patterns</i></dt><dd><p>Filter tests by name using a regular expression.</p>
-<p>Only tests whose fully qualified name matches the pattern will run. Uses partial matching (the pattern can match anywhere in the name). When specified multiple times, a test runs if it matches any of the patterns.</p>
-<p>Examples: <code>-m auth</code>, <code>-m '^test::test_login'</code>, <code>-m 'slow|fast'</code>.</p>
 </dd><dt id="karva-test--no-cache"><a href="#karva-test--no-cache"><code>--no-cache</code></a></dt><dd><p>Disable reading the karva cache for test duration history</p>
 </dd><dt id="karva-test--no-ignore"><a href="#karva-test--no-ignore"><code>--no-ignore</code></a></dt><dd><p>When set, .gitignore files will not be respected</p>
 </dd><dt id="karva-test--no-parallel"><a href="#karva-test--no-parallel"><code>--no-parallel</code></a></dt><dd><p>Disable parallel execution (equivalent to <code>--num-workers 1</code>)</p>
@@ -68,9 +71,6 @@ karva test [OPTIONS] [PATH]...
 </dd><dt id="karva-test--retry"><a href="#karva-test--retry"><code>--retry</code></a> <i>retry</i></dt><dd><p>When set, the test will retry failed tests up to this number of times</p>
 </dd><dt id="karva-test--snapshot-update"><a href="#karva-test--snapshot-update"><code>--snapshot-update</code></a></dt><dd><p>Update snapshots directly instead of creating pending <code>.snap.new</code> files.</p>
 <p>When set, <code>karva.assert_snapshot()</code> will write directly to <code>.snap</code> files, accepting any changes automatically.</p>
-</dd><dt id="karva-test--tag"><a href="#karva-test--tag"><code>--tag</code></a>, <code>-t</code> <i>tag-expressions</i></dt><dd><p>Filter tests by tag expression. Only tests with matching custom tags will run.</p>
-<p>Expressions support <code>and</code>, <code>or</code>, <code>not</code>, and parentheses for grouping. When specified multiple times, a test runs if it matches any of the expressions.</p>
-<p>Examples: <code>-t slow</code>, <code>-t 'not slow'</code>, <code>-t 'slow and integration'</code>, <code>-t 'slow or integration'</code>, <code>-t '(slow or fast) and not flaky'</code>.</p>
 </dd><dt id="karva-test--test-prefix"><a href="#karva-test--test-prefix"><code>--test-prefix</code></a> <i>test-prefix</i></dt><dd><p>The prefix of the test functions</p>
 </dd><dt id="karva-test--try-import-fixtures"><a href="#karva-test--try-import-fixtures"><code>--try-import-fixtures</code></a></dt><dd><p>When set, we will try to import functions in each test file as well as parsing the ast to find them.</p>
 <p>This is often slower, so it is not recommended for most projects.</p>

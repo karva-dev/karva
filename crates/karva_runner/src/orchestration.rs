@@ -429,14 +429,9 @@ fn inner_cli_args(settings: &ProjectSettings, args: &SubTestCommand) -> Vec<Stri
         cli_args.push(retry);
     }
 
-    for expr in &args.tag_expressions {
-        cli_args.push("--tag");
+    for expr in &args.filter_expressions {
+        cli_args.push("--filter");
         cli_args.push(expr);
-    }
-
-    for pattern in &args.name_patterns {
-        cli_args.push("--match");
-        cli_args.push(pattern);
     }
 
     cli_args.iter().map(ToString::to_string).collect()

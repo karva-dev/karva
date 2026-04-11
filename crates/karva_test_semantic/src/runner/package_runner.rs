@@ -5,6 +5,7 @@ use std::sync::Arc;
 type FixtureArguments = HashMap<String, Py<PyAny>>;
 
 use karva_diagnostic::IndividualTestResultKind;
+use karva_metadata::filter::EvalContext;
 use karva_python_semantic::{FunctionKind, QualifiedFunctionName, QualifiedTestName};
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyIterator};
@@ -181,24 +182,18 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
         name: &QualifiedFunctionName,
         tags: &crate::extensions::tags::Tags,
     ) -> Option<bool> {
-        let tag_filter = &self.context.settings().test().tag_filter;
-        if !tag_filter.is_empty() {
+        let filter = &self.context.settings().test().filter;
+        if !filter.is_empty() {
+            let qualified = QualifiedTestName::new(name.clone(), None);
+            let display_name = qualified.to_string();
             let custom_names = tags.custom_tag_names();
-            if !tag_filter.matches(&custom_names) {
+            let ctx = EvalContext {
+                test_name: &display_name,
+                tags: &custom_names,
+            };
+            if !filter.matches(&ctx) {
                 return Some(self.context.register_test_case_result(
-                    &QualifiedTestName::new(name.clone(), None),
-                    IndividualTestResultKind::Skipped { reason: None },
-                    std::time::Duration::ZERO,
-                ));
-            }
-        }
-
-        let name_filter = &self.context.settings().test().name_filter;
-        if !name_filter.is_empty() {
-            let display_name = QualifiedTestName::new(name.clone(), None).to_string();
-            if !name_filter.matches(&display_name) {
-                return Some(self.context.register_test_case_result(
-                    &QualifiedTestName::new(name.clone(), None),
+                    &qualified,
                     IndividualTestResultKind::Skipped { reason: None },
                     std::time::Duration::ZERO,
                 ));
