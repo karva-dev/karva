@@ -3,7 +3,7 @@ use clap::Parser;
 use clap::builder::Styles;
 use clap::builder::styling::{AnsiColor, Effects};
 use karva_logging::{TerminalColor, VerbosityLevel};
-use karva_metadata::{Options, SrcOptions, TerminalOptions, TestOptions};
+use karva_metadata::{MaxFail, Options, SrcOptions, TerminalOptions, TestOptions};
 use ruff_db::diagnostic::DiagnosticFormat;
 
 const STYLES: Styles = Styles::styled()
@@ -176,7 +176,20 @@ pub struct SubTestCommand {
     #[clap(long, default_missing_value = "true", num_args=0..1)]
     pub no_ignore: Option<bool>,
 
-    /// When set, the test will fail immediately if any test fails.
+    /// Stop scheduling new tests after this many failures.
+    ///
+    /// Accepts a positive integer such as `--max-fail=3`, or `all` to
+    /// disable the limit. Equivalent to the legacy `--fail-fast` (which is
+    /// `--max-fail=1`) and `--no-fail-fast` (which is `--max-fail=all`).
+    /// When `--max-fail` is provided alongside `--fail-fast` or
+    /// `--no-fail-fast`, `--max-fail` takes precedence.
+    #[clap(long, value_name = "N")]
+    pub max_fail: Option<MaxFail>,
+
+    /// Stop scheduling new tests after the first failure.
+    ///
+    /// Equivalent to `--max-fail=1`. Use `--no-fail-fast` (or `--max-fail=all`)
+    /// to keep running after failures.
     #[clap(long, default_missing_value = "true", num_args=0..1)]
     pub fail_fast: Option<bool>,
 
@@ -322,6 +335,7 @@ impl SubTestCommand {
             test: Some(TestOptions {
                 test_function_prefix: self.test_prefix,
                 fail_fast: self.fail_fast,
+                max_fail: self.max_fail,
                 try_import_fixtures: self.try_import_fixtures,
                 retry: self.retry,
             }),

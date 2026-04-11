@@ -168,7 +168,12 @@ fn run(f: impl FnOnce(Vec<OsString>) -> Vec<OsString>) -> anyhow::Result<ExitSta
 
     cache.write_result(args.worker_id, &result, &diagnostic_resolver, &config)?;
 
-    if settings.fail_fast() && !result.stats().is_success() {
+    // Propagate the stop signal to sibling workers whenever this worker has
+    // reached (or exceeded) its configured max-fail budget. The budget is
+    // enforced locally per worker inside `PackageRunner`, so hitting any
+    // failure here while `max_fail` is set means we ran out of budget.
+    let failed_count = u32::try_from(result.stats().failed()).unwrap_or(u32::MAX);
+    if settings.max_fail().is_exceeded_by(failed_count) {
         cache.write_fail_fast_signal()?;
     }
 

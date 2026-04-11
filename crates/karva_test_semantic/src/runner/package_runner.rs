@@ -1,3 +1,4 @@
+use std::cell::Cell;
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::sync::Arc;
@@ -42,6 +43,12 @@ pub struct PackageRunner<'ctx, 'a> {
 
     /// Cache for fixture finalizers to run cleanup at appropriate times.
     finalizer_cache: FinalizerCache,
+
+    /// Running count of failed tests observed during this run.
+    ///
+    /// Used to enforce `--max-fail=N`: once this counter reaches the
+    /// configured budget we stop scheduling new tests.
+    failed_count: Cell<u32>,
 }
 
 impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
@@ -50,6 +57,25 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
             context,
             fixture_cache: FixtureCache::default(),
             finalizer_cache: FinalizerCache::default(),
+            failed_count: Cell::new(0),
+        }
+    }
+
+    /// Returns `true` when the configured `max-fail` budget has been
+    /// reached, signalling that the runner should stop scheduling tests.
+    fn budget_exhausted(&self) -> bool {
+        self.context
+            .settings()
+            .test()
+            .max_fail
+            .is_exceeded_by(self.failed_count.get())
+    }
+
+    /// Record a test variant's outcome for `max-fail` accounting.
+    fn record_outcome(&self, passed: bool) {
+        if !passed {
+            self.failed_count
+                .set(self.failed_count.get().saturating_add(1));
         }
     }
 
@@ -107,14 +133,16 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
             // Uses next_with_py so each variant gets fresh function-scoped built-in fixtures.
             let mut iterator = TestVariantIterator::new(py, test_function, &mut test_resolver);
             while let Some(variant) = iterator.next_with_py(py) {
-                passed &= self.execute_test_variant(py, variant);
+                let variant_passed = self.execute_test_variant(py, variant);
+                self.record_outcome(variant_passed);
+                passed &= variant_passed;
 
-                if self.context.settings().test().fail_fast && !passed {
+                if self.budget_exhausted() {
                     break;
                 }
             }
 
-            if self.context.settings().test().fail_fast && !passed {
+            if self.budget_exhausted() {
                 break;
             }
         }
@@ -154,16 +182,16 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
         for module in package.modules().values() {
             passed &= self.execute_module(py, module, &new_parents);
 
-            if self.context.settings().test().fail_fast && !passed {
+            if self.budget_exhausted() {
                 break;
             }
         }
 
-        if !self.context.settings().test().fail_fast || passed {
+        if !self.budget_exhausted() {
             for sub_package in package.packages().values() {
                 passed &= self.execute_package(py, sub_package, &new_parents);
 
-                if self.context.settings().test().fail_fast && !passed {
+                if self.budget_exhausted() {
                     break;
                 }
             }

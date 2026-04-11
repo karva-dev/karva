@@ -1446,6 +1446,71 @@ def test_pass():
     ");
 }
 
+/// `--max-fail=2` should run exactly two failing tests and then stop scheduling
+/// the rest. The summary reflects only the tests that actually ran.
+#[test]
+fn test_max_fail_stops_after_n_failures() {
+    let context = TestContext::with_file(
+        "test_max_fail.py",
+        r"
+def test_first_fail():
+    assert False, 'boom 1'
+
+def test_second_fail():
+    assert False, 'boom 2'
+
+def test_third_fail():
+    assert False, 'boom 3'
+
+def test_fourth_skipped():
+    assert True
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--max-fail=2"));
+}
+
+/// `--max-fail=all` disables the limit, so every test runs even when some fail.
+#[test]
+fn test_max_fail_all_runs_every_test() {
+    let context = TestContext::with_file(
+        "test_max_fail_all.py",
+        r"
+def test_a():
+    assert False, 'a boom'
+
+def test_b():
+    assert False, 'b boom'
+
+def test_c():
+    assert True
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--max-fail=all"));
+}
+
+/// `--max-fail=1` is the generalized form of `--fail-fast` and should stop
+/// scheduling once a single test has failed.
+#[test]
+fn test_max_fail_one_is_equivalent_to_fail_fast() {
+    let context = TestContext::with_file(
+        "test_max_fail_one.py",
+        r"
+def test_first():
+    assert True
+
+def test_second():
+    assert False, 'stop here'
+
+def test_third():
+    assert True
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--max-fail=1"));
+}
+
 #[test]
 fn test_fail_fast() {
     let context = TestContext::with_file(

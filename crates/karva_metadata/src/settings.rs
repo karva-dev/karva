@@ -1,4 +1,5 @@
 use crate::filter::FiltersetSet;
+use crate::max_fail::MaxFail;
 use crate::options::OutputFormat;
 
 #[derive(Default, Debug, Clone)]
@@ -21,8 +22,8 @@ impl ProjectSettings {
         &self.test
     }
 
-    pub fn fail_fast(&self) -> bool {
-        self.test.fail_fast
+    pub fn max_fail(&self) -> MaxFail {
+        self.test.max_fail
     }
 
     pub fn set_filter(&mut self, filter: FiltersetSet) {
@@ -45,7 +46,7 @@ pub struct SrcSettings {
 #[derive(Default, Debug, Clone)]
 pub struct TestSettings {
     pub test_function_prefix: String,
-    pub fail_fast: bool,
+    pub max_fail: MaxFail,
     pub try_import_fixtures: bool,
     pub retry: u32,
     pub filter: FiltersetSet,

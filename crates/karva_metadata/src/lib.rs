@@ -4,10 +4,12 @@ use ruff_python_ast::PythonVersion;
 use thiserror::Error;
 
 pub mod filter;
+mod max_fail;
 mod options;
 mod pyproject;
 mod settings;
 
+pub use max_fail::{MaxFail, MaxFailParseError};
 pub use options::{
     Options, OutputFormat, ProjectOptionsOverrides, SrcOptions, TerminalOptions, TestOptions,
 };

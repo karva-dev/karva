@@ -363,6 +363,64 @@ def check_should_not_run(): pass
     ");
 }
 
+/// `max-fail = 2` in a karva.toml should stop the run after two failures.
+#[test]
+fn test_max_fail_from_config() {
+    let context = TestContext::with_files([
+        (
+            "karva.toml",
+            r"
+[test]
+max-fail = 2
+",
+        ),
+        (
+            "test.py",
+            r"
+def test_a():
+    assert False
+
+def test_b():
+    assert False
+
+def test_c():
+    assert False
+",
+        ),
+    ]);
+
+    assert_cmd_snapshot!(context.command_no_parallel());
+}
+
+/// `max-fail = "all"` in a karva.toml should let every test run.
+#[test]
+fn test_max_fail_all_from_config() {
+    let context = TestContext::with_files([
+        (
+            "karva.toml",
+            r#"
+[test]
+max-fail = "all"
+"#,
+        ),
+        (
+            "test.py",
+            r"
+def test_a():
+    assert False
+
+def test_b():
+    assert False
+
+def test_c():
+    assert True
+",
+        ),
+    ]);
+
+    assert_cmd_snapshot!(context.command_no_parallel());
+}
+
 #[test]
 fn test_fail_fast_true() {
     let context = TestContext::with_files([

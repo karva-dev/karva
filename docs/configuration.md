@@ -88,7 +88,11 @@ show-python-output = false
 
 ### `fail-fast`
 
-Whether to fail fast when a test fails.
+Whether to stop at the first test failure.
+
+This is a legacy alias for [`max_fail`](#test_max-fail): `true`
+corresponds to `max-fail = 1` and `false` corresponds to
+`max-fail = "all"`. When both are set, `max-fail` takes precedence.
 
 Defaults to `false`.
 
@@ -101,6 +105,33 @@ Defaults to `false`.
 ```toml
 [tool.karva.test]
 fail-fast = true
+```
+
+---
+
+### `max-fail`
+
+Stop scheduling new tests once this many tests have failed.
+
+Accepts a positive integer or the string `"all"`. When set to
+`"all"`, every test runs regardless of how many fail (karva's
+default). Setting `max-fail = 1` is equivalent to the legacy
+`fail-fast = true`.
+
+When both [`fail_fast`](#test_fail-fast) and `max-fail` are set,
+`max-fail` takes precedence.
+
+Defaults to `"all"`.
+
+**Default value**: `"all"`
+
+**Type**: `positive integer | "all"`
+
+**Example usage** (`pyproject.toml`):
+
+```toml
+[tool.karva.test]
+max-fail = 3
 ```
 
 ---
