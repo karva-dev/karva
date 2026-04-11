@@ -198,25 +198,27 @@ pub struct SubTestCommand {
     #[arg(long)]
     pub color: Option<TerminalColor>,
 
-    /// Filter tests by tag expression. Only tests with matching custom tags will run.
+    /// Filter tests using a filterset expression.
     ///
-    /// Expressions support `and`, `or`, `not`, and parentheses for grouping.
-    /// When specified multiple times, a test runs if it matches any of the expressions.
+    /// Predicates: `test(<matcher>)` matches the fully qualified test name;
+    /// `tag(<matcher>)` matches any custom tag on the test.
     ///
-    /// Examples: `-t slow`, `-t 'not slow'`, `-t 'slow and integration'`,
-    /// `-t 'slow or integration'`, `-t '(slow or fast) and not flaky'`.
-    #[clap(short = 't', long = "tag")]
-    pub tag_expressions: Vec<String>,
-
-    /// Filter tests by name using a regular expression.
+    /// Matchers: `=exact`, `~substring`, `/regex/`, `#glob`. The default is
+    /// substring for `test()` and exact for `tag()`. String bodies may be
+    /// quoted (`"..."`) to allow spaces or reserved characters.
     ///
-    /// Only tests whose fully qualified name matches the pattern will run.
-    /// Uses partial matching (the pattern can match anywhere in the name).
-    /// When specified multiple times, a test runs if it matches any of the patterns.
+    /// Operators: `&` / `and`, `|` / `or`, `not` / `!`, and `-` as
+    /// shorthand for "and not". Use parentheses for grouping. `and` binds
+    /// tighter than `or`.
     ///
-    /// Examples: `-m auth`, `-m '^test::test_login'`, `-m 'slow|fast'`.
-    #[clap(short = 'm', long = "match")]
-    pub name_patterns: Vec<String>,
+    /// When specified multiple times, a test runs if it matches any of the
+    /// expressions (OR semantics across flags).
+    ///
+    /// Examples: `-E 'tag(slow)'`, `-E 'test(/^mod::test_login$/)'`,
+    /// `-E 'tag(slow) & test(~login)'`,
+    /// `-E '(tag(fast) | tag(unit)) - tag(flaky)'`.
+    #[clap(short = 'E', long = "filter")]
+    pub filter_expressions: Vec<String>,
 
     /// Update snapshots directly instead of creating pending `.snap.new` files.
     ///

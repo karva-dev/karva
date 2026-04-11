@@ -4,12 +4,12 @@ use std::collections::HashMap;
 use std::fmt::Write;
 use std::time::{Duration, Instant};
 
-use anyhow::Result;
+use anyhow::{Context as _, Result};
 use karva_cache::AggregatedResults;
 use karva_cli::{OutputFormat, TestCommand};
 use karva_collector::CollectedPackage;
 use karva_logging::{Printer, Stdout, set_colored_override, setup_tracing};
-use karva_metadata::filter::{NameFilterSet, TagFilterSet};
+use karva_metadata::filter::FiltersetSet;
 use karva_metadata::{ProjectMetadata, ProjectOptionsOverrides};
 use karva_project::Project;
 use karva_project::path::absolute;
@@ -73,8 +73,7 @@ pub fn test(args: TestCommand) -> Result<ExitStatus> {
         return Ok(ExitStatus::Success);
     }
 
-    TagFilterSet::new(&sub_command.tag_expressions)?;
-    NameFilterSet::new(&sub_command.name_patterns)?;
+    FiltersetSet::new(&sub_command.filter_expressions).context("invalid `--filter` expression")?;
 
     let config = karva_runner::ParallelTestConfig {
         num_workers,

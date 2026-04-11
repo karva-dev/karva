@@ -17,6 +17,7 @@ karva_combine = { workspace = true }
 karva_macros = { workspace = true }
 
 camino = { workspace = true }
+globset = { workspace = true }
 regex = { workspace = true }
 ruff_db = { workspace = true }
 ruff_options_metadata = { workspace = true }

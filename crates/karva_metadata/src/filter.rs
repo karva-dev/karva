@@ -1,85 +1,84 @@
 use std::fmt;
 
+use globset::{Glob, GlobMatcher};
 use regex::Regex;
 
-/// A name filter that matches test names using a regular expression.
+/// How the body of a predicate should be compared against the value it's
+/// evaluated over (a test name or a tag name).
 #[derive(Debug, Clone)]
-pub struct NameFilter {
-    regex: Regex,
+pub enum Matcher {
+    /// The value must equal the pattern exactly.
+    Exact(String),
+    /// The pattern must appear anywhere in the value.
+    Substring(String),
+    /// The value must match the compiled regular expression.
+    Regex(Regex),
+    /// The value must match the compiled glob pattern.
+    Glob(GlobMatcher),
 }
 
-impl NameFilter {
-    pub fn new(pattern: &str) -> Result<Self, NameFilterError> {
-        let regex = Regex::new(pattern).map_err(|err| NameFilterError::InvalidRegex {
-            pattern: pattern.to_string(),
-            source: err,
-        })?;
-        Ok(Self { regex })
-    }
-
-    pub fn matches(&self, name: &str) -> bool {
-        self.regex.is_match(name)
-    }
-}
-
-/// A set of name filters. Any filter must match for the set to match (OR semantics across `-m` flags).
-#[derive(Debug, Clone, Default)]
-pub struct NameFilterSet {
-    filters: Vec<NameFilter>,
-}
-
-impl NameFilterSet {
-    pub fn new(patterns: &[String]) -> Result<Self, NameFilterError> {
-        let filters = patterns
-            .iter()
-            .map(|pattern| NameFilter::new(pattern))
-            .collect::<Result<_, _>>()?;
-        Ok(Self { filters })
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.filters.is_empty()
-    }
-
-    pub fn matches(&self, name: &str) -> bool {
-        self.filters.is_empty() || self.filters.iter().any(|f| f.matches(name))
-    }
-}
-
-/// Error that occurs when parsing a name filter pattern.
-#[derive(Debug)]
-pub enum NameFilterError {
-    InvalidRegex {
-        pattern: String,
-        source: regex::Error,
-    },
-}
-
-impl fmt::Display for NameFilterError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl Matcher {
+    fn matches(&self, value: &str) -> bool {
         match self {
-            Self::InvalidRegex { pattern, source } => {
-                write!(f, "invalid regex pattern `{pattern}`: {source}")
-            }
+            Self::Exact(pattern) => value == pattern,
+            Self::Substring(pattern) => value.contains(pattern.as_str()),
+            Self::Regex(regex) => regex.is_match(value),
+            Self::Glob(glob) => glob.is_match(value),
         }
     }
 }
 
-impl std::error::Error for NameFilterError {}
-
-/// A parsed tag filter expression that can be matched against a set of tag names.
+/// A single predicate in the filter DSL, e.g. `test(~login)` or `tag(slow)`.
 #[derive(Debug, Clone)]
-pub struct TagFilter {
+pub enum Predicate {
+    /// Evaluated against the fully qualified test name.
+    Test(Matcher),
+    /// Evaluated against each custom tag on the test; matches if any tag matches.
+    Tag(Matcher),
+}
+
+/// The value a [`Filterset`] is evaluated against.
+#[derive(Debug, Clone, Copy)]
+pub struct EvalContext<'a> {
+    pub test_name: &'a str,
+    pub tags: &'a [&'a str],
+}
+
+#[derive(Debug, Clone)]
+enum Expr {
+    Predicate(Predicate),
+    Not(Box<Self>),
+    And(Box<Self>, Box<Self>),
+    Or(Box<Self>, Box<Self>),
+}
+
+impl Expr {
+    fn matches(&self, ctx: &EvalContext<'_>) -> bool {
+        match self {
+            Self::Predicate(Predicate::Test(matcher)) => matcher.matches(ctx.test_name),
+            Self::Predicate(Predicate::Tag(matcher)) => {
+                ctx.tags.iter().any(|tag| matcher.matches(tag))
+            }
+            Self::Not(inner) => !inner.matches(ctx),
+            Self::And(lhs, rhs) => lhs.matches(ctx) && rhs.matches(ctx),
+            Self::Or(lhs, rhs) => lhs.matches(ctx) || rhs.matches(ctx),
+        }
+    }
+}
+
+/// A parsed filterset expression that can be evaluated against a test.
+#[derive(Debug, Clone)]
+pub struct Filterset {
     expr: Expr,
 }
 
-impl TagFilter {
-    pub fn new(input: &str) -> Result<Self, TagFilterError> {
+impl Filterset {
+    pub fn new(input: &str) -> Result<Self, FilterError> {
         let tokens = tokenize(input)?;
         let mut parser = Parser::new(&tokens, input);
         let expr = parser.parse_or()?;
         if parser.pos < parser.tokens.len() {
-            return Err(TagFilterError::UnexpectedToken {
+            return Err(FilterError::UnexpectedToken {
                 token: parser.tokens[parser.pos].to_string(),
                 expression: input.to_string(),
             });
@@ -87,22 +86,23 @@ impl TagFilter {
         Ok(Self { expr })
     }
 
-    pub fn matches(&self, tag_names: &[&str]) -> bool {
-        self.expr.matches(tag_names)
+    pub fn matches(&self, ctx: &EvalContext<'_>) -> bool {
+        self.expr.matches(ctx)
     }
 }
 
-/// A set of tag filters. Any filter must match for the set to match (OR semantics across `-t` flags).
+/// A set of filterset expressions combined with OR semantics (matches if any
+/// filter matches). An empty set matches everything.
 #[derive(Debug, Clone, Default)]
-pub struct TagFilterSet {
-    filters: Vec<TagFilter>,
+pub struct FiltersetSet {
+    filters: Vec<Filterset>,
 }
 
-impl TagFilterSet {
-    pub fn new(expressions: &[String]) -> Result<Self, TagFilterError> {
+impl FiltersetSet {
+    pub fn new(expressions: &[String]) -> Result<Self, FilterError> {
         let filters = expressions
             .iter()
-            .map(|expr| TagFilter::new(expr))
+            .map(|expr| Filterset::new(expr))
             .collect::<Result<_, _>>()?;
         Ok(Self { filters })
     }
@@ -111,22 +111,59 @@ impl TagFilterSet {
         self.filters.is_empty()
     }
 
-    pub fn matches(&self, tag_names: &[&str]) -> bool {
-        self.filters.is_empty() || self.filters.iter().any(|f| f.matches(tag_names))
+    pub fn matches(&self, ctx: &EvalContext<'_>) -> bool {
+        self.filters.is_empty() || self.filters.iter().any(|f| f.matches(ctx))
     }
 }
 
-/// Error that occurs when parsing a tag filter expression.
 #[derive(Debug)]
-pub enum TagFilterError {
-    UnexpectedCharacter { character: char, expression: String },
-    EmptyExpression { expression: String },
-    UnclosedParenthesis { expression: String },
-    UnexpectedToken { token: String, expression: String },
-    UnexpectedEndOfExpression { expression: String },
+pub enum FilterError {
+    UnexpectedCharacter {
+        character: char,
+        expression: String,
+    },
+    EmptyExpression {
+        expression: String,
+    },
+    UnclosedParenthesis {
+        expression: String,
+    },
+    UnclosedRegex {
+        expression: String,
+    },
+    UnclosedString {
+        expression: String,
+    },
+    UnexpectedToken {
+        token: String,
+        expression: String,
+    },
+    UnexpectedEndOfExpression {
+        expression: String,
+    },
+    InvalidRegex {
+        pattern: String,
+        source: regex::Error,
+        expression: String,
+    },
+    InvalidGlob {
+        pattern: String,
+        source: globset::Error,
+        expression: String,
+    },
+    UnknownPredicate {
+        name: String,
+        expression: String,
+    },
+    ExpectedPredicateOpenParen {
+        expression: String,
+    },
+    ExpectedMatcher {
+        expression: String,
+    },
 }
 
-impl fmt::Display for TagFilterError {
+impl fmt::Display for FilterError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::UnexpectedCharacter {
@@ -134,54 +171,90 @@ impl fmt::Display for TagFilterError {
                 expression,
             } => write!(
                 f,
-                "unexpected character `{character}` in tag expression `{expression}`"
+                "unexpected character `{character}` in filter expression `{expression}`"
             ),
             Self::EmptyExpression { expression } => {
-                write!(f, "empty tag expression `{expression}`")
+                write!(f, "empty filter expression `{expression}`")
             }
             Self::UnclosedParenthesis { expression } => {
-                write!(f, "expected closing `)` in tag expression `{expression}`")
+                write!(
+                    f,
+                    "expected closing `)` in filter expression `{expression}`"
+                )
+            }
+            Self::UnclosedRegex { expression } => {
+                write!(
+                    f,
+                    "unterminated regex literal in filter expression `{expression}`"
+                )
+            }
+            Self::UnclosedString { expression } => {
+                write!(
+                    f,
+                    "unterminated quoted string in filter expression `{expression}`"
+                )
             }
             Self::UnexpectedToken { token, expression } => {
                 write!(
                     f,
-                    "unexpected token `{token}` in tag expression `{expression}`"
+                    "unexpected token `{token}` in filter expression `{expression}`"
                 )
             }
             Self::UnexpectedEndOfExpression { expression } => {
-                write!(f, "unexpected end of tag expression `{expression}`")
+                write!(f, "unexpected end of filter expression `{expression}`")
             }
+            Self::InvalidRegex {
+                pattern,
+                source,
+                expression,
+            } => write!(
+                f,
+                "invalid regex `/{pattern}/` in filter expression `{expression}`: {source}"
+            ),
+            Self::InvalidGlob {
+                pattern,
+                source,
+                expression,
+            } => write!(
+                f,
+                "invalid glob `#{pattern}` in filter expression `{expression}`: {source}"
+            ),
+            Self::UnknownPredicate { name, expression } => write!(
+                f,
+                "unknown predicate `{name}` in filter expression `{expression}` (expected `test` or `tag`)"
+            ),
+            Self::ExpectedPredicateOpenParen { expression } => write!(
+                f,
+                "expected `(` after predicate in filter expression `{expression}`"
+            ),
+            Self::ExpectedMatcher { expression } => write!(
+                f,
+                "expected a matcher body in filter expression `{expression}`"
+            ),
         }
     }
 }
 
-impl std::error::Error for TagFilterError {}
+impl std::error::Error for FilterError {}
 
-#[derive(Debug, Clone)]
-enum Expr {
-    Tag(String),
-    Not(Box<Self>),
-    And(Box<Self>, Box<Self>),
-    Or(Box<Self>, Box<Self>),
-}
-
-impl Expr {
-    fn matches(&self, tag_names: &[&str]) -> bool {
-        match self {
-            Self::Tag(name) => tag_names.contains(&name.as_str()),
-            Self::Not(inner) => !inner.matches(tag_names),
-            Self::And(lhs, rhs) => lhs.matches(tag_names) && rhs.matches(tag_names),
-            Self::Or(lhs, rhs) => lhs.matches(tag_names) || rhs.matches(tag_names),
-        }
-    }
+#[derive(Debug, Clone, Copy)]
+enum PredicateKind {
+    Test,
+    Tag,
 }
 
 #[derive(Debug, PartialEq)]
 enum Token {
     Ident(String),
+    String(String),
+    Regex(String),
+    Equals,
+    Tilde,
+    Hash,
     And,
     Or,
     Not,
+    Minus,
     LParen,
     RParen,
 }
@@ -190,16 +263,22 @@ impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Ident(s) => write!(f, "{s}"),
-            Self::And => write!(f, "and"),
-            Self::Or => write!(f, "or"),
+            Self::String(s) => write!(f, "\"{s}\""),
+            Self::Regex(s) => write!(f, "/{s}/"),
+            Self::Equals => write!(f, "="),
+            Self::Tilde => write!(f, "~"),
+            Self::Hash => write!(f, "#"),
+            Self::And => write!(f, "&"),
+            Self::Or => write!(f, "|"),
             Self::Not => write!(f, "not"),
+            Self::Minus => write!(f, "-"),
             Self::LParen => write!(f, "("),
             Self::RParen => write!(f, ")"),
         }
     }
 }
 
-fn tokenize(input: &str) -> Result<Vec<Token>, TagFilterError> {
+fn tokenize(input: &str) -> Result<Vec<Token>, FilterError> {
     let mut tokens = Vec::new();
     let mut chars = input.chars().peekable();
 
@@ -209,50 +288,128 @@ fn tokenize(input: &str) -> Result<Vec<Token>, TagFilterError> {
             continue;
         }
 
-        if ch == '(' {
-            tokens.push(Token::LParen);
-            chars.next();
-            continue;
-        }
-
-        if ch == ')' {
-            tokens.push(Token::RParen);
-            chars.next();
-            continue;
-        }
-
-        if ch.is_alphanumeric() || ch == '_' {
-            let mut ident = String::new();
-            while let Some(&c) = chars.peek() {
-                if c.is_alphanumeric() || c == '_' {
-                    ident.push(c);
-                    chars.next();
-                } else {
-                    break;
+        match ch {
+            '(' => {
+                tokens.push(Token::LParen);
+                chars.next();
+            }
+            ')' => {
+                tokens.push(Token::RParen);
+                chars.next();
+            }
+            '&' => {
+                tokens.push(Token::And);
+                chars.next();
+            }
+            '|' => {
+                tokens.push(Token::Or);
+                chars.next();
+            }
+            '!' => {
+                tokens.push(Token::Not);
+                chars.next();
+            }
+            '-' => {
+                tokens.push(Token::Minus);
+                chars.next();
+            }
+            '=' => {
+                tokens.push(Token::Equals);
+                chars.next();
+            }
+            '~' => {
+                tokens.push(Token::Tilde);
+                chars.next();
+            }
+            '#' => {
+                tokens.push(Token::Hash);
+                chars.next();
+            }
+            '/' => {
+                chars.next();
+                let body = consume_delimited(&mut chars, '/').ok_or_else(|| {
+                    FilterError::UnclosedRegex {
+                        expression: input.to_string(),
+                    }
+                })?;
+                tokens.push(Token::Regex(body));
+            }
+            '"' => {
+                chars.next();
+                let body = consume_delimited(&mut chars, '"').ok_or_else(|| {
+                    FilterError::UnclosedString {
+                        expression: input.to_string(),
+                    }
+                })?;
+                tokens.push(Token::String(body));
+            }
+            c if is_ident_char(c) => {
+                let mut ident = String::new();
+                while let Some(&c) = chars.peek() {
+                    if is_ident_char(c) {
+                        ident.push(c);
+                        chars.next();
+                    } else {
+                        break;
+                    }
+                }
+                match ident.as_str() {
+                    "and" => tokens.push(Token::And),
+                    "or" => tokens.push(Token::Or),
+                    "not" => tokens.push(Token::Not),
+                    _ => tokens.push(Token::Ident(ident)),
                 }
             }
-            match ident.as_str() {
-                "and" => tokens.push(Token::And),
-                "or" => tokens.push(Token::Or),
-                "not" => tokens.push(Token::Not),
-                _ => tokens.push(Token::Ident(ident)),
+            _ => {
+                return Err(FilterError::UnexpectedCharacter {
+                    character: ch,
+                    expression: input.to_string(),
+                });
             }
-            continue;
         }
-
-        return Err(TagFilterError::UnexpectedCharacter {
-            character: ch,
-            expression: input.to_string(),
-        });
     }
 
     if tokens.is_empty() {
-        return Err(TagFilterError::EmptyExpression {
+        return Err(FilterError::EmptyExpression {
             expression: input.to_string(),
         });
     }
 
     Ok(tokens)
+}
+
+fn is_ident_char(c: char) -> bool {
+    c.is_alphanumeric()
+        || matches!(
+            c,
+            '_' | '.' | ':' | '*' | '?' | '[' | ']' | '{' | '}' | '^' | '$'
+        )
+}
+
+/// Consumes characters from `chars` up to and including the next occurrence
+/// of `delim`, treating only `\<delim>` as an escape (other backslashes are
+/// preserved literally so e.g. regex metacharacters like `\d` round-trip).
+/// Returns the accumulated body, or `None` if the iterator is exhausted
+/// before `delim` is found.
+fn consume_delimited(
+    chars: &mut std::iter::Peekable<std::str::Chars<'_>>,
+    delim: char,
+) -> Option<String> {
+    let mut body = String::new();
+    loop {
+        match chars.next() {
+            Some('\\') => match chars.peek() {
+                Some(&c) if c == delim => {
+                    body.push(delim);
+                    chars.next();
+                }
+                _ => body.push('\\'),
+            },
+            Some(c) if c == delim => return Some(body),
+            Some(c) => body.push(c),
+            None => return None,
+        }
+    }
 }
 
 struct Parser<'a> {
@@ -278,7 +435,11 @@ impl<'a> Parser<'a> {
         self.pos += 1;
     }
 
-    fn parse_or(&mut self) -> Result<Expr, TagFilterError> {
+    fn expr_str(&self) -> String {
+        self.input.to_string()
+    }
+
+    fn parse_or(&mut self) -> Result<Expr, FilterError> {
         let mut left = self.parse_and()?;
         while self.peek() == Some(&Token::Or) {
             self.advance();
@@ -288,55 +449,149 @@ impl<'a> Parser<'a> {
         Ok(left)
     }
 
-    fn parse_and(&mut self) -> Result<Expr, TagFilterError> {
-        let mut left = self.parse_not()?;
-        while self.peek() == Some(&Token::And) {
-            self.advance();
-            let right = self.parse_not()?;
-            left = Expr::And(Box::new(left), Box::new(right));
+    fn parse_and(&mut self) -> Result<Expr, FilterError> {
+        let mut left = self.parse_unary()?;
+        loop {
+            match self.peek() {
+                Some(Token::And) => {
+                    self.advance();
+                    let right = self.parse_unary()?;
+                    left = Expr::And(Box::new(left), Box::new(right));
+                }
+                Some(Token::Minus) => {
+                    self.advance();
+                    let right = self.parse_unary()?;
+                    left = Expr::And(Box::new(left), Box::new(Expr::Not(Box::new(right))));
+                }
+                _ => break,
+            }
         }
         Ok(left)
     }
 
-    fn parse_not(&mut self) -> Result<Expr, TagFilterError> {
+    fn parse_unary(&mut self) -> Result<Expr, FilterError> {
         if self.peek() == Some(&Token::Not) {
             self.advance();
-            let inner = self.parse_not()?;
+            let inner = self.parse_unary()?;
             return Ok(Expr::Not(Box::new(inner)));
         }
         self.parse_atom()
     }
 
-    fn parse_atom(&mut self) -> Result<Expr, TagFilterError> {
+    fn parse_atom(&mut self) -> Result<Expr, FilterError> {
         match self.peek() {
             Some(Token::LParen) => {
                 self.advance();
                 let expr = self.parse_or()?;
                 if self.peek() != Some(&Token::RParen) {
-                    return Err(TagFilterError::UnclosedParenthesis {
-                        expression: self.input.to_string(),
+                    return Err(FilterError::UnclosedParenthesis {
+                        expression: self.expr_str(),
                     });
                 }
                 self.advance();
                 Ok(expr)
             }
-            Some(Token::Ident(_)) => {
-                if let Token::Ident(name) = &self.tokens[self.pos] {
-                    let name = name.clone();
-                    self.advance();
-                    Ok(Expr::Tag(name))
-                } else {
-                    Err(TagFilterError::UnexpectedEndOfExpression {
-                        expression: self.input.to_string(),
-                    })
+            Some(Token::Ident(name)) => {
+                let name = name.clone();
+                let kind = match name.as_str() {
+                    "test" => PredicateKind::Test,
+                    "tag" => PredicateKind::Tag,
+                    _ => {
+                        return Err(FilterError::UnknownPredicate {
+                            name,
+                            expression: self.expr_str(),
+                        });
+                    }
+                };
+                self.advance();
+                if self.peek() != Some(&Token::LParen) {
+                    return Err(FilterError::ExpectedPredicateOpenParen {
+                        expression: self.expr_str(),
+                    });
                 }
+                self.advance();
+                let matcher = self.parse_matcher(kind)?;
+                if self.peek() != Some(&Token::RParen) {
+                    return Err(FilterError::UnclosedParenthesis {
+                        expression: self.expr_str(),
+                    });
+                }
+                self.advance();
+                let predicate = match kind {
+                    PredicateKind::Test => Predicate::Test(matcher),
+                    PredicateKind::Tag => Predicate::Tag(matcher),
+                };
+                Ok(Expr::Predicate(predicate))
             }
-            Some(token) => Err(TagFilterError::UnexpectedToken {
+            Some(token) => Err(FilterError::UnexpectedToken {
                 token: token.to_string(),
-                expression: self.input.to_string(),
+                expression: self.expr_str(),
             }),
-            None => Err(TagFilterError::UnexpectedEndOfExpression {
-                expression: self.input.to_string(),
+            None => Err(FilterError::UnexpectedEndOfExpression {
+                expression: self.expr_str(),
+            }),
+        }
+    }
+
+    fn parse_matcher(&mut self, kind: PredicateKind) -> Result<Matcher, FilterError> {
+        match self.peek() {
+            Some(Token::Regex(pattern)) => {
+                let pattern = pattern.clone();
+                self.advance();
+                let regex = Regex::new(&pattern).map_err(|source| FilterError::InvalidRegex {
+                    pattern: pattern.clone(),
+                    source,
+                    expression: self.expr_str(),
+                })?;
+                Ok(Matcher::Regex(regex))
+            }
+            Some(Token::Equals) => {
+                self.advance();
+                let body = self.parse_matcher_body()?;
+                Ok(Matcher::Exact(body))
+            }
+            Some(Token::Tilde) => {
+                self.advance();
+                let body = self.parse_matcher_body()?;
+                Ok(Matcher::Substring(body))
+            }
+            Some(Token::Hash) => {
+                self.advance();
+                let body = self.parse_matcher_body()?;
+                let glob = Glob::new(&body).map_err(|source| FilterError::InvalidGlob {
+                    pattern: body.clone(),
+                    source,
+                    expression: self.expr_str(),
+                })?;
+                Ok(Matcher::Glob(glob.compile_matcher()))
+            }
+            Some(Token::Ident(_) | Token::String(_)) => {
+                let body = self.parse_matcher_body()?;
+                Ok(match kind {
+                    PredicateKind::Test => Matcher::Substring(body),
+                    PredicateKind::Tag => Matcher::Exact(body),
+                })
+            }
+            _ => Err(FilterError::ExpectedMatcher {
+                expression: self.expr_str(),
+            }),
+        }
+    }
+
+    fn parse_matcher_body(&mut self) -> Result<String, FilterError> {
+        match self.peek() {
+            Some(Token::Ident(name)) => {
+                let name = name.clone();
+                self.advance();
+                Ok(name)
+            }
+            Some(Token::String(s)) => {
+                let s = s.clone();
+                self.advance();
+                Ok(s)
+            }
+            _ => Err(FilterError::ExpectedMatcher {
+                expression: self.expr_str(),
             }),
         }
     }
@@ -346,459 +601,333 @@ impl<'a> Parser<'a> {
 mod tests {
     use super::*;
 
-    #[test]
-    fn single_tag_present() {
-        let f = TagFilter::new("slow").expect("parse");
-        assert!(f.matches(&["slow"]));
+    fn ctx<'a>(test_name: &'a str, tag_list: &'a [&'a str]) -> EvalContext<'a> {
+        EvalContext {
+            test_name,
+            tags: tag_list,
+        }
     }
 
     #[test]
-    fn single_tag_present_among_others() {
-        let f = TagFilter::new("slow").expect("parse");
-        assert!(f.matches(&["slow", "integration"]));
+    fn tag_default_exact() {
+        let f = Filterset::new("tag(slow)").expect("parse");
+        assert!(f.matches(&ctx("x", &["slow"])));
+        assert!(!f.matches(&ctx("x", &["slowish"])));
+        assert!(!f.matches(&ctx("x", &[])));
     }
 
     #[test]
-    fn single_tag_absent() {
-        let f = TagFilter::new("slow").expect("parse");
-        assert!(!f.matches(&["fast"]));
+    fn tag_exact_explicit() {
+        let f = Filterset::new("tag(=slow)").expect("parse");
+        assert!(f.matches(&ctx("x", &["slow"])));
+        assert!(!f.matches(&ctx("x", &["slowish"])));
     }
 
     #[test]
-    fn single_tag_empty_set() {
-        let f = TagFilter::new("slow").expect("parse");
-        assert!(!f.matches(&[]));
+    fn tag_substring() {
+        let f = Filterset::new("tag(~slo)").expect("parse");
+        assert!(f.matches(&ctx("x", &["slow"])));
+        assert!(f.matches(&ctx("x", &["slowish"])));
+        assert!(!f.matches(&ctx("x", &["fast"])));
     }
 
     #[test]
-    fn not_present_tag() {
-        let f = TagFilter::new("not slow").expect("parse");
-        assert!(!f.matches(&["slow"]));
+    fn tag_regex() {
+        let f = Filterset::new("tag(/^slo/)").expect("parse");
+        assert!(f.matches(&ctx("x", &["slow"])));
+        assert!(f.matches(&ctx("x", &["slower"])));
+        assert!(!f.matches(&ctx("x", &["not_slow"])));
     }
 
     #[test]
-    fn not_absent_tag() {
-        let f = TagFilter::new("not slow").expect("parse");
-        assert!(f.matches(&["fast"]));
+    fn tag_glob() {
+        let f = Filterset::new("tag(#py3*)").expect("parse");
+        assert!(f.matches(&ctx("x", &["py311"])));
+        assert!(f.matches(&ctx("x", &["py312"])));
+        assert!(!f.matches(&ctx("x", &["py2"])));
     }
 
     #[test]
-    fn not_empty_set() {
-        let f = TagFilter::new("not slow").expect("parse");
-        assert!(f.matches(&[]));
+    fn test_default_substring() {
+        let f = Filterset::new("test(login)").expect("parse");
+        assert!(f.matches(&ctx("mod::test_login", &[])));
+        assert!(f.matches(&ctx("mod::test_login_flow", &[])));
+        assert!(!f.matches(&ctx("mod::test_logout", &[])));
     }
 
     #[test]
-    fn double_not() {
-        let f = TagFilter::new("not not slow").expect("parse");
-        assert!(f.matches(&["slow"]));
-        assert!(!f.matches(&["fast"]));
+    fn test_exact() {
+        let f = Filterset::new("test(=mod::test_login)").expect("parse");
+        assert!(f.matches(&ctx("mod::test_login", &[])));
+        assert!(!f.matches(&ctx("mod::test_login_flow", &[])));
     }
 
     #[test]
-    fn triple_not() {
-        let f = TagFilter::new("not not not slow").expect("parse");
-        assert!(!f.matches(&["slow"]));
-        assert!(f.matches(&["fast"]));
+    fn test_regex() {
+        let f = Filterset::new("test(/^mod::test_login$/)").expect("parse");
+        assert!(f.matches(&ctx("mod::test_login", &[])));
+        assert!(!f.matches(&ctx("mod::test_login_flow", &[])));
     }
 
     #[test]
-    fn and_both_present() {
-        let f = TagFilter::new("slow and integration").expect("parse");
-        assert!(f.matches(&["slow", "integration"]));
+    fn test_regex_alternation() {
+        let f = Filterset::new("test(/slow|fast/)").expect("parse");
+        assert!(f.matches(&ctx("mod::test_slow", &[])));
+        assert!(f.matches(&ctx("mod::test_fast", &[])));
+        assert!(!f.matches(&ctx("mod::test_medium", &[])));
     }
 
     #[test]
-    fn and_only_left_present() {
-        let f = TagFilter::new("slow and integration").expect("parse");
-        assert!(!f.matches(&["slow"]));
+    fn test_glob() {
+        let f = Filterset::new("test(#*login*)").expect("parse");
+        assert!(f.matches(&ctx("mod::test_login", &[])));
+        assert!(f.matches(&ctx("mod::test_logout_and_login", &[])));
+        assert!(!f.matches(&ctx("mod::test_logout", &[])));
     }
 
     #[test]
-    fn and_only_right_present() {
-        let f = TagFilter::new("slow and integration").expect("parse");
-        assert!(!f.matches(&["integration"]));
+    fn quoted_string_matcher() {
+        let f = Filterset::new("tag(=\"my tag\")").expect("parse");
+        assert!(f.matches(&ctx("x", &["my tag"])));
+        assert!(!f.matches(&ctx("x", &["my-tag"])));
     }
 
     #[test]
-    fn and_neither_present() {
-        let f = TagFilter::new("slow and integration").expect("parse");
-        assert!(!f.matches(&[]));
+    fn and_both_required() {
+        let f = Filterset::new("tag(slow) & tag(integration)").expect("parse");
+        assert!(f.matches(&ctx("x", &["slow", "integration"])));
+        assert!(!f.matches(&ctx("x", &["slow"])));
+        assert!(!f.matches(&ctx("x", &["integration"])));
     }
 
     #[test]
-    fn chained_and() {
-        let f = TagFilter::new("a and b and c").expect("parse");
-        assert!(f.matches(&["a", "b", "c"]));
-        assert!(!f.matches(&["a", "b"]));
-        assert!(!f.matches(&["a", "c"]));
-        assert!(!f.matches(&["b", "c"]));
+    fn and_with_keyword_spelling() {
+        let f = Filterset::new("tag(slow) and tag(integration)").expect("parse");
+        assert!(f.matches(&ctx("x", &["slow", "integration"])));
+        assert!(!f.matches(&ctx("x", &["slow"])));
     }
 
     #[test]
-    fn or_left_present() {
-        let f = TagFilter::new("slow or integration").expect("parse");
-        assert!(f.matches(&["slow"]));
+    fn or_either() {
+        let f = Filterset::new("tag(slow) | tag(fast)").expect("parse");
+        assert!(f.matches(&ctx("x", &["slow"])));
+        assert!(f.matches(&ctx("x", &["fast"])));
+        assert!(!f.matches(&ctx("x", &["medium"])));
     }
 
     #[test]
-    fn or_right_present() {
-        let f = TagFilter::new("slow or integration").expect("parse");
-        assert!(f.matches(&["integration"]));
+    fn or_with_keyword_spelling() {
+        let f = Filterset::new("tag(slow) or tag(fast)").expect("parse");
+        assert!(f.matches(&ctx("x", &["slow"])));
+        assert!(f.matches(&ctx("x", &["fast"])));
     }
 
     #[test]
-    fn or_both_present() {
-        let f = TagFilter::new("slow or integration").expect("parse");
-        assert!(f.matches(&["slow", "integration"]));
+    fn not_inverts() {
+        let f = Filterset::new("not tag(flaky)").expect("parse");
+        assert!(f.matches(&ctx("x", &[])));
+        assert!(f.matches(&ctx("x", &["slow"])));
+        assert!(!f.matches(&ctx("x", &["flaky"])));
     }
 
     #[test]
-    fn or_neither_present() {
-        let f = TagFilter::new("slow or integration").expect("parse");
-        assert!(!f.matches(&["fast"]));
-        assert!(!f.matches(&[]));
+    fn bang_inverts() {
+        let f = Filterset::new("!tag(flaky)").expect("parse");
+        assert!(f.matches(&ctx("x", &[])));
+        assert!(!f.matches(&ctx("x", &["flaky"])));
     }
 
     #[test]
-    fn chained_or() {
-        let f = TagFilter::new("a or b or c").expect("parse");
-        assert!(f.matches(&["a"]));
-        assert!(f.matches(&["b"]));
-        assert!(f.matches(&["c"]));
-        assert!(!f.matches(&["d"]));
-    }
-
-    #[test]
-    fn precedence_and_binds_tighter_than_or() {
-        let f = TagFilter::new("a or b and c").expect("parse");
-        assert!(f.matches(&["a"]));
-        assert!(f.matches(&["b", "c"]));
-        assert!(!f.matches(&["b"]));
-        assert!(!f.matches(&["c"]));
-    }
-
-    #[test]
-    fn precedence_reverse_order() {
-        let f = TagFilter::new("a and b or c").expect("parse");
-        assert!(f.matches(&["a", "b"]));
-        assert!(f.matches(&["c"]));
-        assert!(!f.matches(&["a"]));
-        assert!(!f.matches(&["b"]));
+    fn minus_is_and_not() {
+        let f = Filterset::new("tag(slow) - tag(flaky)").expect("parse");
+        assert!(f.matches(&ctx("x", &["slow"])));
+        assert!(!f.matches(&ctx("x", &["slow", "flaky"])));
+        assert!(!f.matches(&ctx("x", &["flaky"])));
     }
 
     #[test]
     fn parens_override_precedence() {
-        let f = TagFilter::new("(a or b) and c").expect("parse");
-        assert!(f.matches(&["a", "c"]));
-        assert!(f.matches(&["b", "c"]));
-        assert!(!f.matches(&["a"]));
-        assert!(!f.matches(&["c"]));
+        let f = Filterset::new("(tag(a) | tag(b)) & tag(c)").expect("parse");
+        assert!(f.matches(&ctx("x", &["a", "c"])));
+        assert!(f.matches(&ctx("x", &["b", "c"])));
+        assert!(!f.matches(&ctx("x", &["a"])));
+        assert!(!f.matches(&ctx("x", &["c"])));
     }
 
     #[test]
-    fn parens_around_and() {
-        let f = TagFilter::new("a or (b and c)").expect("parse");
-        assert!(f.matches(&["a"]));
-        assert!(f.matches(&["b", "c"]));
-        assert!(!f.matches(&["b"]));
+    fn precedence_and_binds_tighter_than_or() {
+        let f = Filterset::new("tag(a) | tag(b) & tag(c)").expect("parse");
+        assert!(f.matches(&ctx("x", &["a"])));
+        assert!(f.matches(&ctx("x", &["b", "c"])));
+        assert!(!f.matches(&ctx("x", &["b"])));
     }
 
     #[test]
-    fn nested_parens() {
-        let f = TagFilter::new("((a or b) and (c or d))").expect("parse");
-        assert!(f.matches(&["a", "c"]));
-        assert!(f.matches(&["b", "d"]));
-        assert!(f.matches(&["a", "d"]));
-        assert!(!f.matches(&["a"]));
-        assert!(!f.matches(&["c"]));
+    fn combined_test_and_tag() {
+        let f = Filterset::new("test(login) & tag(slow)").expect("parse");
+        assert!(f.matches(&ctx("mod::test_login", &["slow"])));
+        assert!(!f.matches(&ctx("mod::test_login", &[])));
+        assert!(!f.matches(&ctx("mod::test_logout", &["slow"])));
     }
 
     #[test]
-    fn and_not() {
-        let f = TagFilter::new("slow and not integration").expect("parse");
-        assert!(f.matches(&["slow"]));
-        assert!(f.matches(&["slow", "fast"]));
-        assert!(!f.matches(&["slow", "integration"]));
-        assert!(!f.matches(&["integration"]));
-        assert!(!f.matches(&[]));
+    fn test_name_with_colons_bare() {
+        let f = Filterset::new("test(=mod::sub::test_login)").expect("parse");
+        assert!(f.matches(&ctx("mod::sub::test_login", &[])));
+        assert!(!f.matches(&ctx("mod::sub::test_login_flow", &[])));
     }
 
     #[test]
-    fn or_not() {
-        let f = TagFilter::new("slow or not integration").expect("parse");
-        assert!(f.matches(&["slow"]));
-        assert!(f.matches(&["slow", "integration"]));
-        assert!(f.matches(&["fast"]));
-        assert!(f.matches(&[]));
-        assert!(!f.matches(&["integration"]));
+    fn double_not() {
+        let f = Filterset::new("not not tag(slow)").expect("parse");
+        assert!(f.matches(&ctx("x", &["slow"])));
+        assert!(!f.matches(&ctx("x", &["fast"])));
     }
 
     #[test]
     fn not_with_parens() {
-        let f = TagFilter::new("not (a and b)").expect("parse");
-        assert!(f.matches(&["a"]));
-        assert!(f.matches(&["b"]));
-        assert!(f.matches(&[]));
-        assert!(!f.matches(&["a", "b"]));
+        let f = Filterset::new("not (tag(a) & tag(b))").expect("parse");
+        assert!(f.matches(&ctx("x", &["a"])));
+        assert!(f.matches(&ctx("x", &["b"])));
+        assert!(!f.matches(&ctx("x", &["a", "b"])));
     }
 
     #[test]
-    fn not_or_in_parens() {
-        let f = TagFilter::new("not (a or b)").expect("parse");
-        assert!(f.matches(&["c"]));
-        assert!(f.matches(&[]));
-        assert!(!f.matches(&["a"]));
-        assert!(!f.matches(&["b"]));
-        assert!(!f.matches(&["a", "b"]));
-    }
-
-    #[test]
-    fn underscores_in_tag_names() {
-        let f = TagFilter::new("my_tag").expect("parse");
-        assert!(f.matches(&["my_tag"]));
-        assert!(!f.matches(&["my"]));
-    }
-
-    #[test]
-    fn numeric_in_tag_names() {
-        let f = TagFilter::new("py312").expect("parse");
-        assert!(f.matches(&["py312"]));
-        assert!(!f.matches(&["py311"]));
-    }
-
-    #[test]
-    fn tag_starting_with_underscore() {
-        let f = TagFilter::new("_internal").expect("parse");
-        assert!(f.matches(&["_internal"]));
-    }
-
-    #[test]
-    fn extra_whitespace() {
-        let f = TagFilter::new("  slow   and   integration  ").expect("parse");
-        assert!(f.matches(&["slow", "integration"]));
-        assert!(!f.matches(&["slow"]));
-    }
-
-    #[test]
-    fn no_whitespace_around_parens() {
-        let f = TagFilter::new("(slow)and(integration)").expect("parse");
-        assert!(f.matches(&["slow", "integration"]));
-        assert!(!f.matches(&["slow"]));
-    }
-
-    #[test]
-    fn filter_set_or_semantics() {
-        let set =
-            TagFilterSet::new(&["slow".to_string(), "integration".to_string()]).expect("parse");
-        assert!(set.matches(&["slow"]));
-        assert!(set.matches(&["integration"]));
-        assert!(set.matches(&["slow", "integration"]));
-        assert!(!set.matches(&["fast"]));
-        assert!(!set.matches(&[]));
-    }
-
-    #[test]
-    fn filter_set_single_filter() {
-        let set = TagFilterSet::new(&["slow".to_string()]).expect("parse");
-        assert!(set.matches(&["slow"]));
-        assert!(!set.matches(&["fast"]));
-    }
-
-    #[test]
-    fn filter_set_empty_always_matches() {
-        let set = TagFilterSet::new(&[]).expect("parse");
-        assert!(set.is_empty());
-        assert!(set.matches(&[]));
-        assert!(set.matches(&["anything"]));
-    }
-
-    #[test]
-    fn filter_set_complex_expressions() {
-        let set = TagFilterSet::new(&["slow and not flaky".to_string(), "integration".to_string()])
+    fn filterset_set_or_across_flags() {
+        let set = FiltersetSet::new(&["tag(slow)".to_string(), "tag(integration)".to_string()])
             .expect("parse");
-        assert!(set.matches(&["slow"]));
-        assert!(set.matches(&["integration"]));
-        assert!(!set.matches(&["slow", "flaky"]));
-        assert!(set.matches(&["slow", "flaky", "integration"]));
+        assert!(set.matches(&ctx("x", &["slow"])));
+        assert!(set.matches(&ctx("x", &["integration"])));
+        assert!(!set.matches(&ctx("x", &["fast"])));
+    }
+
+    #[test]
+    fn filterset_set_empty_matches_all() {
+        let set = FiltersetSet::new(&[]).expect("parse");
+        assert!(set.is_empty());
+        assert!(set.matches(&ctx("anything", &[])));
     }
 
     #[test]
     fn empty_expression_is_error() {
         assert!(matches!(
-            TagFilter::new(""),
-            Err(TagFilterError::EmptyExpression { .. })
+            Filterset::new(""),
+            Err(FilterError::EmptyExpression { .. })
         ));
     }
 
     #[test]
     fn whitespace_only_is_error() {
         assert!(matches!(
-            TagFilter::new("   "),
-            Err(TagFilterError::EmptyExpression { .. })
+            Filterset::new("   "),
+            Err(FilterError::EmptyExpression { .. })
         ));
     }
 
     #[test]
-    fn invalid_character_is_error() {
+    fn unknown_predicate_is_error() {
         assert!(matches!(
-            TagFilter::new("slow!"),
-            Err(TagFilterError::UnexpectedCharacter { character: '!', .. })
+            Filterset::new("package(foo)"),
+            Err(FilterError::UnknownPredicate { .. })
         ));
+    }
+
+    #[test]
+    fn bare_ident_without_parens_is_error() {
         assert!(matches!(
-            TagFilter::new("a & b"),
-            Err(TagFilterError::UnexpectedCharacter { character: '&', .. })
-        ));
-        assert!(matches!(
-            TagFilter::new("a | b"),
-            Err(TagFilterError::UnexpectedCharacter { character: '|', .. })
+            Filterset::new("slow"),
+            Err(FilterError::UnknownPredicate { .. })
         ));
     }
 
     #[test]
     fn unclosed_paren_is_error() {
         assert!(matches!(
-            TagFilter::new("(slow"),
-            Err(TagFilterError::UnclosedParenthesis { .. })
+            Filterset::new("tag(slow"),
+            Err(FilterError::UnclosedParenthesis { .. })
         ));
     }
 
     #[test]
-    fn extra_closing_paren_is_error() {
+    fn unclosed_regex_is_error() {
         assert!(matches!(
-            TagFilter::new("slow)"),
-            Err(TagFilterError::UnexpectedToken { .. })
+            Filterset::new("test(/slow"),
+            Err(FilterError::UnclosedRegex { .. })
+        ));
+    }
+
+    #[test]
+    fn unclosed_string_is_error() {
+        assert!(matches!(
+            Filterset::new("tag(\"slow)"),
+            Err(FilterError::UnclosedString { .. })
+        ));
+    }
+
+    #[test]
+    fn invalid_regex_is_error() {
+        assert!(matches!(
+            Filterset::new("test(/[invalid/)"),
+            Err(FilterError::InvalidRegex { .. })
+        ));
+    }
+
+    #[test]
+    fn missing_matcher_body_is_error() {
+        assert!(matches!(
+            Filterset::new("tag()"),
+            Err(FilterError::ExpectedMatcher { .. })
+        ));
+        assert!(matches!(
+            Filterset::new("tag(=)"),
+            Err(FilterError::ExpectedMatcher { .. })
+        ));
+    }
+
+    #[test]
+    fn predicate_without_parens_is_error() {
+        assert!(matches!(
+            Filterset::new("tag slow"),
+            Err(FilterError::ExpectedPredicateOpenParen { .. })
         ));
     }
 
     #[test]
     fn trailing_and_is_error() {
         assert!(matches!(
-            TagFilter::new("slow and"),
-            Err(TagFilterError::UnexpectedEndOfExpression { .. })
+            Filterset::new("tag(slow) &"),
+            Err(FilterError::UnexpectedEndOfExpression { .. })
         ));
     }
 
     #[test]
     fn trailing_or_is_error() {
         assert!(matches!(
-            TagFilter::new("slow or"),
-            Err(TagFilterError::UnexpectedEndOfExpression { .. })
-        ));
-    }
-
-    #[test]
-    fn trailing_not_is_error() {
-        assert!(matches!(
-            TagFilter::new("not"),
-            Err(TagFilterError::UnexpectedEndOfExpression { .. })
+            Filterset::new("tag(slow) |"),
+            Err(FilterError::UnexpectedEndOfExpression { .. })
         ));
     }
 
     #[test]
     fn leading_and_is_error() {
         assert!(matches!(
-            TagFilter::new("and slow"),
-            Err(TagFilterError::UnexpectedToken { .. })
+            Filterset::new("& tag(slow)"),
+            Err(FilterError::UnexpectedToken { .. })
         ));
     }
 
     #[test]
-    fn leading_or_is_error() {
-        assert!(matches!(
-            TagFilter::new("or slow"),
-            Err(TagFilterError::UnexpectedToken { .. })
-        ));
+    fn parametrized_test_name_via_regex() {
+        let f = Filterset::new(r"test(/param=1/)").expect("parse");
+        assert!(f.matches(&ctx("mod::test_add(param=1)", &[])));
+        assert!(!f.matches(&ctx("mod::test_add(param=2)", &[])));
     }
 
     #[test]
-    fn double_operator_is_error() {
-        assert!(matches!(
-            TagFilter::new("slow and and fast"),
-            Err(TagFilterError::UnexpectedToken { .. })
-        ));
-        assert!(matches!(
-            TagFilter::new("slow or or fast"),
-            Err(TagFilterError::UnexpectedToken { .. })
-        ));
-    }
-
-    #[test]
-    fn empty_parens_is_error() {
-        assert!(matches!(
-            TagFilter::new("()"),
-            Err(TagFilterError::UnexpectedToken { .. })
-        ));
-    }
-
-    #[test]
-    fn filter_set_rejects_invalid_expression() {
-        assert!(TagFilterSet::new(&["slow".to_string(), "and".to_string()]).is_err());
-    }
-
-    #[test]
-    fn name_filter_partial_match() {
-        let f = NameFilter::new("auth").expect("parse");
-        assert!(f.matches("test::test_auth_login"));
-        assert!(f.matches("test::test_auth"));
-        assert!(!f.matches("test::test_login"));
-    }
-
-    #[test]
-    fn name_filter_anchored_start() {
-        let f = NameFilter::new("^test::test_login").expect("parse");
-        assert!(f.matches("test::test_login"));
-        assert!(f.matches("test::test_login_flow"));
-        assert!(!f.matches("other::test_login"));
-    }
-
-    #[test]
-    fn name_filter_anchored_end() {
-        let f = NameFilter::new("login$").expect("parse");
-        assert!(f.matches("test::test_login"));
-        assert!(!f.matches("test::test_login_flow"));
-    }
-
-    #[test]
-    fn name_filter_alternation() {
-        let f = NameFilter::new("slow|fast").expect("parse");
-        assert!(f.matches("test::test_slow"));
-        assert!(f.matches("test::test_fast"));
-        assert!(!f.matches("test::test_medium"));
-    }
-
-    #[test]
-    fn name_filter_invalid_regex() {
-        assert!(matches!(
-            NameFilter::new("[invalid"),
-            Err(NameFilterError::InvalidRegex { .. })
-        ));
-    }
-
-    #[test]
-    fn name_filter_set_or_semantics() {
-        let set = NameFilterSet::new(&["test_a".to_string(), "test_b".to_string()]).expect("parse");
-        assert!(set.matches("test::test_a"));
-        assert!(set.matches("test::test_b"));
-        assert!(!set.matches("test::test_c"));
-    }
-
-    #[test]
-    fn name_filter_set_empty_always_matches() {
-        let set = NameFilterSet::new(&[]).expect("parse");
-        assert!(set.is_empty());
-        assert!(set.matches("anything"));
-    }
-
-    #[test]
-    fn name_filter_set_rejects_invalid_pattern() {
-        assert!(NameFilterSet::new(&["valid".to_string(), "[invalid".to_string()]).is_err());
-    }
-
-    #[test]
-    fn name_filter_parametrized_name() {
-        let f = NameFilter::new(r"param=1").expect("parse");
-        assert!(f.matches("test::test_add(param=1)"));
-        assert!(!f.matches("test::test_add(param=2)"));
+    fn test_and_tag_keywords_not_reserved_inside_matchers() {
+        let f = Filterset::new("tag(test)").expect("parse");
+        assert!(f.matches(&ctx("x", &["test"])));
+        let f = Filterset::new("test(tag)").expect("parse");
+        assert!(f.matches(&ctx("mod::test_tag_something", &[])));
     }
 }

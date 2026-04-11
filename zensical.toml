@@ -18,6 +18,7 @@ nav = [
     { "Tutorial" = "tutorial.md"},
     { "Using Karva" = [
         { "Snapshots" = "usage/snapshots.md"},
+        { "Filtering Tests" = "usage/filtering.md"},
         { "Fixtures" = [
             { "Fixtures" = "usage/fixtures/fixtures.md"},
             { "Built In" = "usage/fixtures/builtin.md"},

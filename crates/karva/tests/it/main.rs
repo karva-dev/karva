@@ -7,7 +7,7 @@ mod configuration;
 mod discovery;
 mod durations;
 mod extensions;
+mod filterset;
 mod last_failed;
-mod name_filter;
 mod version;
 mod watch;
