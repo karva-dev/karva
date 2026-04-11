@@ -172,6 +172,47 @@ def test_fail_b(): assert False
     ");
 }
 
+/// Combining `--last-failed` with `-E` should further narrow the rerun set
+/// to only previously-failed tests that also match the filter expression.
+#[test]
+fn last_failed_with_filter_narrows_rerun_set() {
+    let context = TestContext::with_files([
+        (
+            "test_a.py",
+            "
+def test_pass_a(): pass
+def test_fail_a(): assert False
+            ",
+        ),
+        (
+            "test_b.py",
+            "
+def test_pass_b(): pass
+def test_fail_b(): assert False
+            ",
+        ),
+    ]);
+
+    context.command_no_parallel().output().unwrap();
+
+    assert_cmd_snapshot!(
+        context
+            .command_no_parallel()
+            .arg("--last-failed")
+            .args(["-E", "test(~fail_a)"])
+            .arg("-q"),
+        @"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+    ────────────
+         Summary [TIME] 2 tests run: 0 passed, 1 failed, 1 skipped
+
+    ----- stderr -----
+    ",
+    );
+}
+
 #[test]
 fn last_failed_fix_then_rerun() {
     let context = TestContext::with_file(
