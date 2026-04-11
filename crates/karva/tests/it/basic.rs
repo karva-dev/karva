@@ -2202,23 +2202,32 @@ fn test_nonexistent_path_exits_nonzero() {
     ");
 }
 
-/// `karva` with no subcommand should print help and exit successfully.
+/// `karva` with no subcommand is a clap error: exit code 2, help on stderr.
 #[test]
 fn test_no_subcommand_prints_help() {
     let context = TestContext::new();
 
-    let output = context
-        .karva_command_in(context.root())
-        .output()
-        .expect("failed to run karva with no subcommand");
+    assert_cmd_snapshot!(context.karva_command_in(context.root()), @"
+    success: false
+    exit_code: 2
+    ----- stdout -----
 
-    // No subcommand is a clap error; exit code is 2 and help goes to stderr.
-    assert_eq!(output.status.code(), Some(2));
-    let stderr = String::from_utf8_lossy(&output.stderr);
-    assert!(
-        stderr.contains("Usage: karva <COMMAND>"),
-        "expected usage line in stderr, got: {stderr}"
-    );
+    ----- stderr -----
+    A Python test runner.
+
+    Usage: karva <COMMAND>
+
+    Commands:
+      test      Run tests
+      snapshot  Manage snapshots created by `karva.assert_snapshot()`
+      cache     Manage the karva cache
+      version   Display Karva's version
+      help      Print this message or the help of the given subcommand(s)
+
+    Options:
+      -h, --help     Print help
+      -V, --version  Print version
+    ");
 }
 
 /// `karva testx` (typo of `test`) should suggest the closest subcommand.
