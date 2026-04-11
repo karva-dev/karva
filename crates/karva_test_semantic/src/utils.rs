@@ -8,12 +8,13 @@ use pyo3::{PyResult, Python};
 use ruff_source_file::{SourceFile, SourceFileBuilder};
 
 /// Get the source file for the given utf8 path.
+///
+/// If the file cannot be read (e.g., it was removed between discovery and diagnostic rendering),
+/// returns a `SourceFile` with an empty body so downstream span rendering degrades gracefully
+/// instead of panicking.
 pub(crate) fn source_file(path: &Utf8Path) -> SourceFile {
-    SourceFileBuilder::new(
-        path.as_str(),
-        std::fs::read_to_string(path).expect("Failed to read source file"),
-    )
-    .finish()
+    let source_text = std::fs::read_to_string(path).unwrap_or_default();
+    SourceFileBuilder::new(path.as_str(), source_text).finish()
 }
 
 /// Runs a Python coroutine to completion using `asyncio.run()`.
@@ -232,6 +233,14 @@ mod tests {
 
     mod utils_tests {
         use super::*;
+
+        #[test]
+        fn source_file_missing_path_does_not_panic() {
+            let path = Utf8Path::new("/nonexistent/path/to/file.py");
+            let file = source_file(path);
+            assert_eq!(file.name(), path.as_str());
+            assert_eq!(file.source_text(), "");
+        }
 
         #[test]
         fn test_iter_with_ancestors() {
