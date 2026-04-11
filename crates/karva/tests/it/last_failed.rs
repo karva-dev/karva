@@ -172,44 +172,157 @@ def test_fail_b(): assert False
     ");
 }
 
-/// Combining `--last-failed` with `-E` should further narrow the rerun set
-/// to only previously-failed tests that also match the filter expression.
+/// `--dry-run` currently ignores `--last-failed` and prints every discovered
+/// test. Pinning this so the behavior is intentional — see PR follow-ups.
 #[test]
-fn last_failed_with_filter_narrows_rerun_set() {
-    let context = TestContext::with_files([
-        (
-            "test_a.py",
-            "
-def test_pass_a(): pass
-def test_fail_a(): assert False
-            ",
-        ),
-        (
-            "test_b.py",
-            "
-def test_pass_b(): pass
-def test_fail_b(): assert False
-            ",
-        ),
-    ]);
+fn last_failed_with_dry_run_shows_all_tests() {
+    let context = TestContext::with_file(
+        "test_a.py",
+        "
+def test_pass(): pass
+def test_fail(): assert False
+        ",
+    );
 
     context.command_no_parallel().output().unwrap();
 
     assert_cmd_snapshot!(
         context
             .command_no_parallel()
-            .arg("--last-failed")
-            .args(["-E", "test(~fail_a)"])
-            .arg("-q"),
+            .args(["--last-failed", "--dry-run"]),
+        @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    <test> test_a::test_fail
+    <test> test_a::test_pass
+
+    2 tests collected
+
+    ----- stderr -----
+    "
+    );
+}
+
+/// A filter combined with `--last-failed` intersects: tests that were in the
+/// last-failed set but are now filtered out are skipped.
+#[test]
+fn last_failed_with_filter_intersects() {
+    let context = TestContext::with_file(
+        "test_a.py",
+        "
+def test_pass(): pass
+def test_fail_a(): assert False
+def test_fail_b(): assert False
+        ",
+    );
+
+    context.command_no_parallel().output().unwrap();
+
+    assert_cmd_snapshot!(
+        context
+            .command_no_parallel()
+            .args(["--last-failed", "-E", "test(~fail_a)"]),
+        @"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+        Starting 3 tests across 1 worker
+            FAIL [TIME] test_a::test_fail_a
+            SKIP [TIME] test_a::test_fail_b
+
+    diagnostics:
+
+    error[test-failure]: Test `test_fail_a` failed
+     --> test_a.py:3:5
+      |
+    2 | def test_pass(): pass
+    3 | def test_fail_a(): assert False
+      |     ^^^^^^^^^^^
+    4 | def test_fail_b(): assert False
+      |
+    info: Test failed here
+     --> test_a.py:3:1
+      |
+    2 | def test_pass(): pass
+    3 | def test_fail_a(): assert False
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    4 | def test_fail_b(): assert False
+      |
+
+    ────────────
+         Summary [TIME] 2 tests run: 0 passed, 1 failed, 1 skipped
+
+    ----- stderr -----
+    "
+    );
+}
+
+/// `--last-failed` + `--max-fail=1` still stops scheduling once a single test
+/// in the rerun has failed.
+#[test]
+fn last_failed_with_max_fail_stops_early() {
+    let context = TestContext::with_file(
+        "test_a.py",
+        "
+def test_pass(): pass
+def test_fail_a(): assert False
+def test_fail_b(): assert False
+        ",
+    );
+
+    context.command_no_parallel().output().unwrap();
+
+    assert_cmd_snapshot!(
+        context
+            .command_no_parallel()
+            .args(["--last-failed", "--max-fail=1", "-q"]),
         @"
     success: false
     exit_code: 1
     ----- stdout -----
     ────────────
-         Summary [TIME] 2 tests run: 0 passed, 1 failed, 1 skipped
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
-    ",
+    "
+    );
+}
+
+/// Adding a brand new test after a run does not cause `--last-failed` to pick
+/// it up — only previously-known failures are rerun.
+#[test]
+fn last_failed_ignores_newly_added_tests() {
+    let context = TestContext::with_file(
+        "test_a.py",
+        "
+def test_pass(): pass
+def test_fail(): assert False
+        ",
+    );
+
+    context.command_no_parallel().output().unwrap();
+
+    context.write_file(
+        "test_a.py",
+        "
+def test_pass(): pass
+def test_fail(): assert False
+def test_new_fail(): assert False
+        ",
+    );
+
+    assert_cmd_snapshot!(
+        context.command_no_parallel().args(["--last-failed", "-q"]),
+        @"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+    ────────────
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
+
+    ----- stderr -----
+    "
     );
 }
 

@@ -1379,6 +1379,130 @@ def test_should_not_run(): pass
     ");
 }
 
+/// The `KARVA_CONFIG_FILE` environment variable is equivalent to passing
+/// `--config-file` on the command line.
+#[test]
+fn test_config_file_env_var() {
+    let context = TestContext::with_files([
+        (
+            "custom.toml",
+            r#"
+[test]
+test-function-prefix = "spec"
+"#,
+        ),
+        (
+            "test.py",
+            r"
+def spec_example(): pass
+def test_should_not_run(): pass
+",
+        ),
+    ]);
+
+    assert_cmd_snapshot!(
+        context.command().env("KARVA_CONFIG_FILE", "custom.toml"),
+        @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+        Starting 1 test across 1 worker
+            PASS [TIME] test::spec_example
+
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    "
+    );
+}
+
+/// An explicit `--config-file` takes precedence over the `KARVA_CONFIG_FILE`
+/// environment variable.
+#[test]
+fn test_cli_config_file_overrides_env() {
+    let context = TestContext::with_files([
+        (
+            "env.toml",
+            r#"
+[test]
+test-function-prefix = "env"
+"#,
+        ),
+        (
+            "cli.toml",
+            r#"
+[test]
+test-function-prefix = "cli"
+"#,
+        ),
+        (
+            "test.py",
+            r"
+def env_should_not_run(): pass
+def cli_should_run(): pass
+",
+        ),
+    ]);
+
+    assert_cmd_snapshot!(
+        context
+            .command()
+            .env("KARVA_CONFIG_FILE", "env.toml")
+            .args(["--config-file", "cli.toml"]),
+        @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+        Starting 1 test across 1 worker
+            PASS [TIME] test::cli_should_run
+
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    "
+    );
+}
+
+/// `karva.toml` discovered from a parent directory should still apply when
+/// karva is invoked from a subdirectory.
+#[test]
+fn test_karva_toml_discovered_from_subdirectory() {
+    let context = TestContext::with_files([
+        (
+            "karva.toml",
+            r#"
+[test]
+test-function-prefix = "check"
+"#,
+        ),
+        (
+            "tests/test_a.py",
+            r"
+def check_found(): pass
+def test_should_not_run(): pass
+",
+        ),
+    ]);
+
+    let mut cmd = context.karva_command_in(context.root().join("tests"));
+    cmd.arg("test");
+
+    assert_cmd_snapshot!(cmd, @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+        Starting 1 test across 1 worker
+            PASS [TIME] tests.test_a::check_found
+
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
 #[test]
 #[cfg(unix)]
 fn test_config_file_flag_nonexistent_unix() {
