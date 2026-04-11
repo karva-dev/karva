@@ -2,6 +2,7 @@ use std::fmt;
 
 use globset::{Glob, GlobMatcher};
 use regex::Regex;
+use thiserror::Error;
 
 /// How the body of a predicate should be compared against the value it's
 /// evaluated over (a test name or a tag name).
@@ -116,126 +117,43 @@ impl FiltersetSet {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum FilterError {
-    UnexpectedCharacter {
-        character: char,
-        expression: String,
-    },
-    EmptyExpression {
-        expression: String,
-    },
-    UnclosedParenthesis {
-        expression: String,
-    },
-    UnclosedRegex {
-        expression: String,
-    },
-    UnclosedString {
-        expression: String,
-    },
-    UnexpectedToken {
-        token: String,
-        expression: String,
-    },
-    UnexpectedEndOfExpression {
-        expression: String,
-    },
+    #[error("unexpected character `{character}` in filter expression `{expression}`")]
+    UnexpectedCharacter { character: char, expression: String },
+    #[error("empty filter expression `{expression}`")]
+    EmptyExpression { expression: String },
+    #[error("expected closing `)` in filter expression `{expression}`")]
+    UnclosedParenthesis { expression: String },
+    #[error("unterminated regex literal in filter expression `{expression}`")]
+    UnclosedRegex { expression: String },
+    #[error("unterminated quoted string in filter expression `{expression}`")]
+    UnclosedString { expression: String },
+    #[error("unexpected token `{token}` in filter expression `{expression}`")]
+    UnexpectedToken { token: String, expression: String },
+    #[error("unexpected end of filter expression `{expression}`")]
+    UnexpectedEndOfExpression { expression: String },
+    #[error("invalid regex `/{pattern}/` in filter expression `{expression}`: {error}")]
     InvalidRegex {
         pattern: String,
-        source: regex::Error,
+        error: regex::Error,
         expression: String,
     },
+    #[error("invalid glob `#{pattern}` in filter expression `{expression}`: {error}")]
     InvalidGlob {
         pattern: String,
-        source: globset::Error,
+        error: globset::Error,
         expression: String,
     },
-    UnknownPredicate {
-        name: String,
-        expression: String,
-    },
-    ExpectedPredicateOpenParen {
-        expression: String,
-    },
-    ExpectedMatcher {
-        expression: String,
-    },
+    #[error(
+        "unknown predicate `{name}` in filter expression `{expression}` (expected `test` or `tag`)"
+    )]
+    UnknownPredicate { name: String, expression: String },
+    #[error("expected `(` after predicate in filter expression `{expression}`")]
+    ExpectedPredicateOpenParen { expression: String },
+    #[error("expected a matcher body in filter expression `{expression}`")]
+    ExpectedMatcher { expression: String },
 }
-
-impl fmt::Display for FilterError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::UnexpectedCharacter {
-                character,
-                expression,
-            } => write!(
-                f,
-                "unexpected character `{character}` in filter expression `{expression}`"
-            ),
-            Self::EmptyExpression { expression } => {
-                write!(f, "empty filter expression `{expression}`")
-            }
-            Self::UnclosedParenthesis { expression } => {
-                write!(
-                    f,
-                    "expected closing `)` in filter expression `{expression}`"
-                )
-            }
-            Self::UnclosedRegex { expression } => {
-                write!(
-                    f,
-                    "unterminated regex literal in filter expression `{expression}`"
-                )
-            }
-            Self::UnclosedString { expression } => {
-                write!(
-                    f,
-                    "unterminated quoted string in filter expression `{expression}`"
-                )
-            }
-            Self::UnexpectedToken { token, expression } => {
-                write!(
-                    f,
-                    "unexpected token `{token}` in filter expression `{expression}`"
-                )
-            }
-            Self::UnexpectedEndOfExpression { expression } => {
-                write!(f, "unexpected end of filter expression `{expression}`")
-            }
-            Self::InvalidRegex {
-                pattern,
-                source,
-                expression,
-            } => write!(
-                f,
-                "invalid regex `/{pattern}/` in filter expression `{expression}`: {source}"
-            ),
-            Self::InvalidGlob {
-                pattern,
-                source,
-                expression,
-            } => write!(
-                f,
-                "invalid glob `#{pattern}` in filter expression `{expression}`: {source}"
-            ),
-            Self::UnknownPredicate { name, expression } => write!(
-                f,
-                "unknown predicate `{name}` in filter expression `{expression}` (expected `test` or `tag`)"
-            ),
-            Self::ExpectedPredicateOpenParen { expression } => write!(
-                f,
-                "expected `(` after predicate in filter expression `{expression}`"
-            ),
-            Self::ExpectedMatcher { expression } => write!(
-                f,
-                "expected a matcher body in filter expression `{expression}`"
-            ),
-        }
-    }
-}
-
-impl std::error::Error for FilterError {}
 
 #[derive(Debug, Clone, Copy)]
 enum PredicateKind {
@@ -243,7 +161,7 @@ enum PredicateKind {
     Tag,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 enum Token {
     Ident(String),
     String(String),
@@ -378,6 +296,10 @@ fn tokenize(input: &str) -> Result<Vec<Token>, FilterError> {
     Ok(tokens)
 }
 
+/// Bare matcher bodies are allowed to contain glob and regex metacharacters
+/// (`*`, `?`, `[`, `]`, `{`, `}`, `^`, `$`) so that expressions like
+/// `tag(#py3*)` or `test(#[abc])` lex as a single identifier token. Removing
+/// any of these would force users to quote the body.
 fn is_ident_char(c: char) -> bool {
     c.is_alphanumeric()
         || matches!(
@@ -538,12 +460,14 @@ impl<'a> Parser<'a> {
             Some(Token::Regex(pattern)) => {
                 let pattern = pattern.clone();
                 self.advance();
-                let regex = Regex::new(&pattern).map_err(|source| FilterError::InvalidRegex {
-                    pattern: pattern.clone(),
-                    source,
-                    expression: self.expr_str(),
-                })?;
-                Ok(Matcher::Regex(regex))
+                match Regex::new(&pattern) {
+                    Ok(regex) => Ok(Matcher::Regex(regex)),
+                    Err(error) => Err(FilterError::InvalidRegex {
+                        pattern,
+                        error,
+                        expression: self.expr_str(),
+                    }),
+                }
             }
             Some(Token::Equals) => {
                 self.advance();
@@ -558,12 +482,14 @@ impl<'a> Parser<'a> {
             Some(Token::Hash) => {
                 self.advance();
                 let body = self.parse_matcher_body()?;
-                let glob = Glob::new(&body).map_err(|source| FilterError::InvalidGlob {
-                    pattern: body.clone(),
-                    source,
-                    expression: self.expr_str(),
-                })?;
-                Ok(Matcher::Glob(glob.compile_matcher()))
+                match Glob::new(&body) {
+                    Ok(glob) => Ok(Matcher::Glob(glob.compile_matcher())),
+                    Err(error) => Err(FilterError::InvalidGlob {
+                        pattern: body,
+                        error,
+                        expression: self.expr_str(),
+                    }),
+                }
             }
             Some(Token::Ident(_) | Token::String(_)) => {
                 let body = self.parse_matcher_body()?;

@@ -5,6 +5,7 @@ use std::sync::Arc;
 type FixtureArguments = HashMap<String, Py<PyAny>>;
 
 use karva_diagnostic::IndividualTestResultKind;
+use karva_metadata::filter::EvalContext;
 use karva_python_semantic::{FunctionKind, QualifiedFunctionName, QualifiedTestName};
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyIterator};
@@ -183,15 +184,16 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
     ) -> Option<bool> {
         let filter = &self.context.settings().test().filter;
         if !filter.is_empty() {
+            let qualified = QualifiedTestName::new(name.clone(), None);
+            let display_name = qualified.to_string();
             let custom_names = tags.custom_tag_names();
-            let display_name = QualifiedTestName::new(name.clone(), None).to_string();
-            let ctx = karva_metadata::filter::EvalContext {
+            let ctx = EvalContext {
                 test_name: &display_name,
                 tags: &custom_names,
             };
             if !filter.matches(&ctx) {
                 return Some(self.context.register_test_case_result(
-                    &QualifiedTestName::new(name.clone(), None),
+                    &qualified,
                     IndividualTestResultKind::Skipped { reason: None },
                     std::time::Duration::ZERO,
                 ));
