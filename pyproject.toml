@@ -50,6 +50,7 @@ target-version = "py311"
 [tool.ruff.lint]
 exclude = [
     "python/karva/__main__.py",
+    "python/karva/_vendor/**/*.py",
     "crates/karva_benchmark/resources/test_*.py",
 ]
 select = [

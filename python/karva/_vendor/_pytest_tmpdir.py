@@ -35,7 +35,6 @@ from karva._vendor._pytest_pathlib import (
     rm_rf,
 )
 
-
 RetentionType = Literal["all", "failed", "none"]
 
 

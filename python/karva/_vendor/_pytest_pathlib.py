@@ -31,7 +31,6 @@ from functools import partial
 from pathlib import Path, PurePath
 from typing import Any, TypeVar
 
-
 LOCK_TIMEOUT = 60 * 60 * 24 * 3
 
 _AnyPurePath = TypeVar("_AnyPurePath", bound=PurePath)

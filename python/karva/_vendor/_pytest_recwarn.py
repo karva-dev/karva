@@ -25,7 +25,6 @@ from typing import TYPE_CHECKING
 
 from karva._karva import fixture
 
-
 if TYPE_CHECKING:
     from typing import Self
 

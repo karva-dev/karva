@@ -255,9 +255,7 @@ class MockEnv:
         self._setitem.append((dic, name, dic.get(name, _NOTSET)))
         dic[name] = value
 
-    def delitem(
-        self, dic: MutableMapping[K, V], name: K, raising: bool = True
-    ) -> None:
+    def delitem(self, dic: MutableMapping[K, V], name: K, raising: bool = True) -> None:
         """Delete ``name`` from dict.
 
         Raises ``KeyError`` if it doesn't exist, unless ``raising`` is set to
