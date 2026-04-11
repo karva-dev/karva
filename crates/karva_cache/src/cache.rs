@@ -405,4 +405,196 @@ mod tests {
         assert_eq!(results.stats.total(), 0);
         assert!(results.diagnostics.is_empty());
     }
+
+    #[test]
+    fn write_last_failed_roundtrips_with_read() {
+        let tmp = tempfile::tempdir().unwrap();
+        let cache_dir = Utf8PathBuf::try_from(tmp.path().to_path_buf()).unwrap();
+
+        let failed = vec!["mod::test_a".to_string(), "mod::test_b".to_string()];
+        write_last_failed(&cache_dir, &failed).unwrap();
+
+        let read = read_last_failed(&cache_dir).unwrap();
+        assert_eq!(read, failed);
+    }
+
+    #[test]
+    fn read_last_failed_missing_file_returns_empty() {
+        let tmp = tempfile::tempdir().unwrap();
+        let cache_dir = Utf8PathBuf::try_from(tmp.path().to_path_buf()).unwrap();
+
+        let read = read_last_failed(&cache_dir).unwrap();
+        assert!(read.is_empty());
+    }
+
+    #[test]
+    fn write_last_failed_overwrites_previous_list() {
+        let tmp = tempfile::tempdir().unwrap();
+        let cache_dir = Utf8PathBuf::try_from(tmp.path().to_path_buf()).unwrap();
+
+        write_last_failed(&cache_dir, &["old".to_string()]).unwrap();
+        write_last_failed(&cache_dir, &["new".to_string()]).unwrap();
+
+        let read = read_last_failed(&cache_dir).unwrap();
+        assert_eq!(read, vec!["new".to_string()]);
+    }
+
+    #[test]
+    fn write_last_failed_creates_cache_dir() {
+        let tmp = tempfile::tempdir().unwrap();
+        let cache_dir = Utf8PathBuf::try_from(tmp.path().join("nested").join("cache")).unwrap();
+        assert!(!cache_dir.exists());
+
+        write_last_failed(&cache_dir, &["x".to_string()]).unwrap();
+
+        assert!(cache_dir.exists());
+        assert_eq!(read_last_failed(&cache_dir).unwrap(), vec!["x".to_string()]);
+    }
+
+    #[test]
+    fn read_last_failed_empty_json_list_parses() {
+        let tmp = tempfile::tempdir().unwrap();
+        let cache_dir = Utf8PathBuf::try_from(tmp.path().to_path_buf()).unwrap();
+
+        write_last_failed(&cache_dir, &[]).unwrap();
+        assert!(read_last_failed(&cache_dir).unwrap().is_empty());
+    }
+
+    #[test]
+    fn prune_cache_keeps_most_recent_run_only() {
+        let tmp = tempfile::tempdir().unwrap();
+        let cache_dir = Utf8PathBuf::try_from(tmp.path().to_path_buf()).unwrap();
+
+        for ts in ["run-100", "run-200", "run-300"] {
+            fs::create_dir_all(tmp.path().join(ts)).unwrap();
+        }
+
+        let result = prune_cache(&cache_dir).unwrap();
+        assert_eq!(result.removed.len(), 2);
+        assert!(result.removed.contains(&"run-100".to_string()));
+        assert!(result.removed.contains(&"run-200".to_string()));
+        assert!(cache_dir.join("run-300").exists());
+        assert!(!cache_dir.join("run-100").exists());
+        assert!(!cache_dir.join("run-200").exists());
+    }
+
+    #[test]
+    fn prune_cache_handles_missing_dir() {
+        let tmp = tempfile::tempdir().unwrap();
+        let cache_dir = Utf8PathBuf::try_from(tmp.path().join("nope")).unwrap();
+
+        let result = prune_cache(&cache_dir).unwrap();
+        assert!(result.removed.is_empty());
+    }
+
+    #[test]
+    fn prune_cache_ignores_non_run_directories() {
+        let tmp = tempfile::tempdir().unwrap();
+        let cache_dir = Utf8PathBuf::try_from(tmp.path().to_path_buf()).unwrap();
+
+        fs::create_dir_all(tmp.path().join("run-10")).unwrap();
+        fs::create_dir_all(tmp.path().join("run-20")).unwrap();
+        fs::create_dir_all(tmp.path().join("not-a-run")).unwrap();
+        fs::write(tmp.path().join("last-failed.json"), "[]").unwrap();
+
+        prune_cache(&cache_dir).unwrap();
+
+        assert!(cache_dir.join("not-a-run").exists());
+        assert!(cache_dir.join("last-failed.json").exists());
+        assert!(cache_dir.join("run-20").exists());
+        assert!(!cache_dir.join("run-10").exists());
+    }
+
+    #[test]
+    fn prune_cache_keeps_newest_even_when_names_are_lexicographically_out_of_order() {
+        // `run-9` lexicographically sorts AFTER `run-100` but numerically it is
+        // older; pruning must use the numeric `sort_key` or it would delete the
+        // newest run directory. This test guards against a regression to naive
+        // string sorting.
+        let tmp = tempfile::tempdir().unwrap();
+        let cache_dir = Utf8PathBuf::try_from(tmp.path().to_path_buf()).unwrap();
+
+        fs::create_dir_all(tmp.path().join("run-9")).unwrap();
+        fs::create_dir_all(tmp.path().join("run-100")).unwrap();
+
+        prune_cache(&cache_dir).unwrap();
+
+        assert!(cache_dir.join("run-100").exists());
+        assert!(!cache_dir.join("run-9").exists());
+    }
+
+    #[test]
+    fn clean_cache_removes_dir_and_returns_true() {
+        let tmp = tempfile::tempdir().unwrap();
+        let cache_dir = Utf8PathBuf::try_from(tmp.path().to_path_buf()).unwrap();
+        fs::create_dir_all(tmp.path().join("run-1")).unwrap();
+
+        assert!(clean_cache(&cache_dir).unwrap());
+        assert!(!cache_dir.exists());
+    }
+
+    #[test]
+    fn clean_cache_missing_dir_returns_false() {
+        let tmp = tempfile::tempdir().unwrap();
+        let cache_dir = Utf8PathBuf::try_from(tmp.path().join("nope")).unwrap();
+        assert!(!clean_cache(&cache_dir).unwrap());
+    }
+
+    #[test]
+    fn aggregate_results_merges_failed_tests_and_durations_across_workers() {
+        let tmp = tempfile::tempdir().unwrap();
+        let cache_dir = Utf8PathBuf::try_from(tmp.path().to_path_buf()).unwrap();
+        let run_hash = RunHash::from_existing("run-700");
+
+        let run_dir = tmp.path().join("run-700");
+        let worker0 = run_dir.join("worker-0");
+        let worker1 = run_dir.join("worker-1");
+        fs::create_dir_all(&worker0).unwrap();
+        fs::create_dir_all(&worker1).unwrap();
+
+        fs::write(worker0.join(FAILED_TESTS_FILE), r#"["mod::test_a"]"#).unwrap();
+        fs::write(worker1.join(FAILED_TESTS_FILE), r#"["mod::test_b"]"#).unwrap();
+
+        let mut d0 = HashMap::new();
+        d0.insert("mod::test_a".to_string(), Duration::from_millis(10));
+        let mut d1 = HashMap::new();
+        d1.insert("mod::test_b".to_string(), Duration::from_millis(20));
+        fs::write(
+            worker0.join(DURATIONS_FILE),
+            serde_json::to_string(&d0).unwrap(),
+        )
+        .unwrap();
+        fs::write(
+            worker1.join(DURATIONS_FILE),
+            serde_json::to_string(&d1).unwrap(),
+        )
+        .unwrap();
+
+        let cache = Cache::new(&cache_dir, &run_hash);
+        let results = cache.aggregate_results().unwrap();
+
+        let mut failed = results.failed_tests.clone();
+        failed.sort();
+        assert_eq!(
+            failed,
+            vec!["mod::test_a".to_string(), "mod::test_b".to_string()]
+        );
+        assert_eq!(results.durations.len(), 2);
+        assert_eq!(
+            results.durations.get("mod::test_a"),
+            Some(&Duration::from_millis(10))
+        );
+    }
+
+    #[test]
+    fn fail_fast_signal_round_trip() {
+        let tmp = tempfile::tempdir().unwrap();
+        let cache_dir = Utf8PathBuf::try_from(tmp.path().to_path_buf()).unwrap();
+        let run_hash = RunHash::from_existing("run-800");
+        let cache = Cache::new(&cache_dir, &run_hash);
+
+        assert!(!cache.has_fail_fast_signal());
+        cache.write_fail_fast_signal().unwrap();
+        assert!(cache.has_fail_fast_signal());
+    }
 }
