@@ -356,14 +356,52 @@ respect-ignore-files = false
 include = ["tests", "more"]
 "#;
         let options = Options::from_toml_str(toml).expect("parse");
-        let settings = options.to_settings();
-        assert_eq!(settings.test().test_function_prefix, "check");
-        assert_eq!(settings.test().max_fail, MaxFail::from_count(3));
-        assert_eq!(settings.test().retry, 2);
-        assert_eq!(settings.terminal().output_format, OutputFormat::Concise);
-        assert!(settings.terminal().show_python_output);
-        assert!(!settings.src().respect_ignore_files);
-        assert_eq!(settings.src().include_paths, vec!["tests", "more"]);
+        insta::assert_debug_snapshot!(options, @r#"
+        Options {
+            src: Some(
+                SrcOptions {
+                    respect_ignore_files: Some(
+                        false,
+                    ),
+                    include: Some(
+                        [
+                            "tests",
+                            "more",
+                        ],
+                    ),
+                },
+            ),
+            terminal: Some(
+                TerminalOptions {
+                    output_format: Some(
+                        Concise,
+                    ),
+                    show_python_output: Some(
+                        true,
+                    ),
+                },
+            ),
+            test: Some(
+                TestOptions {
+                    test_function_prefix: Some(
+                        "check",
+                    ),
+                    fail_fast: None,
+                    max_fail: Some(
+                        MaxFail(
+                            Some(
+                                3,
+                            ),
+                        ),
+                    ),
+                    try_import_fixtures: None,
+                    retry: Some(
+                        2,
+                    ),
+                },
+            ),
+        }
+        "#);
     }
 
     #[test]
@@ -422,10 +460,21 @@ max-fail = 0
             try_import_fixtures: Some(true),
             ..TestOptions::default()
         };
-        let merged = cli.combine(file);
-        assert_eq!(merged.test_function_prefix.as_deref(), Some("cli_prefix"));
-        assert_eq!(merged.retry, Some(5));
-        assert_eq!(merged.try_import_fixtures, Some(true));
+        insta::assert_debug_snapshot!(cli.combine(file), @r#"
+        TestOptions {
+            test_function_prefix: Some(
+                "cli_prefix",
+            ),
+            fail_fast: None,
+            max_fail: None,
+            try_import_fixtures: Some(
+                true,
+            ),
+            retry: Some(
+                5,
+            ),
+        }
+        "#);
     }
 
     #[test]
@@ -437,12 +486,24 @@ max-fail = 0
             retry: Some(3),
             ..TestOptions::default()
         };
-        let merged = cli.combine(file);
-        assert_eq!(merged.test_function_prefix.as_deref(), Some("from_file"));
-        assert_eq!(merged.fail_fast, Some(true));
-        assert_eq!(merged.retry, Some(3));
+        insta::assert_debug_snapshot!(cli.combine(file), @r#"
+        TestOptions {
+            test_function_prefix: Some(
+                "from_file",
+            ),
+            fail_fast: Some(
+                true,
+            ),
+            max_fail: None,
+            try_import_fixtures: None,
+            retry: Some(
+                3,
+            ),
+        }
+        "#);
     }
 
+    /// Vec combine appends `self` after `other`, so CLI entries take precedence at the tail.
     #[test]
     fn combine_merges_include_paths_with_cli_taking_precedence() {
         let cli = SrcOptions {
@@ -453,11 +514,19 @@ max-fail = 0
             include: Some(vec!["file_only".to_string()]),
             respect_ignore_files: Some(false),
         };
-        let merged = cli.combine(file);
-        // Vec combine appends `self` after `other`, so CLI entries take precedence at the tail.
-        let include = merged.include.expect("include set");
-        assert_eq!(include, vec!["file_only", "cli_only"]);
-        assert_eq!(merged.respect_ignore_files, Some(false));
+        insta::assert_debug_snapshot!(cli.combine(file), @r#"
+        SrcOptions {
+            respect_ignore_files: Some(
+                false,
+            ),
+            include: Some(
+                [
+                    "file_only",
+                    "cli_only",
+                ],
+            ),
+        }
+        "#);
     }
 
     #[test]
@@ -478,10 +547,25 @@ max-fail = 0
             ..Options::default()
         };
         let overrides = ProjectOptionsOverrides::new(None, cli_options);
-        let merged = overrides.apply_to(file_options);
-        let test = merged.test.expect("test section set");
-        assert_eq!(test.test_function_prefix.as_deref(), Some("cli"));
-        assert_eq!(test.retry, Some(2));
+        insta::assert_debug_snapshot!(overrides.apply_to(file_options), @r#"
+        Options {
+            src: None,
+            terminal: None,
+            test: Some(
+                TestOptions {
+                    test_function_prefix: Some(
+                        "cli",
+                    ),
+                    fail_fast: None,
+                    max_fail: None,
+                    try_import_fixtures: None,
+                    retry: Some(
+                        2,
+                    ),
+                },
+            ),
+        }
+        "#);
     }
 }
 
