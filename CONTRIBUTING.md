@@ -1,70 +1,70 @@
 # Contributing to Karva
 
-Thank you for considering contributing to Karva! We welcome contributions from everyone.
+Thanks for your interest in contributing to Karva. Contributions of all kinds
+are welcome, and we try to keep the development process as smooth as possible.
 
-Not only do we aim to make Karva a better tool for everyone, but we also aim to make the contributing process as smooth and enjoyable as possible.
+If you hit a bug, have a feature idea, or want to suggest an improvement to
+the contributing docs themselves, please
+[open an issue](https://github.com/karva-dev/karva/issues/new).
 
-So, if you come across any issues or have suggestions for improving development in the karva repo, please [open an issue](https://github.com/karva-dev/karva/issues/new).
+For small changes like bug fixes, feel free to jump straight to a pull request.
+For anything larger, it's usually worth opening an issue first to discuss the
+approach.
 
-## Reporting Issues
-
-If you encounter any issues or have suggestions for improvements, please [open an issue](https://github.com/karva-dev/karva/issues/new).
-
-## The Basics
-
-For small changes (e.g., bug fixes), feel free to submit a PR.
-
-For larger changes, consider creating an issue outlining your proposed change.
-
-If you have suggestions on how we might improve the contributing documentation, let us know!
+If you are wanting to attempt to tackle an issue that is already open, please
+leave a comment letting me know you would like to work on it. There's only one
+person working on this project right now, so issues may be out of date and I
+don't want you to work on something that doesn't align with the goals for the
+project, so let's have a chat about the issue first. Thank you in advance.
 
 ## Architecture
 
-Karva uses a **main-process + worker-subprocess** execution model. When you run `karva test`, the main process (`karva`) collects test files, partitions them across workers, then spawns one or more `karva-worker` subprocesses to actually execute the tests. Each worker writes its results to a shared cache directory, and the main process aggregates results when all workers finish.
+Karva runs tests using a **main process plus worker subprocesses**. When you
+run `karva test`, the main `karva` process discovers the test files, partitions
+them across workers, and spawns one or more `karva-worker` subprocesses to
+actually execute the tests. Each worker writes its results into a shared cache
+directory, and the main process aggregates everything once the workers finish.
+
+The two binaries never link against each other. They communicate only through
+CLI arguments and the cache directory on disk. Shared types live in
+`karva_cli`, which both binaries depend on. Only the worker embeds a Python
+interpreter via PyO3 — the main process only touches Python for wheel
+packaging.
 
 ### Crate Map
 
-**Binaries:**
+The two binaries:
 
-- `karva` — Main CLI binary. Parses args, discovers test files, partitions work, spawns workers, aggregates results.
-- `karva_worker` — Worker subprocess binary. Receives a subset of test files, runs them, writes results to cache.
+- `karva` — main CLI. Parses arguments, discovers test files, partitions work, spawns workers, and aggregates results.
+- `karva_worker` — worker subprocess. Receives a subset of test files, runs them, and writes results to the cache.
 
-**Shared libraries (used by both binaries):**
+Libraries shared between both binaries:
 
-- `karva_cli` — Shared CLI types (`SubTestCommand`, `Verbosity`, etc.), the bridge between main and worker.
-- `karva_cache` — Cache directory layout, result serialization, duration tracking.
-- `karva_static` — Environment variable constants, `max_parallelism()`.
-- `karva_metadata` — Project configuration (`ProjectSettings`), config file parsing.
-- `karva_diagnostic` — Test result types (`TestRunResult`), diagnostic reporting.
-- `karva_logging` — Tracing setup, `Printer`, colored output control, duration formatting.
-- `karva_python_semantic` — Python version detection, AST-level semantic types.
+- `karva_cli` — shared CLI types (`SubTestCommand`, `Verbosity`, etc.), the bridge between main and worker.
+- `karva_cache` — cache directory layout, result serialization, and duration tracking.
+- `karva_static` — environment variable constants and `max_parallelism()`.
+- `karva_metadata` — project configuration (`ProjectSettings`) and config file parsing.
+- `karva_diagnostic` — test result types (`TestRunResult`) and diagnostic reporting.
+- `karva_logging` — tracing setup, `Printer`, colored output control, and duration formatting.
+- `karva_python_semantic` — Python version detection and AST-level semantic types.
 
-**Main-process only:**
+Used only by the main process:
 
-- `karva_runner` — Orchestration: worker spawning, partitioning, parallel collection.
-- `karva_project` — Project metadata, test path resolution, path utilities.
-- `karva_collector` — File-level test collection (parsing Python files for test functions).
-- `karva_combine` — Result combination and summary output.
+- `karva_runner` — orchestration: worker spawning, partitioning, and parallel collection.
+- `karva_project` — project metadata, test path resolution, and path utilities.
+- `karva_collector` — file-level test collection (parsing Python files for test functions).
+- `karva_combine` — result combination and summary output.
 
-**Worker-process only:**
+Used only by the worker process:
 
-- `karva_test_semantic` — Core test execution library: discovery, context, extensions, PyO3 runner.
+- `karva_test_semantic` — the core test execution library: discovery, context, extensions, and the PyO3 runner.
 
-**Infrastructure / Build:**
+Infrastructure and tooling:
 
-- `karva_python` — PyO3 `cdylib`, the Python wheel entry point. Wraps both `karva` and `karva_worker`.
-- `karva_macros` — Procedural macros.
-- `karva_dev` — Dev tools (CLI reference generation, etc.).
-
-**Dev / Testing:**
-
-- `karva_benchmark` — Wall-time benchmark for karva, runs `karva test` against a pinned snapshot of `karva-benchmark-1`.
-
-### Key Design Decisions
-
-- **Binaries don't depend on each other.** `karva` and `karva_worker` communicate only through the filesystem (cache directory) and CLI arguments.
-- **Shared types live in `karva_cli`.** Both binaries depend on `karva_cli` for common command-line types like `SubTestCommand`.
-- **The worker embeds a Python interpreter.** `karva_test_semantic` uses PyO3 to attach to Python for test execution, while the main process only needs Python for the wheel packaging.
+- `karva_python` — the PyO3 `cdylib` that produces the Python wheel and wraps both `karva` and `karva_worker`.
+- `karva_macros` — procedural macros.
+- `karva_dev` — dev tools such as CLI reference generation.
+- `karva_benchmark` — wall-time benchmark that runs `karva test` against a pinned snapshot of `karva-benchmark-1`.
 
 ### Prerequisites
 
