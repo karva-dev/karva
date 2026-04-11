@@ -18,7 +18,6 @@ use crate::diagnostic::{
     report_test_pass_on_expect_failure,
 };
 use crate::discovery::{DiscoveredModule, DiscoveredPackage};
-use crate::extensions::fixtures::DiscoveredFixture;
 use crate::extensions::fixtures::{
     Finalizer, FixtureScope, NormalizedFixture, missing_arguments_from_error,
 };
@@ -38,9 +37,6 @@ pub struct PackageRunner<'ctx, 'a> {
     /// Reference to the test execution context.
     context: &'ctx Context<'a>,
 
-    /// Framework fixtures from `karva._builtins`, available to all tests.
-    framework_fixtures: Vec<DiscoveredFixture>,
-
     /// Cache for fixture values to avoid re-computation within a scope.
     fixture_cache: FixtureCache,
 
@@ -49,13 +45,9 @@ pub struct PackageRunner<'ctx, 'a> {
 }
 
 impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
-    pub(crate) fn new(
-        context: &'ctx Context<'a>,
-        framework_fixtures: Vec<DiscoveredFixture>,
-    ) -> Self {
+    pub(crate) fn new(context: &'ctx Context<'a>) -> Self {
         Self {
             context,
-            framework_fixtures,
             fixture_cache: FixtureCache::default(),
             finalizer_cache: FinalizerCache::default(),
         }
@@ -67,8 +59,7 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
     pub(crate) fn execute(&self, py: Python<'_>, session: &DiscoveredPackage) {
         // Get session-scoped auto-use fixtures
         if let Some(config_module) = session.configuration_module_impl() {
-            let mut resolver =
-                RuntimeFixtureResolver::new(&[], config_module, &self.framework_fixtures);
+            let mut resolver = RuntimeFixtureResolver::new(&[], config_module);
             let session_auto_use_fixtures =
                 resolver.get_normalized_auto_use_fixtures(py, FixtureScope::Session);
             let auto_use_errors = self.run_fixtures(py, &session_auto_use_fixtures);
@@ -93,7 +84,7 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
         module: &DiscoveredModule,
         parents: &[&DiscoveredPackage],
     ) -> bool {
-        let mut resolver = RuntimeFixtureResolver::new(parents, module, &self.framework_fixtures);
+        let mut resolver = RuntimeFixtureResolver::new(parents, module);
 
         // Run module-scoped auto-use fixtures
         let module_auto_use_fixtures =
@@ -108,8 +99,7 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
 
         for test_function in module.test_functions() {
             // Create a new resolver for each test to handle fixture resolution
-            let mut test_resolver =
-                RuntimeFixtureResolver::new(parents, module, &self.framework_fixtures);
+            let mut test_resolver = RuntimeFixtureResolver::new(parents, module);
 
             // Iterate over all test variants (parametrize combinations × fixture combinations).
             // Uses next_with_py so each variant gets fresh function-scoped built-in fixtures.
@@ -148,8 +138,7 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
 
         // Run package-scoped auto-use fixtures
         if let Some(config_module) = package.configuration_module_impl() {
-            let mut resolver =
-                RuntimeFixtureResolver::new(parents, config_module, &self.framework_fixtures);
+            let mut resolver = RuntimeFixtureResolver::new(parents, config_module);
             let package_auto_use_fixtures =
                 resolver.get_normalized_auto_use_fixtures(py, FixtureScope::Package);
             let auto_use_errors = self.run_fixtures(py, &package_auto_use_fixtures);

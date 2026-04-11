@@ -17,9 +17,6 @@ use crate::utils::iter_with_ancestors;
 pub(super) struct RuntimeFixtureResolver<'a> {
     parents: &'a [&'a DiscoveredPackage],
     current_module: &'a DiscoveredModule,
-    /// Framework fixtures discovered from `karva._builtins`, used as a fallback
-    /// when a fixture is not found in user code.
-    framework_fixtures: &'a [DiscoveredFixture],
     fixture_cache: HashMap<String, Rc<NormalizedFixture>>,
 }
 
@@ -27,12 +24,10 @@ impl<'a> RuntimeFixtureResolver<'a> {
     pub(super) fn new(
         parents: &'a [&'a DiscoveredPackage],
         current_module: &'a DiscoveredModule,
-        framework_fixtures: &'a [DiscoveredFixture],
     ) -> Self {
         Self {
             parents,
             current_module,
-            framework_fixtures,
             fixture_cache: HashMap::new(),
         }
     }
@@ -126,13 +121,6 @@ impl<'a> RuntimeFixtureResolver<'a> {
         for dep_name in fixture_names {
             if let Some(fixture) =
                 find_fixture(current_fixture, dep_name, self.parents, self.current_module)
-            {
-                let normalized = self.normalize_fixture(py, fixture);
-                normalized_fixtures.push(normalized);
-            } else if let Some(fixture) = self
-                .framework_fixtures
-                .iter()
-                .find(|f| f.name().function_name() == dep_name)
             {
                 let normalized = self.normalize_fixture(py, fixture);
                 normalized_fixtures.push(normalized);

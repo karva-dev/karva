@@ -39,12 +39,20 @@ impl<'a> HasFixtures<'a> for DiscoveredPackage {
     fn get_fixture(&'a self, fixture_name: &str) -> Option<&'a DiscoveredFixture> {
         self.configuration_module_impl()
             .and_then(|module| module.get_fixture(fixture_name))
+            .or_else(|| {
+                self.framework_module_impl()
+                    .and_then(|module| module.get_fixture(fixture_name))
+            })
     }
 
     fn auto_use_fixtures(&'a self, scopes: &[FixtureScope]) -> Vec<&'a DiscoveredFixture> {
         let mut fixtures = Vec::new();
 
         if let Some(module) = self.configuration_module_impl() {
+            fixtures.extend(module.auto_use_fixtures(scopes));
+        }
+
+        if let Some(module) = self.framework_module_impl() {
             fixtures.extend(module.auto_use_fixtures(scopes));
         }
 

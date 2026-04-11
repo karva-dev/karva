@@ -61,6 +61,11 @@ impl<'ctx, 'a> StandardDiscoverer<'ctx, 'a> {
 
         session_package.shrink();
 
+        session_package.set_framework_module(discover_framework_fixtures(
+            py,
+            self.context.python_version(),
+        ));
+
         session_package
     }
 
@@ -123,39 +128,29 @@ impl<'ctx, 'a> StandardDiscoverer<'ctx, 'a> {
 /// Discovers all fixtures defined in `karva._builtins` by importing the module at
 /// runtime and parsing its source file.
 ///
-/// Returns an empty list if the module cannot be imported or parsed, so callers
-/// always have a valid (possibly empty) slice to work with.
-pub fn discover_framework_fixtures(
+/// Returns a synthetic `DiscoveredModule` holding the discovered fixtures, or
+/// `None` if `karva._builtins` cannot be imported or parsed. The returned
+/// module is intended to be attached to the session root's `framework_module`
+/// slot so that fixture resolution walks through it via `HasFixtures`.
+fn discover_framework_fixtures(
     py: Python<'_>,
     python_version: PythonVersion,
-) -> Vec<DiscoveredFixture> {
-    let Ok(builtins_module) = py.import("karva._builtins") else {
-        return vec![];
-    };
+) -> Option<DiscoveredModule> {
+    let builtins_module = py.import("karva._builtins").ok()?;
 
-    let Ok(file_path_obj) = builtins_module.getattr("__file__") else {
-        return vec![];
-    };
-    let Ok(file_path_str) = file_path_obj.extract::<String>() else {
-        return vec![];
-    };
-    let Some(utf8_path) = Utf8Path::from_path(Path::new(&file_path_str)) else {
-        return vec![];
-    };
+    let file_path_str: String = builtins_module.getattr("__file__").ok()?.extract().ok()?;
+    let utf8_path = Utf8Path::from_path(Path::new(&file_path_str))?;
 
-    let Ok(source_text) = std::fs::read_to_string(utf8_path) else {
-        return vec![];
-    };
+    let source_text = std::fs::read_to_string(utf8_path).ok()?;
 
     let module_path = ModulePath::new_with_name(utf8_path, "karva._builtins".to_string());
 
     let mut parse_options = ParseOptions::from(Mode::Module);
     parse_options = parse_options.with_target_version(python_version);
-    let Some(parsed) = parse_unchecked(&source_text, parse_options).try_into_module() else {
-        return vec![];
-    };
+    let parsed = parse_unchecked(&source_text, parse_options).try_into_module()?;
 
-    let mut fixtures = Vec::new();
+    let mut framework_module = DiscoveredModule::new_with_source(module_path.clone(), source_text);
+
     for stmt in parsed.into_syntax().body {
         let Stmt::FunctionDef(function_def) = stmt else {
             continue;
@@ -172,9 +167,9 @@ pub fn discover_framework_fixtures(
             &module_path,
             is_gen,
         ) {
-            fixtures.push(fixture);
+            framework_module.add_fixture(fixture);
         }
     }
 
-    fixtures
+    Some(framework_module)
 }
