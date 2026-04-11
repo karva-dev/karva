@@ -1628,6 +1628,19 @@ def test_2(): pass
     [DATETIME] INFO Spawning 1 workers
     [DATETIME] INFO Worker 0 spawned with 2 tests
     [DATETIME] INFO Waiting for 1 workers to complete (Ctrl+C to cancel)
+    [DATETIME] DEBUG Trying to parse `monkeypatch` as a fixture
+    [DATETIME] DEBUG Trying to parse `capsys` as a fixture
+    [DATETIME] DEBUG Trying to parse `capfd` as a fixture
+    [DATETIME] DEBUG Trying to parse `capsysbinary` as a fixture
+    [DATETIME] DEBUG Trying to parse `capfdbinary` as a fixture
+    [DATETIME] DEBUG Trying to parse `caplog` as a fixture
+    [DATETIME] DEBUG Trying to parse `tmp_path` as a fixture
+    [DATETIME] DEBUG Trying to parse `temp_path` as a fixture
+    [DATETIME] DEBUG Trying to parse `temp_dir` as a fixture
+    [DATETIME] DEBUG Trying to parse `tmpdir` as a fixture
+    [DATETIME] DEBUG Trying to parse `tmp_path_factory` as a fixture
+    [DATETIME] DEBUG Trying to parse `tmpdir_factory` as a fixture
+    [DATETIME] DEBUG Trying to parse `recwarn` as a fixture
     [DATETIME] DEBUG Running test `test::test_1`
     [DATETIME] DEBUG Running test `test::test_2`
     [DATETIME] INFO Worker 0 completed successfully in [TIME]
@@ -1664,6 +1677,19 @@ def test_1(): pass
     1   [TIME] INFO karva_runner::orchestration Spawning 1 workers
     1   [TIME] INFO karva_runner::orchestration Worker 0 spawned with 1 tests
     1   [TIME] INFO karva_runner::orchestration Waiting for 1 workers to complete (Ctrl+C to cancel)
+    1   [TIME] DEBUG karva_test_semantic::extensions::fixtures Trying to parse `monkeypatch` as a fixture
+    1   [TIME] DEBUG karva_test_semantic::extensions::fixtures Trying to parse `capsys` as a fixture
+    1   [TIME] DEBUG karva_test_semantic::extensions::fixtures Trying to parse `capfd` as a fixture
+    1   [TIME] DEBUG karva_test_semantic::extensions::fixtures Trying to parse `capsysbinary` as a fixture
+    1   [TIME] DEBUG karva_test_semantic::extensions::fixtures Trying to parse `capfdbinary` as a fixture
+    1   [TIME] DEBUG karva_test_semantic::extensions::fixtures Trying to parse `caplog` as a fixture
+    1   [TIME] DEBUG karva_test_semantic::extensions::fixtures Trying to parse `tmp_path` as a fixture
+    1   [TIME] DEBUG karva_test_semantic::extensions::fixtures Trying to parse `temp_path` as a fixture
+    1   [TIME] DEBUG karva_test_semantic::extensions::fixtures Trying to parse `temp_dir` as a fixture
+    1   [TIME] DEBUG karva_test_semantic::extensions::fixtures Trying to parse `tmpdir` as a fixture
+    1   [TIME] DEBUG karva_test_semantic::extensions::fixtures Trying to parse `tmp_path_factory` as a fixture
+    1   [TIME] DEBUG karva_test_semantic::extensions::fixtures Trying to parse `tmpdir_factory` as a fixture
+    1   [TIME] DEBUG karva_test_semantic::extensions::fixtures Trying to parse `recwarn` as a fixture
     1   [TIME] DEBUG karva_test_semantic::runner::package_runner Running test `test::test_1`
     1   [TIME] INFO karva_runner::orchestration Worker 0 completed successfully in [TIME]
     1   [TIME] INFO karva_runner::orchestration All workers completed

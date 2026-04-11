@@ -263,7 +263,7 @@ pub fn discover(
 }
 
 /// Returns `true` if the function body contains a yield or yield-from expression.
-fn is_generator(stmt_function_def: &StmtFunctionDef) -> bool {
+pub fn is_generator(stmt_function_def: &StmtFunctionDef) -> bool {
     let mut visitor = GeneratorFunctionVisitor::default();
     source_order::walk_body(&mut visitor, &stmt_function_def.body);
     visitor.is_generator

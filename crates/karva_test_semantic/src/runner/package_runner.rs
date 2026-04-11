@@ -19,8 +19,7 @@ use crate::diagnostic::{
 };
 use crate::discovery::{DiscoveredModule, DiscoveredPackage};
 use crate::extensions::fixtures::{
-    Finalizer, FixtureScope, NormalizedFixture, create_fixture_with_finalizer,
-    missing_arguments_from_error,
+    Finalizer, FixtureScope, NormalizedFixture, missing_arguments_from_error,
 };
 use crate::extensions::tags::expect_fail::ExpectFailTag;
 use crate::extensions::tags::skip::{extract_skip_reason, is_skip_exception};
@@ -58,15 +57,17 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
     ///
     /// The main entrypoint for actual test execution.
     pub(crate) fn execute(&self, py: Python<'_>, session: &DiscoveredPackage) {
-        // Get session-scoped auto-use fixtures
-        if let Some(config_module) = session.configuration_module_impl() {
-            let mut resolver = RuntimeFixtureResolver::new(&[], config_module);
-            let session_auto_use_fixtures =
-                resolver.get_normalized_auto_use_fixtures(py, FixtureScope::Session);
-            let auto_use_errors = self.run_fixtures(py, &session_auto_use_fixtures);
-            for error in auto_use_errors {
-                report_fixture_failure(self.context, py, error);
-            }
+        // Resolve session-scoped auto-use fixtures using the session package
+        // itself as the `HasFixtures` source so that the walk includes both
+        // the user conftest at the session root and the framework module. No
+        // `if let Some(...)` gate: the session always exists, and if neither
+        // slot contributes any autouse fixtures the walk returns an empty vec.
+        let mut resolver = RuntimeFixtureResolver::new(&[], session);
+        let session_auto_use_fixtures =
+            resolver.get_normalized_auto_use_fixtures(py, FixtureScope::Session);
+        let auto_use_errors = self.run_fixtures(py, &session_auto_use_fixtures);
+        for error in auto_use_errors {
+            report_fixture_failure(self.context, py, error);
         }
 
         self.execute_package(py, session, &[]);
@@ -402,17 +403,16 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
             snapshot_test_name,
         );
 
-        let py_dict = PyDict::new(py);
-        for (key, value) in &function_arguments {
-            let _ = py_dict.set_item(key, value.as_ref());
-        }
-
         let is_async = stmt_function_def.is_async
             && !crate::utils::patch_async_test_function(py, &function).unwrap_or(false);
         let run_test = || {
             let result = if function_arguments.is_empty() {
                 function.call0(py)
             } else {
+                let py_dict = PyDict::new(py);
+                for (key, value) in &function_arguments {
+                    py_dict.set_item(key, value.as_ref())?;
+                }
                 function.call(py, (), Some(&py_dict))
             };
             if is_async {
@@ -484,13 +484,11 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
                     }
                 }
                 Err(mut err) => {
-                    if let Some(fixture_def) = fixture.as_user_defined() {
-                        err.dependency_chain.push(FixtureChainEntry {
-                            name: fixture_def.name.function_name().to_string(),
-                            source_file: source_file(fixture_def.name.module_path().path()),
-                            stmt_function_def: fixture_def.stmt_function_def.clone(),
-                        });
-                    }
+                    err.dependency_chain.push(FixtureChainEntry {
+                        name: fixture.name.function_name().to_string(),
+                        source_file: source_file(fixture.name.module_path().path()),
+                        stmt_function_def: fixture.stmt_function_def.clone(),
+                    });
                     return Err(err);
                 }
             }
@@ -499,15 +497,11 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
         let fixture_call_result = match fixture.call(py, &function_arguments) {
             Ok(fixture_call_result) => fixture_call_result,
             Err(err) => {
-                let fixture_def = fixture
-                    .as_user_defined()
-                    .expect("builtin fixtures to not fail");
-
                 return Err(FixtureCallError {
-                    fixture_name: fixture_def.name.function_name().to_string(),
+                    fixture_name: fixture.name.function_name().to_string(),
                     error: err,
-                    stmt_function_def: fixture_def.stmt_function_def.clone(),
-                    source_file: source_file(fixture_def.name.module_path().path()),
+                    stmt_function_def: fixture.stmt_function_def.clone(),
+                    source_file: source_file(fixture.name.module_path().path()),
                     arguments: function_arguments,
                     dependency_chain: Vec::new(),
                 });
@@ -518,28 +512,22 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
             match get_value_and_finalizer(py, fixture, fixture_call_result) {
                 Ok((final_result, finalizer)) => (final_result, finalizer),
                 Err(err) => {
-                    let fixture_def = fixture
-                        .as_user_defined()
-                        .expect("builtin fixtures to not fail");
-
                     return Err(FixtureCallError {
-                        fixture_name: fixture_def.name.function_name().to_string(),
+                        fixture_name: fixture.name.function_name().to_string(),
                         error: err,
-                        stmt_function_def: fixture_def.stmt_function_def.clone(),
-                        source_file: source_file(fixture_def.name.module_path().path()),
+                        stmt_function_def: fixture.stmt_function_def.clone(),
+                        source_file: source_file(fixture.name.module_path().path()),
                         arguments: HashMap::new(),
                         dependency_chain: Vec::new(),
                     });
                 }
             };
 
-        if fixture.should_cache() {
-            self.fixture_cache.insert(
-                fixture.function_name().to_string(),
-                final_result.clone_ref(py),
-                fixture.scope(),
-            );
-        }
+        self.fixture_cache.insert(
+            fixture.function_name().to_string(),
+            final_result.clone_ref(py),
+            fixture.scope(),
+        );
 
         // Handle finalizer based on scope
         // Function-scoped finalizers are returned to be run immediately after the test
@@ -599,10 +587,7 @@ fn get_value_and_finalizer(
     fixture: &NormalizedFixture,
     fixture_call_result: Py<PyAny>,
 ) -> PyResult<(Py<PyAny>, Option<Finalizer>)> {
-    if let Some(user_defined_fixture) = fixture.as_user_defined()
-        && user_defined_fixture.is_generator
-        && user_defined_fixture.stmt_function_def.is_async
-    {
+    if fixture.is_generator && fixture.stmt_function_def.is_async {
         // Async generator fixture: call __anext__() and await the coroutine
         let bound = fixture_call_result.bind(py);
         let anext_coroutine = bound.call_method0("__anext__")?;
@@ -612,13 +597,12 @@ fn get_value_and_finalizer(
             fixture_return: fixture_call_result,
             is_async: true,
             scope: fixture.scope(),
-            fixture_name: Some(user_defined_fixture.name.clone()),
-            stmt_function_def: Some(user_defined_fixture.stmt_function_def.clone()),
+            fixture_name: Some(fixture.name.clone()),
+            stmt_function_def: Some(fixture.stmt_function_def.clone()),
         };
 
         Ok((value, Some(finalizer)))
-    } else if let Some(user_defined_fixture) = fixture.as_user_defined()
-        && user_defined_fixture.is_generator
+    } else if fixture.is_generator
         && let Ok(mut bound_iterator) = fixture_call_result
             .clone_ref(py)
             .into_bound(py)
@@ -631,8 +615,8 @@ fn get_value_and_finalizer(
                     fixture_return: bound_iterator.clone().unbind().into_any(),
                     is_async: false,
                     scope: fixture.scope(),
-                    fixture_name: Some(user_defined_fixture.name.clone()),
-                    stmt_function_def: Some(user_defined_fixture.stmt_function_def.clone()),
+                    fixture_name: Some(fixture.name.clone()),
+                    stmt_function_def: Some(fixture.stmt_function_def.clone()),
                 };
 
                 Ok((value.unbind(), Some(finalizer)))
@@ -642,21 +626,6 @@ fn get_value_and_finalizer(
                 "Generator fixture yielded no value",
             )),
         }
-    } else if let Some(builtin_fixture) = fixture.as_builtin()
-        && let Some(finalizer_fn) = &builtin_fixture.finalizer
-        && let Ok(mut bound_iterator) =
-            create_fixture_with_finalizer(py, &fixture_call_result, finalizer_fn)
-        && let Some(Ok(value)) = bound_iterator.next()
-    {
-        let finalizer = Finalizer {
-            fixture_return: bound_iterator.unbind().into_any(),
-            is_async: false,
-            scope: builtin_fixture.scope,
-            fixture_name: None,
-            stmt_function_def: None,
-        };
-
-        Ok((value.unbind(), Some(finalizer)))
     } else {
         Ok((fixture_call_result, None))
     }

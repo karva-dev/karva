@@ -4,4 +4,7 @@ pub mod builtins;
 pub mod decorators;
 pub mod generators;
 pub mod invalid;
+pub mod more_builtins;
 pub mod parametrized;
+pub mod pytest_monkeypatch;
+pub mod pytest_vendor_tests;

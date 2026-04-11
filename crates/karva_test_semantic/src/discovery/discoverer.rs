@@ -1,11 +1,19 @@
+use std::path::Path;
+use std::rc::Rc;
+
+use camino::Utf8Path;
 use karva_collector::{CollectedModule, CollectedPackage};
 use karva_project::path::{TestPath, TestPathError};
+use karva_python_semantic::ModulePath;
 use pyo3::prelude::*;
+use ruff_python_ast::{PythonVersion, Stmt};
+use ruff_python_parser::{Mode, ParseOptions, parse_unchecked};
 
 use crate::Context;
 use crate::collection::TestFunctionCollector;
-use crate::discovery::visitor::discover;
+use crate::discovery::visitor::{discover, is_generator};
 use crate::discovery::{DiscoveredModule, DiscoveredPackage};
+use crate::extensions::fixtures::DiscoveredFixture;
 use crate::utils::add_to_sys_path;
 
 /// Discovers test functions and fixtures from Python source files.
@@ -52,6 +60,11 @@ impl<'ctx, 'a> StandardDiscoverer<'ctx, 'a> {
         let mut session_package = self.convert_package(py, collected_package);
 
         session_package.shrink();
+
+        session_package.set_framework_module(discover_framework_fixtures(
+            py,
+            self.context.python_version(),
+        ));
 
         session_package
     }
@@ -110,4 +123,94 @@ impl<'ctx, 'a> StandardDiscoverer<'ctx, 'a> {
 
         module
     }
+}
+
+/// Discovers all fixtures defined in `karva._builtins` by importing the module at
+/// runtime and parsing its source file.
+///
+/// Returns a synthetic `DiscoveredModule` holding the discovered fixtures, or
+/// `None` if `karva._builtins` cannot be imported or parsed. The returned
+/// module is intended to be attached to the session root's `framework_module`
+/// slot so that fixture resolution walks through it via `HasFixtures`.
+///
+/// Any failure to locate, read, or parse the module is logged at warn level
+/// so users who end up with an empty framework module (and thus "fixture not
+/// found" errors for `tmp_path`, `monkeypatch`, etc.) can trace the cause.
+fn discover_framework_fixtures(
+    py: Python<'_>,
+    python_version: PythonVersion,
+) -> Option<DiscoveredModule> {
+    let builtins_module = match py.import("karva._builtins") {
+        Ok(module) => module,
+        Err(err) => {
+            tracing::warn!("Failed to import `karva._builtins`: {err}");
+            return None;
+        }
+    };
+
+    let file_path_obj = match builtins_module.getattr("__file__") {
+        Ok(obj) => obj,
+        Err(err) => {
+            tracing::warn!("`karva._builtins` is missing a `__file__` attribute: {err}");
+            return None;
+        }
+    };
+    let file_path_str: String = match file_path_obj.extract() {
+        Ok(path) => path,
+        Err(err) => {
+            tracing::warn!("`karva._builtins.__file__` is not a string: {err}");
+            return None;
+        }
+    };
+    let Some(utf8_path) = Utf8Path::from_path(Path::new(&file_path_str)) else {
+        tracing::warn!("`karva._builtins.__file__` ({file_path_str}) is not valid UTF-8");
+        return None;
+    };
+
+    let source_text = match std::fs::read_to_string(utf8_path) {
+        Ok(text) => text,
+        Err(err) => {
+            tracing::warn!("Failed to read `karva._builtins` source at {utf8_path}: {err}");
+            return None;
+        }
+    };
+
+    let module_path = ModulePath::new_with_name(utf8_path, "karva._builtins".to_string());
+
+    let mut parse_options = ParseOptions::from(Mode::Module);
+    parse_options = parse_options.with_target_version(python_version);
+    let Some(parsed) = parse_unchecked(&source_text, parse_options).try_into_module() else {
+        tracing::warn!("Failed to parse `karva._builtins` as a Python module");
+        return None;
+    };
+
+    let mut framework_module = DiscoveredModule::new_with_source(module_path.clone(), source_text);
+
+    for stmt in parsed.into_syntax().body {
+        let Stmt::FunctionDef(function_def) = stmt else {
+            continue;
+        };
+        if function_def.name.starts_with('_') {
+            continue;
+        }
+        let fixture_name = function_def.name.to_string();
+        let is_gen = is_generator(&function_def);
+        let stmt_rc = Rc::new(function_def);
+        match DiscoveredFixture::try_from_function(
+            py,
+            stmt_rc,
+            &builtins_module,
+            &module_path,
+            is_gen,
+        ) {
+            Ok(fixture) => framework_module.add_fixture(fixture),
+            Err(err) => {
+                tracing::warn!(
+                    "Failed to discover framework fixture `{fixture_name}` from `karva._builtins`: {err}"
+                );
+            }
+        }
+    }
+
+    Some(framework_module)
 }

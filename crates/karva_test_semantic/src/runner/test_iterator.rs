@@ -5,9 +5,7 @@ use std::sync::Arc;
 use pyo3::prelude::*;
 
 use crate::discovery::DiscoveredTestFunction;
-use crate::extensions::fixtures::{
-    FixtureScope, NormalizedFixture, RequiresFixtures, get_builtin_fixture,
-};
+use crate::extensions::fixtures::{NormalizedFixture, RequiresFixtures};
 use crate::extensions::tags::Tags;
 use crate::extensions::tags::parametrize::ParametrizationArgs;
 use crate::runner::fixture_resolver::RuntimeFixtureResolver;
@@ -131,12 +129,8 @@ impl TestVariantIterator {
 }
 
 impl TestVariantIterator {
-    /// Returns the next test variant, creating fresh instances of function-scoped
-    /// built-in fixtures (e.g. `tmp_path`, `monkeypatch`) for each variant.
-    ///
-    /// Built-in fixtures are pre-computed once during construction, but function-scoped
-    /// ones must be fresh per invocation so parametrize combinations don't share state.
-    pub(super) fn next_with_py(&mut self, py: Python<'_>) -> Option<TestVariant> {
+    /// Returns the next test variant for the current parametrize combination.
+    pub(super) fn next_with_py(&mut self, _py: Python<'_>) -> Option<TestVariant> {
         if self.param_index >= self.param_args.len() {
             return None;
         }
@@ -149,12 +143,9 @@ impl TestVariantIterator {
         let variant = TestVariant {
             test: Rc::clone(&self.test),
             params: param_args.values.clone(),
-            fixture_dependencies: fresh_function_scoped_builtins(py, &self.fixture_dependencies),
-            use_fixture_dependencies: fresh_function_scoped_builtins(
-                py,
-                &self.use_fixture_dependencies,
-            ),
-            auto_use_fixtures: fresh_function_scoped_builtins(py, &self.auto_use_fixtures),
+            fixture_dependencies: self.fixture_dependencies.clone(),
+            use_fixture_dependencies: self.use_fixture_dependencies.clone(),
+            auto_use_fixtures: self.auto_use_fixtures.clone(),
             tags: new_tags,
         };
 
@@ -162,28 +153,4 @@ impl TestVariantIterator {
 
         Some(variant)
     }
-}
-
-/// Replace function-scoped built-in fixtures with fresh instances.
-///
-/// When a test has multiple parametrize variants, each variant must receive
-/// independent built-in fixtures (e.g. a separate `tmp_path` directory).
-/// Non-built-in and non-function-scoped fixtures are cloned as-is.
-fn fresh_function_scoped_builtins(
-    py: Python<'_>,
-    fixtures: &[Rc<NormalizedFixture>],
-) -> Vec<Rc<NormalizedFixture>> {
-    fixtures
-        .iter()
-        .map(|f| {
-            if let NormalizedFixture::BuiltIn(builtin) = f.as_ref() {
-                if builtin.scope == FixtureScope::Function {
-                    if let Some(fresh) = get_builtin_fixture(py, &builtin.name) {
-                        return Rc::new(fresh);
-                    }
-                }
-            }
-            Rc::clone(f)
-        })
-        .collect()
 }

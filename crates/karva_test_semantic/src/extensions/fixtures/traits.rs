@@ -39,13 +39,33 @@ impl<'a> HasFixtures<'a> for DiscoveredPackage {
     fn get_fixture(&'a self, fixture_name: &str) -> Option<&'a DiscoveredFixture> {
         self.configuration_module_impl()
             .and_then(|module| module.get_fixture(fixture_name))
+            .or_else(|| {
+                self.framework_module_impl()
+                    .and_then(|module| module.get_fixture(fixture_name))
+            })
     }
 
     fn auto_use_fixtures(&'a self, scopes: &[FixtureScope]) -> Vec<&'a DiscoveredFixture> {
-        let mut fixtures = Vec::new();
+        let mut fixtures: Vec<&'a DiscoveredFixture> = Vec::new();
+        let mut seen: std::collections::HashSet<&str> = std::collections::HashSet::new();
 
+        // User-defined conftest fixtures win on name collision, so they are
+        // collected first and framework fixtures with the same unqualified
+        // name are dropped.
         if let Some(module) = self.configuration_module_impl() {
-            fixtures.extend(module.auto_use_fixtures(scopes));
+            for fixture in module.auto_use_fixtures(scopes) {
+                if seen.insert(fixture.name().function_name()) {
+                    fixtures.push(fixture);
+                }
+            }
+        }
+
+        if let Some(module) = self.framework_module_impl() {
+            for fixture in module.auto_use_fixtures(scopes) {
+                if seen.insert(fixture.name().function_name()) {
+                    fixtures.push(fixture);
+                }
+            }
         }
 
         fixtures

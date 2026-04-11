@@ -21,6 +21,10 @@ pub struct DiscoveredPackage {
 
     /// Optional conftest.py module containing shared fixtures.
     configuration_module: Option<DiscoveredModule>,
+
+    /// Optional synthetic module holding framework-provided fixtures (from
+    /// `karva._builtins`). Only populated on the session root.
+    framework_module: Option<DiscoveredModule>,
 }
 
 impl DiscoveredPackage {
@@ -30,6 +34,7 @@ impl DiscoveredPackage {
             modules: HashMap::new(),
             packages: HashMap::new(),
             configuration_module: None,
+            framework_module: None,
         }
     }
 
@@ -61,6 +66,14 @@ impl DiscoveredPackage {
 
     pub(crate) fn configuration_module_impl(&self) -> Option<&DiscoveredModule> {
         self.configuration_module.as_ref()
+    }
+
+    pub(crate) fn set_framework_module(&mut self, module: Option<DiscoveredModule>) {
+        self.framework_module = module;
+    }
+
+    pub(crate) fn framework_module_impl(&self) -> Option<&DiscoveredModule> {
+        self.framework_module.as_ref()
     }
 
     /// Remove empty modules and packages.

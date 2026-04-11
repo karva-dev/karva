@@ -27,7 +27,7 @@ karva = "karva._karva:karva_run"
 karva-worker = "karva._karva:karva_worker_run"
 
 [dependency-groups]
-dev = ["ruff"]
+dev = ["ruff", "ty"]
 docs = ["zensical==0.0.10"]
 release = ["tbump"]
 
@@ -50,6 +50,7 @@ target-version = "py311"
 [tool.ruff.lint]
 exclude = [
     "python/karva/__main__.py",
+    "python/karva/_vendor/**/*.py",
     "crates/karva_benchmark/resources/test_*.py",
 ]
 select = [
@@ -101,3 +102,9 @@ unfixable = [
     "PLW1510", # automatic fix might obscure issue
     "RUF017",  # Ruff's fix is faster, but I prefer using itertools.chain_from_iterable
 ]
+
+[tool.ty.environment]
+python-version = "3.11"
+
+[tool.ty.src]
+include = ["python"]

@@ -104,6 +104,17 @@ impl ModulePath {
         Some(Self { path, module_name })
     }
 
+    /// Create a new module path with an explicit dotted module name.
+    ///
+    /// Use this when the module name cannot be computed from the file path
+    /// (e.g. framework modules installed into a venv).
+    pub fn new_with_name<P: Into<Utf8PathBuf>>(path: P, module_name: String) -> Self {
+        Self {
+            path: path.into(),
+            module_name,
+        }
+    }
+
     /// Return the dotted module name (e.g., `"tests.test_add"`).
     pub fn module_name(&self) -> &str {
         self.module_name.as_str()
