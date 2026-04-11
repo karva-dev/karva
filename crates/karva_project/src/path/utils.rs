@@ -67,4 +67,51 @@ mod tests {
         let result = absolute("foo/../bar/./baz", "/cwd");
         assert_eq!(result, Utf8PathBuf::from("/cwd/bar/baz"));
     }
+
+    #[test]
+    fn empty_relative_path_returns_cwd() {
+        let result = absolute("", "/home/user");
+        assert_eq!(result, Utf8PathBuf::from("/home/user"));
+    }
+
+    #[test]
+    fn leading_parent_pops_cwd() {
+        let result = absolute("../../other", "/home/user");
+        assert_eq!(result, Utf8PathBuf::from("/other"));
+    }
+
+    #[test]
+    fn parent_past_root_stays_at_root() {
+        // `Utf8PathBuf::pop` on `/` returns false, so extra `..` components
+        // must not escape the filesystem root.
+        let result = absolute("../..", "/");
+        assert_eq!(result, Utf8PathBuf::from("/"));
+    }
+
+    #[test]
+    fn unicode_path_components_are_preserved() {
+        let result = absolute("カルヴァ/tests", "/home/ユーザー");
+        assert_eq!(result, Utf8PathBuf::from("/home/ユーザー/カルヴァ/tests"));
+    }
+
+    #[test]
+    fn path_with_spaces_is_preserved() {
+        let result = absolute("my tests/file.py", "/home/my user");
+        assert_eq!(result, Utf8PathBuf::from("/home/my user/my tests/file.py"));
+    }
+
+    #[test]
+    fn trailing_slash_on_relative_input_is_normalized() {
+        // `camino` components strip trailing slashes, so the result should
+        // match the same input without one.
+        let with = absolute("foo/bar/", "/cwd");
+        let without = absolute("foo/bar", "/cwd");
+        assert_eq!(with, without);
+    }
+
+    #[test]
+    fn dot_only_path_is_cwd() {
+        let result = absolute(".", "/home/user");
+        assert_eq!(result, Utf8PathBuf::from("/home/user"));
+    }
 }
