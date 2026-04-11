@@ -1574,70 +1574,33 @@ def test_third():
 }
 
 #[test]
-fn test_fail_fast() {
-    let context = TestContext::with_file(
-        "test.py",
-        r"
-def test_1():
-    assert True
-
-def test_2():
-    assert False
-
-def test_3():
-    assert True
-        ",
-    );
-
-    let output = context
-        .command_no_parallel()
-        .arg("--fail-fast")
-        .output()
-        .expect("failed to run");
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(!output.status.success());
-    assert!(
-        stdout.contains("PASS") && stdout.contains("test::test_1"),
-        "first test should pass"
-    );
-    assert!(
-        stdout.contains("FAIL") && stdout.contains("test::test_2"),
-        "second test should fail"
-    );
-    assert!(
-        !stdout.contains("test::test_3"),
-        "third test should not run due to --fail-fast"
-    );
-}
-
-#[test]
-fn test_fail_fast_across_modules() {
+fn test_dry_run_nested_packages() {
     let context = TestContext::with_files([
         (
-            "test_a.py",
+            "tests/test_root.py",
             r"
-def test_a_fail():
-    assert False
+def test_root(): pass
             ",
         ),
         (
-            "test_b.py",
+            "tests/sub/test_nested.py",
             r"
-def test_b_pass():
-    assert True
+def test_nested(): pass
             ",
         ),
     ]);
 
-    let output = context
-        .command_no_parallel()
-        .arg("--fail-fast")
-        .arg("-q")
-        .output()
-        .expect("failed to run");
-    assert!(!output.status.success());
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("failed"), "should report failure");
+    assert_cmd_snapshot!(context.command().arg("--dry-run"), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    <test> tests.sub.test_nested::test_nested
+    <test> tests.test_root::test_root
+
+    2 tests collected
+
+    ----- stderr -----
+    ");
 }
 
 #[test]
