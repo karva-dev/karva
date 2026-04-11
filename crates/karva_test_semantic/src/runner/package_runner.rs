@@ -57,15 +57,17 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
     ///
     /// The main entrypoint for actual test execution.
     pub(crate) fn execute(&self, py: Python<'_>, session: &DiscoveredPackage) {
-        // Get session-scoped auto-use fixtures
-        if let Some(config_module) = session.configuration_module_impl() {
-            let mut resolver = RuntimeFixtureResolver::new(&[], config_module);
-            let session_auto_use_fixtures =
-                resolver.get_normalized_auto_use_fixtures(py, FixtureScope::Session);
-            let auto_use_errors = self.run_fixtures(py, &session_auto_use_fixtures);
-            for error in auto_use_errors {
-                report_fixture_failure(self.context, py, error);
-            }
+        // Resolve session-scoped auto-use fixtures using the session package
+        // itself as the `HasFixtures` source so that the walk includes both
+        // the user conftest at the session root and the framework module. No
+        // `if let Some(...)` gate: the session always exists, and if neither
+        // slot contributes any autouse fixtures the walk returns an empty vec.
+        let mut resolver = RuntimeFixtureResolver::new(&[], session);
+        let session_auto_use_fixtures =
+            resolver.get_normalized_auto_use_fixtures(py, FixtureScope::Session);
+        let auto_use_errors = self.run_fixtures(py, &session_auto_use_fixtures);
+        for error in auto_use_errors {
+            report_fixture_failure(self.context, py, error);
         }
 
         self.execute_package(py, session, &[]);
@@ -401,17 +403,16 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
             snapshot_test_name,
         );
 
-        let py_dict = PyDict::new(py);
-        for (key, value) in &function_arguments {
-            let _ = py_dict.set_item(key, value.as_ref());
-        }
-
         let is_async = stmt_function_def.is_async
             && !crate::utils::patch_async_test_function(py, &function).unwrap_or(false);
         let run_test = || {
             let result = if function_arguments.is_empty() {
                 function.call0(py)
             } else {
+                let py_dict = PyDict::new(py);
+                for (key, value) in &function_arguments {
+                    py_dict.set_item(key, value.as_ref())?;
+                }
                 function.call(py, (), Some(&py_dict))
             };
             if is_async {

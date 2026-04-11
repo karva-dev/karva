@@ -30,6 +30,9 @@ pub struct NormalizedFixture {
     pub(crate) is_generator: bool,
 
     /// Reference to the Python callable that produces the fixture value.
+    /// Wrapped in ``Rc`` so ``NormalizedFixture`` stays cheaply ``Clone``
+    /// without needing a Python token (``Py<T>`` only supports
+    /// ``clone_ref(py)``).
     pub(crate) py_function: Rc<Py<PyAny>>,
 
     /// AST representation of the fixture function definition.
@@ -71,7 +74,7 @@ impl NormalizedFixture {
         let kwargs_dict = PyDict::new(py);
 
         for (key, value) in fixture_arguments {
-            let _ = kwargs_dict.set_item(key.clone(), value);
+            kwargs_dict.set_item(key, value)?;
         }
 
         let result = if kwargs_dict.is_empty() {

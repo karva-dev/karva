@@ -41,7 +41,9 @@ pub struct DiscoveredFixture {
     /// Whether this fixture is automatically used without explicit request.
     auto_use: bool,
 
-    /// Reference to the actual Python callable object.
+    /// Reference to the actual Python callable object. Wrapped in ``Rc`` so
+    /// that ``DiscoveredFixture`` stays cheaply ``Clone`` without needing a
+    /// Python token (``Py<T>`` only supports ``clone_ref(py)``).
     function: Rc<Py<PyAny>>,
 
     /// Whether this fixture is a generator (uses yield for teardown).
