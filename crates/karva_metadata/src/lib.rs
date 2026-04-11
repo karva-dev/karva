@@ -9,7 +9,7 @@ mod options;
 mod pyproject;
 mod settings;
 
-pub use max_fail::{MaxFail, MaxFailParseError};
+pub use max_fail::MaxFail;
 pub use options::{
     Options, OutputFormat, ProjectOptionsOverrides, SrcOptions, TerminalOptions, TestOptions,
 };

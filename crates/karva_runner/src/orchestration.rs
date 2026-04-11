@@ -391,11 +391,11 @@ fn inner_cli_args(settings: &ProjectSettings, args: &SubTestCommand) -> Vec<Stri
         cli_args.push(arg.to_string());
     }
 
-    // Forward the resolved max-fail as `--max-fail=<n|all>`. This replaces the
-    // legacy `--fail-fast` pass-through so workers receive exactly the limit
-    // the main process computed from CLI args and config.
-    if settings.test().max_fail.has_limit() {
-        cli_args.push(format!("--max-fail={}", settings.test().max_fail));
+    // Forward the resolved max-fail limit to workers. Omitting the flag
+    // means "no limit", which matches the default when the user supplies
+    // neither `--max-fail` nor a `max-fail` entry in `karva.toml`.
+    if let Some(limit) = settings.test().max_fail.limit() {
+        cli_args.push(format!("--max-fail={limit}"));
     }
 
     if settings.terminal().show_python_output {

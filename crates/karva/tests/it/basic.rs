@@ -1522,11 +1522,11 @@ def test_fourth_skipped():
     "#);
 }
 
-/// `--max-fail=all` disables the limit, so every test runs even when some fail.
+/// `--no-fail-fast` disables the limit, so every test runs even when some fail.
 #[test]
-fn test_max_fail_all_runs_every_test() {
+fn test_no_fail_fast_runs_every_test() {
     let context = TestContext::with_file(
-        "test_max_fail_all.py",
+        "test_no_fail_fast.py",
         r"
 def test_a():
     assert False, 'a boom'
@@ -1539,26 +1539,26 @@ def test_c():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--max-fail=all"), @r#"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--no-fail-fast"), @r#"
     success: false
     exit_code: 1
     ----- stdout -----
         Starting 3 tests across 1 worker
-            FAIL [TIME] test_max_fail_all::test_a
-            FAIL [TIME] test_max_fail_all::test_b
-            PASS [TIME] test_max_fail_all::test_c
+            FAIL [TIME] test_no_fail_fast::test_a
+            FAIL [TIME] test_no_fail_fast::test_b
+            PASS [TIME] test_no_fail_fast::test_c
 
     diagnostics:
 
     error[test-failure]: Test `test_a` failed
-     --> test_max_fail_all.py:2:5
+     --> test_no_fail_fast.py:2:5
       |
     2 | def test_a():
       |     ^^^^^^
     3 |     assert False, 'a boom'
       |
     info: Test failed here
-     --> test_max_fail_all.py:3:5
+     --> test_no_fail_fast.py:3:5
       |
     2 | def test_a():
     3 |     assert False, 'a boom'
@@ -1569,7 +1569,7 @@ def test_c():
     info: a boom
 
     error[test-failure]: Test `test_b` failed
-     --> test_max_fail_all.py:5:5
+     --> test_no_fail_fast.py:5:5
       |
     3 |     assert False, 'a boom'
     4 |
@@ -1578,7 +1578,7 @@ def test_c():
     6 |     assert False, 'b boom'
       |
     info: Test failed here
-     --> test_max_fail_all.py:6:5
+     --> test_no_fail_fast.py:6:5
       |
     5 | def test_b():
     6 |     assert False, 'b boom'
