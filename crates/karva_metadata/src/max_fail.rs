@@ -11,9 +11,10 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 /// lets every test run regardless of failures. `Count(n)` stops scheduling
 /// once `n` tests have failed, which generalizes the legacy `--fail-fast`
 /// flag (equivalent to `Count(1)`).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum MaxFail {
     /// Never stop; run every test regardless of how many fail.
+    #[default]
     All,
 
     /// Stop after this many tests have failed.
@@ -58,13 +59,6 @@ impl MaxFail {
     /// This is how the legacy `--fail-fast` boolean is surfaced internally.
     pub fn is_fail_fast(self) -> bool {
         matches!(self, Self::Count(limit) if limit.get() == 1)
-    }
-}
-
-impl Default for MaxFail {
-    /// Karva's default is to run every test regardless of how many fail.
-    fn default() -> Self {
-        Self::All
     }
 }
 

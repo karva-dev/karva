@@ -61,9 +61,9 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
         }
     }
 
-    /// Returns `true` when the configured `max-fail` budget has been
-    /// reached, signalling that the runner should stop scheduling tests.
-    fn budget_exhausted(&self) -> bool {
+    /// Returns `true` when the configured `max-fail` limit has been reached,
+    /// signalling that the runner should stop scheduling tests.
+    fn max_fail_reached(&self) -> bool {
         self.context
             .settings()
             .test()
@@ -137,12 +137,12 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
                 self.record_outcome(variant_passed);
                 passed &= variant_passed;
 
-                if self.budget_exhausted() {
+                if self.max_fail_reached() {
                     break;
                 }
             }
 
-            if self.budget_exhausted() {
+            if self.max_fail_reached() {
                 break;
             }
         }
@@ -182,16 +182,16 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
         for module in package.modules().values() {
             passed &= self.execute_module(py, module, &new_parents);
 
-            if self.budget_exhausted() {
+            if self.max_fail_reached() {
                 break;
             }
         }
 
-        if !self.budget_exhausted() {
+        if !self.max_fail_reached() {
             for sub_package in package.packages().values() {
                 passed &= self.execute_package(py, sub_package, &new_parents);
 
-                if self.budget_exhausted() {
+                if self.max_fail_reached() {
                     break;
                 }
             }

@@ -1467,7 +1467,59 @@ def test_fourth_skipped():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--max-fail=2"));
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--max-fail=2"), @r#"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+        Starting 4 tests across 1 worker
+            FAIL [TIME] test_max_fail::test_first_fail
+            FAIL [TIME] test_max_fail::test_second_fail
+
+    diagnostics:
+
+    error[test-failure]: Test `test_first_fail` failed
+     --> test_max_fail.py:2:5
+      |
+    2 | def test_first_fail():
+      |     ^^^^^^^^^^^^^^^
+    3 |     assert False, 'boom 1'
+      |
+    info: Test failed here
+     --> test_max_fail.py:3:5
+      |
+    2 | def test_first_fail():
+    3 |     assert False, 'boom 1'
+      |     ^^^^^^^^^^^^^^^^^^^^^^
+    4 |
+    5 | def test_second_fail():
+      |
+    info: boom 1
+
+    error[test-failure]: Test `test_second_fail` failed
+     --> test_max_fail.py:5:5
+      |
+    3 |     assert False, 'boom 1'
+    4 |
+    5 | def test_second_fail():
+      |     ^^^^^^^^^^^^^^^^
+    6 |     assert False, 'boom 2'
+      |
+    info: Test failed here
+     --> test_max_fail.py:6:5
+      |
+    5 | def test_second_fail():
+    6 |     assert False, 'boom 2'
+      |     ^^^^^^^^^^^^^^^^^^^^^^
+    7 |
+    8 | def test_third_fail():
+      |
+    info: boom 2
+
+    ────────────
+         Summary [TIME] 2 tests run: 0 passed, 2 failed, 0 skipped
+
+    ----- stderr -----
+    "#);
 }
 
 /// `--max-fail=all` disables the limit, so every test runs even when some fail.
@@ -1487,7 +1539,60 @@ def test_c():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--max-fail=all"));
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--max-fail=all"), @r#"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+        Starting 3 tests across 1 worker
+            FAIL [TIME] test_max_fail_all::test_a
+            FAIL [TIME] test_max_fail_all::test_b
+            PASS [TIME] test_max_fail_all::test_c
+
+    diagnostics:
+
+    error[test-failure]: Test `test_a` failed
+     --> test_max_fail_all.py:2:5
+      |
+    2 | def test_a():
+      |     ^^^^^^
+    3 |     assert False, 'a boom'
+      |
+    info: Test failed here
+     --> test_max_fail_all.py:3:5
+      |
+    2 | def test_a():
+    3 |     assert False, 'a boom'
+      |     ^^^^^^^^^^^^^^^^^^^^^^
+    4 |
+    5 | def test_b():
+      |
+    info: a boom
+
+    error[test-failure]: Test `test_b` failed
+     --> test_max_fail_all.py:5:5
+      |
+    3 |     assert False, 'a boom'
+    4 |
+    5 | def test_b():
+      |     ^^^^^^
+    6 |     assert False, 'b boom'
+      |
+    info: Test failed here
+     --> test_max_fail_all.py:6:5
+      |
+    5 | def test_b():
+    6 |     assert False, 'b boom'
+      |     ^^^^^^^^^^^^^^^^^^^^^^
+    7 |
+    8 | def test_c():
+      |
+    info: b boom
+
+    ────────────
+         Summary [TIME] 3 tests run: 1 passed, 2 failed, 0 skipped
+
+    ----- stderr -----
+    "#);
 }
 
 /// `--max-fail=1` is the generalized form of `--fail-fast` and should stop
@@ -1508,7 +1613,41 @@ def test_third():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--max-fail=1"));
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--max-fail=1"), @r#"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+        Starting 3 tests across 1 worker
+            PASS [TIME] test_max_fail_one::test_first
+            FAIL [TIME] test_max_fail_one::test_second
+
+    diagnostics:
+
+    error[test-failure]: Test `test_second` failed
+     --> test_max_fail_one.py:5:5
+      |
+    3 |     assert True
+    4 |
+    5 | def test_second():
+      |     ^^^^^^^^^^^
+    6 |     assert False, 'stop here'
+      |
+    info: Test failed here
+     --> test_max_fail_one.py:6:5
+      |
+    5 | def test_second():
+    6 |     assert False, 'stop here'
+      |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+    7 |
+    8 | def test_third():
+      |
+    info: stop here
+
+    ────────────
+         Summary [TIME] 2 tests run: 1 passed, 1 failed, 0 skipped
+
+    ----- stderr -----
+    "#);
 }
 
 #[test]
