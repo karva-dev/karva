@@ -9,6 +9,9 @@ The following adaptations were made:
 
 - ``PytestWarning`` is replaced with ``UserWarning``.
 - Imports of unused pytest helpers (``assert_never``, ``skip``) are dropped.
+- ``_ignore_error``, ``_IGNORED_ERRORS``, ``_IGNORED_WINERRORS`` are dropped:
+  they are copied from CPython's ``pathlib`` for pytest's symlink-scan code
+  path, which is not vendored here.
 
 See the pytest license block in this repository's LICENSE file for the
 applicable copyright notice.
@@ -26,7 +29,6 @@ import types
 import uuid
 import warnings
 from collections.abc import Callable, Iterable, Iterator
-from errno import EBADF, ELOOP, ENOENT, ENOTDIR
 from functools import partial
 from pathlib import Path, PurePath
 from typing import Any, TypeVar
@@ -34,24 +36,6 @@ from typing import Any, TypeVar
 LOCK_TIMEOUT = 60 * 60 * 24 * 3
 
 _AnyPurePath = TypeVar("_AnyPurePath", bound=PurePath)
-
-# The following constants and helpers were copied from cpython 3.9
-# Lib/pathlib.py file.
-
-# EBADF - guard against macOS `stat` throwing EBADF
-_IGNORED_ERRORS = (ENOENT, ENOTDIR, EBADF, ELOOP)
-
-_IGNORED_WINERRORS = (
-    21,  # ERROR_NOT_READY - drive exists but is not accessible
-    1921,  # ERROR_CANT_RESOLVE_FILENAME - fix for broken symlink pointing to itself
-)
-
-
-def _ignore_error(exception: Exception) -> bool:
-    return (
-        getattr(exception, "errno", None) in _IGNORED_ERRORS
-        or getattr(exception, "winerror", None) in _IGNORED_WINERRORS
-    )
 
 
 def get_lock_path(path: _AnyPurePath) -> _AnyPurePath:

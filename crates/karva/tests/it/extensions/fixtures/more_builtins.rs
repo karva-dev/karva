@@ -874,7 +874,7 @@ def test_no_such_fixture(not_a_real_fixture):
 
     // Intentionally use the full (non-quiet) output so that the missing-fixture
     // diagnostic is captured in the snapshot — `-q` elides per-test diagnostics.
-    assert_cmd_snapshot!(context.command_no_parallel(), @"
+    assert_cmd_snapshot!(context.command_no_parallel(), @r"
     success: false
     exit_code: 1
     ----- stdout -----
@@ -894,6 +894,86 @@ def test_no_such_fixture(not_a_real_fixture):
 
     ────────────
          Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_session_autouse_can_depend_on_framework_fixture() {
+    // Regression for the session autouse gate: a user-defined session-scope
+    // autouse fixture that depends on a framework fixture (`tmp_path_factory`)
+    // must resolve correctly. Before the gate was dropped the session-autouse
+    // walk only looked at a user conftest's fixtures, so dependency resolution
+    // could not reach `framework_module`.
+    let context = TestContext::with_files([
+        (
+            "conftest.py",
+            r#"
+import karva
+
+@karva.fixture(scope="session", auto_use=True)
+def session_autouse(tmp_path_factory):
+    tmp_path_factory.mktemp("session-auto")
+    return "ran"
+"#,
+        ),
+        (
+            "test_session.py",
+            r"
+def test_ran():
+    pass
+",
+        ),
+    ]);
+
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+        Starting 1 test across 1 worker
+            PASS [TIME] test_session::test_ran
+
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_derive_importpath_regression_from_pytest_issue_1338() {
+    // Regression equivalent to pytest's `test_issue1338_name_resolving` — the
+    // `delattr("dotted.import.path")` form must successfully traverse a
+    // package boundary where the final attribute is defined by a module whose
+    // parent is another module. We substitute `os.path.defpath` for pytest's
+    // `requests.sessions.Session.request` so the test does not require an
+    // external dependency: `os.path` is itself a submodule resolved via
+    // `importlib.import_module` inside `derive_importpath`, giving the same
+    // resolution path.
+    let context = TestContext::with_file(
+        "test.py",
+        r#"
+import karva
+
+
+def test_delattr_resolves_submodule_attr():
+    mp = karva.MockEnv()
+    try:
+        mp.delattr("os.path.defpath")
+        import os.path as ospath
+        assert not hasattr(ospath, "defpath")
+    finally:
+        mp.undo()
+"#,
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-q"), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");

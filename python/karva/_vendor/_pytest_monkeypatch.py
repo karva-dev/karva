@@ -205,7 +205,7 @@ class MockEnv:
         __tracebackhide__ = True
         import inspect
 
-        if isinstance(name, _NotSetType):
+        if name is _NOTSET:
             if not isinstance(target, str):
                 raise TypeError(
                     "use delattr(target, name) or "
