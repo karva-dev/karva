@@ -1,15 +1,15 @@
 """Record warnings during test function execution.
 
 Vendored from pytest's ``_pytest/recwarn.py`` (commit 8ecf49ec2). Only the
-``WarningsRecorder`` class and the ``recwarn`` fixture are included; the
-``WarningsChecker``/``warns``/``deprecated_call`` helpers are intentionally
-omitted because karva does not yet expose ``pytest.warns``.
+``WarningsRecorder`` class is included; the ``WarningsChecker``/``warns``/
+``deprecated_call`` helpers are intentionally omitted because karva does
+not yet expose ``pytest.warns``. The ``recwarn`` fixture wrapper lives in
+``karva._builtins`` where the framework-fixture discoverer can see it.
 
 The following adaptations were made:
 
 - The ``_ispytest`` constructor parameter and ``check_ispytest`` call are
   dropped.
-- ``fixture`` is imported from ``karva._karva`` instead of ``_pytest.fixtures``.
 
 See the pytest license block in this repository's LICENSE file for the
 applicable copyright notice.
@@ -19,25 +19,12 @@ from __future__ import annotations
 
 import builtins
 import warnings
-from collections.abc import Generator, Iterator
+from collections.abc import Iterator
 from types import TracebackType
 from typing import TYPE_CHECKING
 
-from karva._karva import fixture
-
 if TYPE_CHECKING:
     from typing import Self
-
-
-@fixture
-def recwarn() -> Generator[WarningsRecorder, None, None]:
-    """Return a :class:`WarningsRecorder` instance that records all warnings
-    emitted by test functions.
-    """
-    wrec = WarningsRecorder()
-    with wrec:
-        warnings.simplefilter("default")
-        yield wrec
 
 
 class WarningsRecorder(warnings.catch_warnings):
@@ -120,4 +107,4 @@ class WarningsRecorder(warnings.catch_warnings):
         self._entered = False
 
 
-__all__ = ["WarningsRecorder", "recwarn"]
+__all__ = ["WarningsRecorder"]

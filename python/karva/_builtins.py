@@ -260,8 +260,11 @@ class _CapLog:
 
     def __init__(self, handler: _CapLogHandler) -> None:
         self._handler: _CapLogHandler = handler
-        self._saved_level: int | None = None
-        self._saved_level_logger: str | None = None
+        # Records the original level for every logger that ``set_level`` has
+        # touched, keyed by logger name (``None`` for the root logger). Stored
+        # so teardown can restore every touched logger, not just the first.
+        self._saved_levels: dict[str | None, int] = {}
+        self._saved_handler_level: int | None = None
 
     @property
     def records(self) -> list[logging.LogRecord]:
@@ -285,13 +288,27 @@ class _CapLog:
         return "\n".join(formatter.format(r) for r in self._handler.records)
 
     def set_level(self, level: int, logger: str | None = None) -> None:
-        """Set the capture level for the remainder of the test."""
+        """Set the capture level for the remainder of the test.
+
+        Remembers the original level of every logger touched so the caplog
+        teardown can restore all of them.
+        """
         target = logging.getLogger(logger)
-        if self._saved_level is None:
-            self._saved_level = target.level
-            self._saved_level_logger = logger
+        if logger not in self._saved_levels:
+            self._saved_levels[logger] = target.level
+        if self._saved_handler_level is None:
+            self._saved_handler_level = self._handler.level
         target.setLevel(level)
         self._handler.setLevel(level)
+
+    def _restore_levels(self) -> None:
+        """Restore every logger that was touched via ``set_level``."""
+        for logger_name, original_level in self._saved_levels.items():
+            logging.getLogger(logger_name).setLevel(original_level)
+        self._saved_levels.clear()
+        if self._saved_handler_level is not None:
+            self._handler.setLevel(self._saved_handler_level)
+            self._saved_handler_level = None
 
     def at_level(self, level: int, logger: str | None = None) -> _CapLogAtLevel:
         """Context manager that temporarily sets the capture level."""
@@ -369,8 +386,7 @@ def caplog() -> Generator[_CapLog, None, None]:
 
     root_logger.removeHandler(handler)
     logging.disable(saved_disable)
-    if cap._saved_level is not None:
-        logging.getLogger(cap._saved_level_logger).setLevel(cap._saved_level)
+    cap._restore_levels()
 
 
 @fixture

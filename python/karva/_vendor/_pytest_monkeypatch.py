@@ -10,9 +10,15 @@ following adaptations were made:
   ``syspath_prepend`` and the ``PytestWarning`` warning category are dropped.
 - ``NOTSET``/``NotSetType`` are inlined as ``_NOTSET``/``_NotSetType`` instead
   of being imported from ``_pytest.compat``.
-- ``fixture`` is imported from ``karva._karva`` instead of ``_pytest.fixtures``.
 - A small ``__repr__`` is added so that karva's parametrize display shows the
   stable ``<MockEnv object>`` string instead of the default Python object repr.
+- ``__enter__``/``__exit__`` are added so that ``MockEnv()`` instances can be
+  used directly as context managers (pytest only exposes the classmethod
+  ``MonkeyPatch.context()``).
+- The module-level ``@fixture def monkeypatch(): ...`` wrapper is not present
+  here — karva's framework-fixture discoverer only parses
+  ``python/karva/_builtins.py``, so the fixture wrapper lives there and
+  imports ``MockEnv`` from this module.
 
 See the pytest license block in this repository's LICENSE file for the
 applicable copyright notice.
@@ -30,8 +36,6 @@ from collections.abc import Generator, MutableMapping
 from contextlib import contextmanager
 from typing import Any, Final, TypeVar, final, overload
 
-from karva._karva import fixture
-
 
 class _NotSetType(enum.Enum):
     token = 0
@@ -44,36 +48,6 @@ RE_IMPORT_ERROR_NAME = re.compile(r"^No module named (.*)$")
 
 K = TypeVar("K")
 V = TypeVar("V")
-
-
-@fixture
-def monkeypatch() -> Generator[MockEnv, None, None]:
-    """A convenient fixture for monkey-patching.
-
-    The fixture provides these methods to modify objects, dictionaries, or
-    :data:`os.environ`:
-
-    * :meth:`monkeypatch.setattr(obj, name, value, raising=True) <karva.MockEnv.setattr>`
-    * :meth:`monkeypatch.delattr(obj, name, raising=True) <karva.MockEnv.delattr>`
-    * :meth:`monkeypatch.setitem(mapping, name, value) <karva.MockEnv.setitem>`
-    * :meth:`monkeypatch.delitem(obj, name, raising=True) <karva.MockEnv.delitem>`
-    * :meth:`monkeypatch.setenv(name, value, prepend=None) <karva.MockEnv.setenv>`
-    * :meth:`monkeypatch.delenv(name, raising=True) <karva.MockEnv.delenv>`
-    * :meth:`monkeypatch.syspath_prepend(path) <karva.MockEnv.syspath_prepend>`
-    * :meth:`monkeypatch.chdir(path) <karva.MockEnv.chdir>`
-    * :meth:`monkeypatch.context() <karva.MockEnv.context>`
-
-    All modifications will be undone after the requesting test function or
-    fixture has finished. The ``raising`` parameter determines if a
-    :class:`KeyError` or :class:`AttributeError` will be raised if the
-    set/deletion operation does not have the specified target.
-
-    To undo modifications done by the fixture in a contained scope,
-    use :meth:`context() <karva.MockEnv.context>`.
-    """
-    mpatch = MockEnv()
-    yield mpatch
-    mpatch.undo()
 
 
 def resolve(name: str) -> object:
@@ -354,4 +328,4 @@ class MockEnv:
         self.undo()
 
 
-__all__ = ["MockEnv", "monkeypatch"]
+__all__ = ["MockEnv"]
