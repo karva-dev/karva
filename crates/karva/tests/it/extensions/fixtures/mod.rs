@@ -5,3 +5,4 @@ pub mod decorators;
 pub mod generators;
 pub mod invalid;
 pub mod parametrized;
+pub mod pytest_monkeypatch;
