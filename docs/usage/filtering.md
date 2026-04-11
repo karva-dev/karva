@@ -26,10 +26,10 @@ iff the expression evaluates to true for it; otherwise it is skipped.
 A filter expression is built from predicates combined with boolean
 operators. Karva currently supports two predicates:
 
-| Predicate         | Evaluated against            |
-| ----------------- | ---------------------------- |
-| `test(<matcher>)` | The fully qualified test name, e.g. `mod::sub::test_login` |
-| `tag(<matcher>)`  | Each custom tag on the test; matches if *any* tag matches  |
+- `test(<matcher>)` — evaluated against the fully qualified test name,
+  e.g. `mod::sub::test_login`.
+- `tag(<matcher>)` — evaluated against each custom tag on the test;
+  matches if *any* tag matches.
 
 ## Matchers
 
@@ -37,13 +37,11 @@ A matcher describes how a predicate's argument is compared against the
 value it is evaluated over. There are four matcher kinds, distinguished
 by a single-character prefix:
 
-| Prefix        | Kind       | Meaning                                 |
-| ------------- | ---------- | --------------------------------------- |
-| `=`           | Exact      | Value must equal the pattern exactly.   |
-| `~`           | Substring  | Pattern must appear anywhere in value.  |
-| `/.../`       | Regex      | Value must match the [Rust regex].      |
-| `#`           | Glob       | Value must match the [glob pattern].    |
-| *(no prefix)* | Default    | Substring for `test()`, exact for `tag()`. |
+- `=foo` — exact: the value must equal the pattern exactly.
+- `~foo` — substring: the pattern must appear anywhere in the value.
+- `/foo/` — regex: the value must match the [Rust regex].
+- `#foo` — glob: the value must match the [glob pattern].
+- no prefix — defaults to substring for `test()` and exact for `tag()`.
 
 Examples:
 
@@ -75,16 +73,15 @@ without needing double escaping.
 
 ## Operators
 
-| Operator                 | Meaning         | Example                            |
-| ------------------------ | --------------- | ---------------------------------- |
-| `&` or `and`             | Logical AND     | `tag(slow) & test(~login)`         |
-| <code>&#124;</code> or `or` | Logical OR    | `tag(slow) or tag(fast)`           |
-| `not` or `!`             | Logical NOT     | `not tag(flaky)`                   |
-| `-`                      | Difference (and-not) | `tag(slow) - tag(flaky)`      |
-| `( … )`                  | Grouping        | `(tag(a) | tag(b)) & tag(c)`       |
+- `&` (or `and`) — logical AND, e.g. `tag(slow) & test(~login)`
+- `|` (or `or`) — logical OR, e.g. `tag(slow) or tag(fast)`
+- `not` (or `!`) — logical NOT, e.g. `not tag(flaky)`
+- `-` — difference, shorthand for "and not", e.g. `tag(slow) - tag(flaky)`
+- `( … )` — grouping, e.g. `(tag(a) or tag(b)) and tag(c)`
 
-Precedence, from tightest to loosest: grouping → `not` → `&` / `-` → `|`.
-So `tag(a) | tag(b) & tag(c)` parses as `tag(a) | (tag(b) & tag(c))`.
+Precedence, from tightest to loosest: grouping, then `not`, then `&` and
+`-`, then `|`. So `tag(a) | tag(b) & tag(c)` parses as
+`tag(a) | (tag(b) & tag(c))`.
 
 The `-` operator is shorthand for *and not*: `A - B` is equivalent to
 `A & not B`. It is especially convenient for subtracting flaky or
@@ -95,17 +92,15 @@ platform-gated tests from a broader selection.
 Older releases of karva exposed separate `-t` / `--tag` and `-m` /
 `--match` flags. Both have been replaced by `-E` / `--filter`:
 
-| Before                                    | After                                    |
-| ----------------------------------------- | ---------------------------------------- |
-| `-t slow`                                 | `-E 'tag(slow)'`                         |
-| `-t 'not slow'`                           | `-E 'not tag(slow)'`                     |
-| `-t 'slow and integration'`               | `-E 'tag(slow) & tag(integration)'`     |
-| `-t 'slow or integration'`                | `-E 'tag(slow) | tag(integration)'`     |
-| `-t '(slow or fast) and not flaky'`       | `-E '(tag(slow) | tag(fast)) - tag(flaky)'` |
-| `-m auth`                                 | `-E 'test(/auth/)'`                      |
-| `-m '^test::test_login'`                  | `-E 'test(/^test::test_login/)'`        |
-| `-m 'slow|fast'`                          | `-E 'test(/slow|fast/)'`                |
-| `-t slow -m auth`                         | `-E 'tag(slow) & test(/auth/)'`         |
+- `-t slow` becomes `-E 'tag(slow)'`
+- `-t 'not slow'` becomes `-E 'not tag(slow)'`
+- `-t 'slow and integration'` becomes `-E 'tag(slow) & tag(integration)'`
+- `-t 'slow or integration'` becomes `-E 'tag(slow) or tag(integration)'`
+- `-t '(slow or fast) and not flaky'` becomes `-E '(tag(slow) or tag(fast)) - tag(flaky)'`
+- `-m auth` becomes `-E 'test(/auth/)'`
+- `-m '^test::test_login'` becomes `-E 'test(/^test::test_login/)'`
+- `-m 'slow|fast'` becomes `-E 'test(/slow|fast/)'`
+- `-t slow -m auth` becomes `-E 'tag(slow) & test(/auth/)'`
 
 Everything the old flags supported is expressible with the new syntax,
 and the new syntax also adds exact, substring, and glob matchers.
@@ -132,6 +127,6 @@ string      ::= '"' … '"'
 identifier  ::= [A-Za-z0-9_.:*?\[\]{}^$]+
 ```
 
-[nextest's filtersets]: https://nexte.st/docs/filtersets/
-[Rust regex]: https://docs.rs/regex/latest/regex/#syntax
 [glob pattern]: https://docs.rs/globset/latest/globset/#syntax
+[nextest's filtersets]: https://nexte.st/docs/filtersets/
+[rust regex]: https://docs.rs/regex/latest/regex/#syntax
