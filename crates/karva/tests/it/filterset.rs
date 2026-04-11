@@ -10,8 +10,6 @@ def test_beta():
     assert True
 ";
 
-// ── test() predicate ───────────────────────────────────────────────────
-
 #[test]
 fn filterset_test_substring() {
     let context = TestContext::with_file("test.py", TWO_TESTS);
@@ -414,8 +412,6 @@ def test_signup():
     "
     );
 }
-
-// ── tag() predicate ────────────────────────────────────────────────────
 
 #[test]
 fn filterset_tag_include() {
@@ -862,8 +858,6 @@ def test_with_custom_marks(x):
     ");
 }
 
-// ── Combined test() and tag() ──────────────────────────────────────────
-
 const MIXED: &str = r"
 import karva
 
@@ -948,8 +942,6 @@ fn filterset_parenthesized_or_with_and() {
     "
     );
 }
-
-// ── Error reporting ────────────────────────────────────────────────────
 
 #[test]
 fn filterset_invalid_regex() {
