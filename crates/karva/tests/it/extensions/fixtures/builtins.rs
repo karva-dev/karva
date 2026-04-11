@@ -947,7 +947,7 @@ fn test_monkeypatch_setattr_non_absolute_path() {
 import karva
 
 def test_setattr_non_absolute(monkeypatch):
-    with karva.raises(AttributeError, match="must be absolute import path string"):
+    with karva.raises(TypeError, match="must be absolute import path string"):
         monkeypatch.setattr("simple_name", "value")
         "#,
     );
@@ -967,33 +967,6 @@ def test_setattr_non_absolute(monkeypatch):
 }
 
 #[test]
-fn test_monkeypatch_delattr_string_target_with_name() {
-    let context = TestContext::with_file(
-        "test.py",
-        r#"
-import karva
-
-def test_delattr_string_with_name(monkeypatch):
-    with karva.raises(AttributeError, match="use delattr"):
-        monkeypatch.delattr("os.sep", "extra_name")
-        "#,
-    );
-
-    assert_cmd_snapshot!(context.command(), @"
-    success: true
-    exit_code: 0
-    ----- stdout -----
-        Starting 1 test across 1 worker
-            PASS [TIME] test::test_delattr_string_with_name(monkeypatch=<MockEnv object>)
-
-    ────────────
-         Summary [TIME] 1 test run: 1 passed, 0 skipped
-
-    ----- stderr -----
-    ");
-}
-
-#[test]
 fn test_monkeypatch_delattr_missing_name() {
     let context = TestContext::with_file(
         "test.py",
@@ -1003,7 +976,7 @@ import karva
 def test_delattr_no_name(monkeypatch):
     class A:
         x = 1
-    with karva.raises(AttributeError, match="use delattr"):
+    with karva.raises(TypeError, match="use delattr"):
         monkeypatch.delattr(A)
         "#,
     );
@@ -1319,7 +1292,7 @@ def test_recwarn_captures(recwarn):
     exit_code: 0
     ----- stdout -----
         Starting 1 test across 1 worker
-            PASS [TIME] test::test_recwarn_captures(recwarn=<WarningsChecker object>)
+            PASS [TIME] test::test_recwarn_captures(recwarn=WarningsRecorder(record=True))
 
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
@@ -1405,7 +1378,7 @@ def test_recwarn_pop(recwarn):
     exit_code: 0
     ----- stdout -----
         Starting 1 test across 1 worker
-            PASS [TIME] test::test_recwarn_pop(recwarn=<WarningsChecker object>)
+            PASS [TIME] test::test_recwarn_pop(recwarn=WarningsRecorder(record=True))
 
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
@@ -1546,7 +1519,7 @@ def test_recwarn_clear(recwarn):
     exit_code: 0
     ----- stdout -----
         Starting 1 test across 1 worker
-            PASS [TIME] test::test_recwarn_clear(recwarn=<WarningsChecker object>)
+            PASS [TIME] test::test_recwarn_clear(recwarn=WarningsRecorder(record=True))
 
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
@@ -1667,7 +1640,7 @@ def test_recwarn_pop_no_match(recwarn):
     exit_code: 0
     ----- stdout -----
         Starting 1 test across 1 worker
-            PASS [TIME] test::test_recwarn_pop_no_match(recwarn=<WarningsChecker object>)
+            PASS [TIME] test::test_recwarn_pop_no_match(recwarn=WarningsRecorder(record=True))
 
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
@@ -1724,7 +1697,7 @@ def test_recwarn_getitem(recwarn):
     exit_code: 0
     ----- stdout -----
         Starting 1 test across 1 worker
-            PASS [TIME] test::test_recwarn_getitem(recwarn=<WarningsChecker object>)
+            PASS [TIME] test::test_recwarn_getitem(recwarn=WarningsRecorder(record=True))
 
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
@@ -1781,7 +1754,7 @@ def test_recwarn_iter(recwarn):
     exit_code: 0
     ----- stdout -----
         Starting 1 test across 1 worker
-            PASS [TIME] test::test_recwarn_iter(recwarn=<WarningsChecker object>)
+            PASS [TIME] test::test_recwarn_iter(recwarn=WarningsRecorder(record=True))
 
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped

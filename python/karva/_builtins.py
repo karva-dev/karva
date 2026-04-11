@@ -1,317 +1,61 @@
 """Built-in fixtures provided by the Karva test framework.
 
 These fixtures are automatically available to all tests without any imports.
+
+Several fixtures (``monkeypatch``, ``recwarn``, ``tmp_path`` and friends) are
+thin wrappers around classes vendored from pytest — see
+``karva._vendor._pytest_monkeypatch``, ``karva._vendor._pytest_recwarn``, and
+``karva._vendor._pytest_tmpdir`` for the vendored implementations and the
+LICENSE file at the repository root for the applicable copyright notices.
+
+The fixture wrappers themselves have to live at the top level of this module
+because the Rust-side framework fixture discoverer parses this file's AST
+looking for ``@fixture``-decorated ``def`` statements.
 """
 
 from __future__ import annotations
 
-import contextlib
 import io
 import logging
-import os
-import pathlib
 import sys
-import tempfile
 import warnings
-from collections.abc import Generator, Iterator, MutableMapping
-from typing import TYPE_CHECKING, Any, NamedTuple, TextIO, TypeAlias, TypeVar, cast
+from collections.abc import Generator
+from typing import TYPE_CHECKING, NamedTuple, TextIO, cast
 
 if TYPE_CHECKING:
+    from pathlib import Path
     from typing import Self
 
 from karva._karva import fixture
+from karva._vendor._pytest_monkeypatch import MockEnv
+from karva._vendor._pytest_recwarn import WarningsRecorder
+from karva._vendor._pytest_tmpdir import TempPathFactory
+
+__all__ = [
+    "CaptureResult",
+    "MockEnv",
+    "capfd",
+    "capfdbinary",
+    "caplog",
+    "capsys",
+    "capsysbinary",
+    "monkeypatch",
+    "recwarn",
+    "temp_dir",
+    "temp_path",
+    "tmp_path",
+    "tmp_path_factory",
+    "tmpdir",
+    "tmpdir_factory",
+]
 
 
-class _Missing:
-    """Sentinel for "attribute or item did not exist before patching"."""
-
-    def __repr__(self) -> str:
-        return "<_Missing>"
-
-
-_MISSING = _Missing()
-
-# Alias the built-in setattr/delattr so methods with the same name can call them.
-_builtin_setattr = setattr
-_builtin_delattr = delattr
-_builtin_getattr = getattr
-_builtin_hasattr = hasattr
-
-_K = TypeVar("_K")
-_V = TypeVar("_V")
-
-
-def _resolve(name: str) -> object:
-    """Import and return the object identified by the dotted *name*.
-
-    Traverses the attribute chain, importing submodules as needed — matching
-    the resolution logic used by the Rust ``MockEnv`` implementation.
-    """
-    import importlib
-
-    parts = name.split(".")
-    current_path = parts[0]
-    obj: object = importlib.import_module(current_path)
-
-    for i, part in enumerate(parts[1:], 1):
-        current_path = ".".join(parts[: i + 1])
-        try:
-            obj = _builtin_getattr(obj, part)
-        except AttributeError:
-            obj = importlib.import_module(current_path)
-
-    return obj
-
-
-def _derive_importpath(import_path: str, raising: bool = True) -> tuple[str, object]:
-    """Split *import_path* into ``(attr_name, target_object)``.
-
-    Raises ``AttributeError`` when the path has no dot or when *raising* is
-    ``True`` and the attribute does not exist on the target.
-    """
-    if "." not in import_path:
-        raise AttributeError(
-            f"must be absolute import path string, not {import_path!r}"
-        )
-    module_path, attr = import_path.rsplit(".", 1)
-    target = _resolve(module_path)
-    if raising and not _builtin_hasattr(target, attr):
-        type_name = type(target).__name__
-        raise AttributeError(
-            f"{type_name!r} object at {module_path} has no attribute {attr!r}"
-        )
-    return attr, target
-
-
-class MockEnv:
-    """Helper for patching attributes, items, environment variables, and more.
-
-    Tracks every change so they can all be undone at once via :meth:`undo`.
-    Instances can be used directly as context managers::
-
-        with MockEnv() as mp:
-            mp.setenv("HOME", "/tmp")
-        # HOME is restored here
-
-    Or obtained via the ``monkeypatch`` fixture::
-
-        def test_something(monkeypatch):
-            monkeypatch.setenv("HOME", "/tmp")
-    """
-
-    def __init__(self) -> None:
-        self._setattr_ops: list[tuple[object, str, object]] = []
-        self._setitem_ops: list[tuple[MutableMapping[Any, Any], Any, Any]] = []
-        self._saved_cwd: str | None = None
-        self._saved_syspath: list[str] | None = None
-
-    def __repr__(self) -> str:
-        return "<MockEnv object>"
-
-    @classmethod
-    def context(cls) -> _MockEnvContext:
-        """Return a context manager that creates a fresh :class:`MockEnv` and undoes it on exit."""
-        return _MockEnvContext()
-
-    def __enter__(self) -> Self:
-        return self
-
-    def __exit__(self, *args: object) -> bool:
-        self.undo()
-        return False
-
-    def setattr(self, *args: object, raising: bool = True) -> None:
-        """Set an attribute on *target*, remembering the old value for :meth:`undo`.
-
-        Accepts two call forms:
-
-        - ``setattr(target, name, value)`` — direct object + attribute name + new value
-        - ``setattr("module.attr", value)`` — dotted import string + new value
-        """
-        if len(args) == 2:
-            target_str, value = args
-            if not isinstance(target_str, str):
-                raise TypeError(
-                    "use setattr(target, name, value) or setattr(target, value)"
-                    " with target being a dotted import string"
-                )
-            attr_name, target = _derive_importpath(target_str, raising)
-        elif len(args) == 3:
-            target, attr_name, value = args
-            if not isinstance(attr_name, str):
-                raise TypeError("attribute name must be a string")
-        else:
-            raise TypeError(
-                f"setattr() takes 2 or 3 positional arguments but {len(args)} were given"
-            )
-
-        # For classes, read the raw __dict__ entry to capture descriptors correctly.
-        if isinstance(target, type):
-            old_val: object = target.__dict__.get(attr_name, _MISSING)
-            if (
-                isinstance(old_val, _Missing)
-                and not _builtin_hasattr(target, attr_name)
-                and raising
-            ):
-                raise AttributeError(f"{target!r} has no attribute {attr_name!r}")
-        elif _builtin_hasattr(target, attr_name):
-            old_val = _builtin_getattr(target, attr_name)
-        elif raising:
-            raise AttributeError(f"{target!r} has no attribute {attr_name!r}")
-        else:
-            old_val = _MISSING
-
-        self._setattr_ops.append((target, str(attr_name), old_val))
-        _builtin_setattr(target, str(attr_name), value)
-
-    def delattr(
-        self, target: object, name: object = None, raising: bool = True
-    ) -> None:
-        """Delete an attribute from *target*, remembering it for :meth:`undo`.
-
-        Accepts two call forms:
-
-        - ``delattr(target, name)`` — direct object + attribute name
-        - ``delattr("module.attr")`` — dotted import string (``name`` is omitted)
-        """
-        if isinstance(target, str) and name is None:
-            actual_attr, actual_target = _derive_importpath(target, raising)
-        elif isinstance(target, str) and name is not None:
-            raise AttributeError(
-                "use delattr(target, name) or delattr(target) with target being"
-                " a dotted import string"
-            )
-        else:
-            if name is None:
-                raise AttributeError(
-                    "use delattr(target, name) or delattr(target) with target being"
-                    " a dotted import string"
-                )
-            if not isinstance(name, str):
-                raise TypeError("attribute name must be a string")
-            actual_attr, actual_target = str(name), target
-
-        if not _builtin_hasattr(actual_target, actual_attr):
-            if raising:
-                raise AttributeError(actual_attr)
-            return
-
-        if isinstance(actual_target, type):
-            old_val: object = actual_target.__dict__.get(actual_attr, _MISSING)
-        else:
-            old_val = _builtin_getattr(actual_target, actual_attr, _MISSING)
-
-        self._setattr_ops.append((actual_target, actual_attr, old_val))
-        _builtin_delattr(actual_target, actual_attr)
-
-    def setitem(self, dic: MutableMapping[_K, _V], name: _K, value: _V) -> None:
-        """Set ``dic[name] = value``, remembering the old value for :meth:`undo`."""
-        old_val: _V | _Missing
-        try:
-            old_val = dic[name]
-        except (KeyError, IndexError):
-            old_val = _MISSING
-
-        self._setitem_ops.append((dic, name, old_val))
-        dic[name] = value
-
-    def delitem(
-        self, dic: MutableMapping[_K, _V], name: _K, raising: bool = True
-    ) -> None:
-        """Delete ``dic[name]``, remembering it for :meth:`undo`."""
-        try:
-            old_val: _V = dic[name]
-        except (KeyError, IndexError):
-            if raising:
-                raise
-            return
-
-        self._setitem_ops.append((dic, name, old_val))
-        del dic[name]
-
-    def setenv(self, name: str, value: object, prepend: str | None = None) -> None:
-        """Set the environment variable *name* to *value*, remembering the old value."""
-        value_str = str(value)
-
-        if prepend is not None and name in os.environ:
-            value_str = f"{value_str}{prepend}{os.environ[name]}"
-
-        environ = os.environ
-        old_val: object = environ.get(name, _MISSING)
-
-        self._setitem_ops.append((environ, name, old_val))
-        environ[name] = value_str
-
-    def delenv(self, name: str, raising: bool = True) -> None:
-        """Delete environment variable *name*, remembering it for :meth:`undo`."""
-        environ = os.environ
-        if name not in environ:
-            if raising:
-                raise KeyError(name)
-            return
-
-        old_val = environ[name]
-        self._setitem_ops.append((environ, name, old_val))
-        del environ[name]
-
-    def syspath_prepend(self, path: str | os.PathLike[str]) -> None:
-        """Prepend *path* to ``sys.path``, saving the original list for :meth:`undo`."""
-        import importlib
-
-        path_str = os.fspath(path)
-
-        if self._saved_syspath is None:
-            self._saved_syspath = list(sys.path)
-
-        sys.path.insert(0, path_str)
-        importlib.invalidate_caches()
-
-    def chdir(self, path: object) -> None:
-        """Change the current working directory to *path*, saving the original for :meth:`undo`."""
-        if self._saved_cwd is None:
-            self._saved_cwd = os.getcwd()
-
-        os.chdir(str(path))
-
-    def undo(self) -> None:
-        """Undo all patches in reverse order."""
-        for obj, name, old_val in reversed(self._setattr_ops):
-            if isinstance(old_val, _Missing):
-                with contextlib.suppress(AttributeError):
-                    _builtin_delattr(obj, name)
-            else:
-                _builtin_setattr(obj, name, old_val)
-        self._setattr_ops.clear()
-
-        for dic, key, old_val in reversed(self._setitem_ops):
-            if isinstance(old_val, _Missing):
-                with contextlib.suppress(KeyError, IndexError):
-                    del dic[key]
-            else:
-                dic[key] = old_val
-        self._setitem_ops.clear()
-
-        if self._saved_syspath is not None:
-            sys.path[:] = self._saved_syspath
-            self._saved_syspath = None
-
-        if self._saved_cwd is not None:
-            os.chdir(self._saved_cwd)
-            self._saved_cwd = None
-
-
-class _MockEnvContext:
-    """Context manager that creates a :class:`MockEnv` and undoes it on exit."""
-
-    def __init__(self) -> None:
-        self._mock_env: MockEnv = MockEnv()
-
-    def __enter__(self) -> MockEnv:
-        return self._mock_env
-
-    def __exit__(self, *args: object) -> bool:
-        self._mock_env.undo()
-        return False
+@fixture
+def monkeypatch() -> Generator[MockEnv, None, None]:
+    """Fixture that provides a :class:`MockEnv` for patching during a test."""
+    mpatch = MockEnv()
+    yield mpatch
+    mpatch.undo()
 
 
 class CaptureResult(NamedTuple):
@@ -561,109 +305,6 @@ class _CapLog:
         return "<CapLog object>"
 
 
-class _TmpPathFactory:
-    """Session-scoped factory for creating numbered temporary directories."""
-
-    def __init__(self, base: pathlib.Path) -> None:
-        self._base: pathlib.Path = base
-        self._counter: int = 0
-
-    def mktemp(self, basename: str, numbered: bool = True) -> pathlib.Path:
-        """Create and return a new temporary subdirectory."""
-        if numbered:
-            name = f"{basename}{self._counter}"
-            self._counter += 1
-        else:
-            name = basename
-        path = self._base / name
-        path.mkdir(parents=True, exist_ok=True)
-        return path
-
-    def getbasetemp(self) -> pathlib.Path:
-        """Return the base temporary directory."""
-        return self._base
-
-    def __repr__(self) -> str:
-        return f"<TmpPathFactory basetemp={self._base}>"
-
-
-class _TmpDirFactory:
-    """Session-scoped factory for creating numbered temporary directories."""
-
-    def __init__(self, base: pathlib.Path) -> None:
-        self._base: pathlib.Path = base
-        self._counter: int = 0
-
-    def mktemp(self, basename: str, numbered: bool = True) -> pathlib.Path:
-        """Create and return a new temporary subdirectory."""
-        if numbered:
-            name = f"{basename}{self._counter}"
-            self._counter += 1
-        else:
-            name = basename
-        path = self._base / name
-        path.mkdir(parents=True, exist_ok=True)
-        return path
-
-    def getbasetemp(self) -> pathlib.Path:
-        """Return the base temporary directory."""
-        return self._base
-
-    def __repr__(self) -> str:
-        return f"<TmpDirFactory basetemp={self._base}>"
-
-
-_WarningList: TypeAlias = list[warnings.WarningMessage]
-
-
-class _WarningsChecker:
-    """Collects warnings captured during a test."""
-
-    def __init__(self, warning_list: _WarningList) -> None:
-        self._list: _WarningList = warning_list
-
-    @property
-    def list(self) -> _WarningList:
-        return self._list
-
-    def __len__(self) -> int:
-        return len(self._list)
-
-    def __getitem__(self, index: int) -> warnings.WarningMessage:
-        return self._list[index]
-
-    def __iter__(self) -> Iterator[warnings.WarningMessage]:
-        return iter(self._list)
-
-    def pop(self, category: type[Warning] = Warning) -> warnings.WarningMessage:
-        """Remove and return the first warning of the given *category*."""
-        for i, w in enumerate(self._list):
-            if issubclass(w.category, category):
-                return self._list.pop(i)
-        raise AssertionError(f"No warnings of type {category.__name__} were emitted.")
-
-    def clear(self) -> None:
-        """Clear all captured warnings."""
-        self._list.clear()
-
-    def __repr__(self) -> str:
-        return "<WarningsChecker object>"
-
-
-def _make_tmp_path() -> pathlib.Path:
-    """Create a temporary directory and return its resolved :class:`pathlib.Path`."""
-    # Use mkdtemp (no auto-cleanup) to match existing behaviour.
-    return pathlib.Path(tempfile.mkdtemp(prefix="karva-")).resolve()
-
-
-@fixture
-def monkeypatch() -> Generator[MockEnv, None, None]:
-    """Fixture that provides a :class:`MockEnv` for patching during a test."""
-    mp = MockEnv()
-    yield mp
-    mp.undo()
-
-
 def _capsys_impl() -> Generator[_CapsysFixture, None, None]:
     """Shared generator for capsys and capfd."""
     real_stdout = sys.stdout
@@ -733,46 +374,45 @@ def caplog() -> Generator[_CapLog, None, None]:
 
 
 @fixture
-def tmp_path() -> Generator[pathlib.Path, None, None]:
+def tmp_path(tmp_path_factory: TempPathFactory) -> Path:
     """Provide a temporary directory as a :class:`pathlib.Path` object."""
-    yield _make_tmp_path()
+    return tmp_path_factory.mktemp("test")
 
 
 @fixture
-def temp_path() -> Generator[pathlib.Path, None, None]:
+def temp_path(tmp_path_factory: TempPathFactory) -> Path:
     """Alias for :fixture:`tmp_path`."""
-    yield _make_tmp_path()
+    return tmp_path_factory.mktemp("test")
 
 
 @fixture
-def temp_dir() -> Generator[pathlib.Path, None, None]:
+def temp_dir(tmp_path_factory: TempPathFactory) -> Path:
     """Alias for :fixture:`tmp_path`."""
-    yield _make_tmp_path()
+    return tmp_path_factory.mktemp("test")
 
 
 @fixture
-def tmpdir() -> Generator[pathlib.Path, None, None]:
+def tmpdir(tmp_path_factory: TempPathFactory) -> Path:
     """Provide a temporary directory as a :class:`pathlib.Path`."""
-    yield _make_tmp_path()
+    return tmp_path_factory.mktemp("test")
 
 
 @fixture(scope="session")
-def tmp_path_factory() -> Generator[_TmpPathFactory, None, None]:
+def tmp_path_factory() -> TempPathFactory:
     """Session-scoped factory for creating numbered temporary directories."""
-    base = pathlib.Path(tempfile.mkdtemp(prefix="karva-")).resolve()
-    yield _TmpPathFactory(base)
+    return TempPathFactory()
 
 
 @fixture(scope="session")
-def tmpdir_factory() -> Generator[_TmpDirFactory, None, None]:
+def tmpdir_factory() -> TempPathFactory:
     """Session-scoped factory for creating numbered temporary directories."""
-    base = pathlib.Path(tempfile.mkdtemp(prefix="karva-")).resolve()
-    yield _TmpDirFactory(base)
+    return TempPathFactory()
 
 
 @fixture
-def recwarn() -> Generator[_WarningsChecker, None, None]:
-    """Record warnings raised during a test."""
-    with warnings.catch_warnings(record=True) as warning_list:
-        warnings.simplefilter("always")
-        yield _WarningsChecker(warning_list)
+def recwarn() -> Generator[WarningsRecorder, None, None]:
+    """Return a :class:`WarningsRecorder` that records warnings raised during a test."""
+    wrec = WarningsRecorder()
+    with wrec:
+        warnings.simplefilter("default")
+        yield wrec
