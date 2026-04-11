@@ -7,12 +7,13 @@ notice of every upstream project we vendor from.
 
 ## Upstream pin
 
-| Module                     | Upstream                                              | Pinned commit |
-| -------------------------- | ----------------------------------------------------- | ------------- |
-| `_pytest_monkeypatch.py`   | `pytest-dev/pytest` — `src/_pytest/monkeypatch.py`    | `8ecf49ec2`   |
-| `_pytest_recwarn.py`       | `pytest-dev/pytest` — `src/_pytest/recwarn.py`        | `8ecf49ec2`   |
-| `_pytest_pathlib.py`       | `pytest-dev/pytest` — `src/_pytest/pathlib.py`        | `8ecf49ec2`   |
-| `_pytest_tmpdir.py`        | `pytest-dev/pytest` — `src/_pytest/tmpdir.py`         | `8ecf49ec2`   |
+All modules below are vendored from `pytest-dev/pytest` at commit
+`8ecf49ec2`:
+
+- `_pytest_monkeypatch.py` from `src/_pytest/monkeypatch.py`
+- `_pytest_recwarn.py` from `src/_pytest/recwarn.py`
+- `_pytest_pathlib.py` from `src/_pytest/pathlib.py`
+- `_pytest_tmpdir.py` from `src/_pytest/tmpdir.py`
 
 All four files are MIT-licensed. Pytest's copyright notice is included in
 `LICENSE` at the repository root under the "externally maintained libraries"
@@ -26,7 +27,8 @@ actually vendor. New pytest features do not need to come along for the ride.
 ## How to re-sync
 
 1. Pick the target pytest commit hash.
-2. Diff our vendored files against the upstream versions at that commit:
+
+1. Diff our vendored files against the upstream versions at that commit:
 
    ```sh
    cd ../pytest              # a local clone of pytest-dev/pytest
@@ -35,10 +37,12 @@ actually vendor. New pytest features do not need to come along for the ride.
    # repeat for the other three files
    ```
 
-3. Replay the adaptations documented in each file's module-level docstring
+1. Replay the adaptations documented in each file's module-level docstring
    (rename, import fixes, type widening, `__repr__` additions, etc.).
-4. Bump the pinned commit in this README and in every module docstring.
-5. Run `just test` and `uvx prek run -a`.
+
+1. Bump the pinned commit in this README and in every module docstring.
+
+1. Run `just test` and `uvx prek run -a`.
 
 ## What must not change without re-syncing
 
