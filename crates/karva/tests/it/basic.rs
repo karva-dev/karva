@@ -1446,6 +1446,210 @@ def test_pass():
     ");
 }
 
+/// `--max-fail=2` should run exactly two failing tests and then stop scheduling
+/// the rest. The summary reflects only the tests that actually ran.
+#[test]
+fn test_max_fail_stops_after_n_failures() {
+    let context = TestContext::with_file(
+        "test_max_fail.py",
+        r"
+def test_first_fail():
+    assert False, 'boom 1'
+
+def test_second_fail():
+    assert False, 'boom 2'
+
+def test_third_fail():
+    assert False, 'boom 3'
+
+def test_fourth_skipped():
+    assert True
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--max-fail=2"), @r#"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+        Starting 4 tests across 1 worker
+            FAIL [TIME] test_max_fail::test_first_fail
+            FAIL [TIME] test_max_fail::test_second_fail
+
+    diagnostics:
+
+    error[test-failure]: Test `test_first_fail` failed
+     --> test_max_fail.py:2:5
+      |
+    2 | def test_first_fail():
+      |     ^^^^^^^^^^^^^^^
+    3 |     assert False, 'boom 1'
+      |
+    info: Test failed here
+     --> test_max_fail.py:3:5
+      |
+    2 | def test_first_fail():
+    3 |     assert False, 'boom 1'
+      |     ^^^^^^^^^^^^^^^^^^^^^^
+    4 |
+    5 | def test_second_fail():
+      |
+    info: boom 1
+
+    error[test-failure]: Test `test_second_fail` failed
+     --> test_max_fail.py:5:5
+      |
+    3 |     assert False, 'boom 1'
+    4 |
+    5 | def test_second_fail():
+      |     ^^^^^^^^^^^^^^^^
+    6 |     assert False, 'boom 2'
+      |
+    info: Test failed here
+     --> test_max_fail.py:6:5
+      |
+    5 | def test_second_fail():
+    6 |     assert False, 'boom 2'
+      |     ^^^^^^^^^^^^^^^^^^^^^^
+    7 |
+    8 | def test_third_fail():
+      |
+    info: boom 2
+
+    ────────────
+         Summary [TIME] 2 tests run: 0 passed, 2 failed, 0 skipped
+
+    ----- stderr -----
+    "#);
+}
+
+/// `--no-fail-fast` disables the limit, so every test runs even when some fail.
+#[test]
+fn test_no_fail_fast_runs_every_test() {
+    let context = TestContext::with_file(
+        "test_no_fail_fast.py",
+        r"
+def test_a():
+    assert False, 'a boom'
+
+def test_b():
+    assert False, 'b boom'
+
+def test_c():
+    assert True
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--no-fail-fast"), @r#"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+        Starting 3 tests across 1 worker
+            FAIL [TIME] test_no_fail_fast::test_a
+            FAIL [TIME] test_no_fail_fast::test_b
+            PASS [TIME] test_no_fail_fast::test_c
+
+    diagnostics:
+
+    error[test-failure]: Test `test_a` failed
+     --> test_no_fail_fast.py:2:5
+      |
+    2 | def test_a():
+      |     ^^^^^^
+    3 |     assert False, 'a boom'
+      |
+    info: Test failed here
+     --> test_no_fail_fast.py:3:5
+      |
+    2 | def test_a():
+    3 |     assert False, 'a boom'
+      |     ^^^^^^^^^^^^^^^^^^^^^^
+    4 |
+    5 | def test_b():
+      |
+    info: a boom
+
+    error[test-failure]: Test `test_b` failed
+     --> test_no_fail_fast.py:5:5
+      |
+    3 |     assert False, 'a boom'
+    4 |
+    5 | def test_b():
+      |     ^^^^^^
+    6 |     assert False, 'b boom'
+      |
+    info: Test failed here
+     --> test_no_fail_fast.py:6:5
+      |
+    5 | def test_b():
+    6 |     assert False, 'b boom'
+      |     ^^^^^^^^^^^^^^^^^^^^^^
+    7 |
+    8 | def test_c():
+      |
+    info: b boom
+
+    ────────────
+         Summary [TIME] 3 tests run: 1 passed, 2 failed, 0 skipped
+
+    ----- stderr -----
+    "#);
+}
+
+/// `--max-fail=1` is the generalized form of `--fail-fast` and should stop
+/// scheduling once a single test has failed.
+#[test]
+fn test_max_fail_one_is_equivalent_to_fail_fast() {
+    let context = TestContext::with_file(
+        "test_max_fail_one.py",
+        r"
+def test_first():
+    assert True
+
+def test_second():
+    assert False, 'stop here'
+
+def test_third():
+    assert True
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--max-fail=1"), @r#"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+        Starting 3 tests across 1 worker
+            PASS [TIME] test_max_fail_one::test_first
+            FAIL [TIME] test_max_fail_one::test_second
+
+    diagnostics:
+
+    error[test-failure]: Test `test_second` failed
+     --> test_max_fail_one.py:5:5
+      |
+    3 |     assert True
+    4 |
+    5 | def test_second():
+      |     ^^^^^^^^^^^
+    6 |     assert False, 'stop here'
+      |
+    info: Test failed here
+     --> test_max_fail_one.py:6:5
+      |
+    5 | def test_second():
+    6 |     assert False, 'stop here'
+      |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+    7 |
+    8 | def test_third():
+      |
+    info: stop here
+
+    ────────────
+         Summary [TIME] 2 tests run: 1 passed, 1 failed, 0 skipped
+
+    ----- stderr -----
+    "#);
+}
+
 #[test]
 fn test_fail_fast() {
     let context = TestContext::with_file(

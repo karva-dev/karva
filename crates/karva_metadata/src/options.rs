@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::filter::FiltersetSet;
+use crate::max_fail::MaxFail;
 use crate::settings::{ProjectSettings, SrcSettings, TerminalSettings, TestSettings};
 
 #[derive(
@@ -154,7 +155,11 @@ pub struct TestOptions {
     )]
     pub test_function_prefix: Option<String>,
 
-    /// Whether to fail fast when a test fails.
+    /// Whether to stop at the first test failure.
+    ///
+    /// This is a legacy alias for [`max_fail`](#test_max-fail): `true`
+    /// corresponds to `max-fail = 1` and `false` leaves the limit unset.
+    /// When both are set, `max-fail` takes precedence.
     ///
     /// Defaults to `false`.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -166,6 +171,24 @@ pub struct TestOptions {
         "#
     )]
     pub fail_fast: Option<bool>,
+
+    /// Stop scheduling new tests once this many tests have failed.
+    ///
+    /// Accepts a positive integer. Omitting the field (the default) lets
+    /// every test run regardless of how many fail. Setting `max-fail = 1`
+    /// is equivalent to the legacy `fail-fast = true`.
+    ///
+    /// When both [`fail_fast`](#test_fail-fast) and `max-fail` are set,
+    /// `max-fail` takes precedence.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[option(
+        default = "unlimited",
+        value_type = "positive integer",
+        example = r#"
+            max-fail = 3
+        "#
+    )]
+    pub max_fail: Option<MaxFail>,
 
     /// When set, we will try to import functions in each test file as well as parsing the ast to find them.
     ///
@@ -194,12 +217,17 @@ pub struct TestOptions {
 
 impl TestOptions {
     pub fn to_settings(&self) -> TestSettings {
+        let max_fail = self
+            .max_fail
+            .or_else(|| self.fail_fast.map(MaxFail::from_fail_fast))
+            .unwrap_or_default();
+
         TestSettings {
             test_function_prefix: self
                 .test_function_prefix
                 .clone()
                 .unwrap_or_else(|| "test".to_string()),
-            fail_fast: self.fail_fast.unwrap_or_default(),
+            max_fail,
             try_import_fixtures: self.try_import_fixtures.unwrap_or_default(),
             retry: self.retry.unwrap_or_default(),
             filter: FiltersetSet::default(),

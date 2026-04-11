@@ -363,6 +363,85 @@ def check_should_not_run(): pass
     ");
 }
 
+/// `max-fail = 2` in a karva.toml should stop the run after two failures.
+#[test]
+fn test_max_fail_from_config() {
+    let context = TestContext::with_files([
+        (
+            "karva.toml",
+            r"
+[test]
+max-fail = 2
+",
+        ),
+        (
+            "test.py",
+            r"
+def test_a():
+    assert False
+
+def test_b():
+    assert False
+
+def test_c():
+    assert False
+",
+        ),
+    ]);
+
+    assert_cmd_snapshot!(context.command_no_parallel(), @r#"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+        Starting 3 tests across 1 worker
+            FAIL [TIME] test::test_a
+            FAIL [TIME] test::test_b
+
+    diagnostics:
+
+    error[test-failure]: Test `test_a` failed
+     --> test.py:2:5
+      |
+    2 | def test_a():
+      |     ^^^^^^
+    3 |     assert False
+      |
+    info: Test failed here
+     --> test.py:3:5
+      |
+    2 | def test_a():
+    3 |     assert False
+      |     ^^^^^^^^^^^^
+    4 |
+    5 | def test_b():
+      |
+
+    error[test-failure]: Test `test_b` failed
+     --> test.py:5:5
+      |
+    3 |     assert False
+    4 |
+    5 | def test_b():
+      |     ^^^^^^
+    6 |     assert False
+      |
+    info: Test failed here
+     --> test.py:6:5
+      |
+    5 | def test_b():
+    6 |     assert False
+      |     ^^^^^^^^^^^^
+    7 |
+    8 | def test_c():
+      |
+
+    ────────────
+         Summary [TIME] 2 tests run: 0 passed, 2 failed, 0 skipped
+
+    ----- stderr -----
+    "#);
+}
+
 #[test]
 fn test_fail_fast_true() {
     let context = TestContext::with_files([

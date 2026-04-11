@@ -1,9 +1,11 @@
+use std::num::NonZeroU32;
+
 use camino::Utf8PathBuf;
 use clap::Parser;
 use clap::builder::Styles;
 use clap::builder::styling::{AnsiColor, Effects};
 use karva_logging::{TerminalColor, VerbosityLevel};
-use karva_metadata::{Options, SrcOptions, TerminalOptions, TestOptions};
+use karva_metadata::{MaxFail, Options, SrcOptions, TerminalOptions, TestOptions};
 use ruff_db::diagnostic::DiagnosticFormat;
 
 const STYLES: Styles = Styles::styled()
@@ -176,9 +178,29 @@ pub struct SubTestCommand {
     #[clap(long, default_missing_value = "true", num_args=0..1)]
     pub no_ignore: Option<bool>,
 
-    /// When set, the test will fail immediately if any test fails.
-    #[clap(long, default_missing_value = "true", num_args=0..1)]
+    /// Stop scheduling new tests after this many failures.
+    ///
+    /// Accepts a positive integer such as `--max-fail=3`. `--max-fail=1` is
+    /// equivalent to the legacy `--fail-fast`, and `--no-fail-fast` clears
+    /// the limit. When `--max-fail` is provided alongside `--fail-fast` or
+    /// `--no-fail-fast`, `--max-fail` takes precedence.
+    #[clap(long, value_name = "N")]
+    pub max_fail: Option<NonZeroU32>,
+
+    /// Stop scheduling new tests after the first failure.
+    ///
+    /// Equivalent to `--max-fail=1`. Use `--no-fail-fast` to keep running
+    /// after failures.
+    #[clap(long, default_missing_value = "true", num_args=0..1, overrides_with = "no_fail_fast")]
     pub fail_fast: Option<bool>,
+
+    /// Run every test regardless of how many fail.
+    ///
+    /// Clears any `fail-fast` or `max-fail` value set in configuration. When
+    /// `--max-fail` is provided alongside `--no-fail-fast`, `--max-fail`
+    /// takes precedence.
+    #[clap(long, action = clap::ArgAction::SetTrue, overrides_with = "fail_fast")]
+    pub no_fail_fast: bool,
 
     /// When set, the test will retry failed tests up to this number of times.
     #[clap(long)]
@@ -310,6 +332,22 @@ impl From<OutputFormat> for karva_metadata::OutputFormat {
 
 impl SubTestCommand {
     pub fn into_options(self) -> Options {
+        // `--no-fail-fast` forces `fail_fast = false` and clears any
+        // `max-fail` limit from config. `overrides_with` guarantees
+        // `--fail-fast` and `--no-fail-fast` cannot both be active.
+        // An explicit `--max-fail=N` still wins over `--no-fail-fast`.
+        let fail_fast = if self.no_fail_fast {
+            Some(false)
+        } else {
+            self.fail_fast
+        };
+
+        let max_fail = match (self.max_fail, self.no_fail_fast) {
+            (Some(n), _) => Some(MaxFail::from(n)),
+            (None, true) => Some(MaxFail::unlimited()),
+            (None, false) => None,
+        };
+
         Options {
             src: Some(SrcOptions {
                 respect_ignore_files: self.no_ignore.map(|no_ignore| !no_ignore),
@@ -321,7 +359,8 @@ impl SubTestCommand {
             }),
             test: Some(TestOptions {
                 test_function_prefix: self.test_prefix,
-                fail_fast: self.fail_fast,
+                fail_fast,
+                max_fail,
                 try_import_fixtures: self.try_import_fixtures,
                 retry: self.retry,
             }),

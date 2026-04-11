@@ -324,13 +324,9 @@ pub fn run_parallel_tests(
 
     let cache = Cache::new(&cache_dir, &run_hash);
 
-    let fail_fast_cache = if project.settings().fail_fast() {
-        Some(&cache)
-    } else {
-        None
-    };
+    let max_fail_cache = project.settings().max_fail().has_limit().then_some(&cache);
 
-    worker_manager.wait_for_completion(shutdown_rx, fail_fast_cache);
+    worker_manager.wait_for_completion(shutdown_rx, max_fail_cache);
     worker_manager.kill_remaining();
 
     let result = cache.aggregate_results()?;
@@ -389,52 +385,54 @@ fn find_karva_worker_binary(current_dir: &Utf8PathBuf) -> Result<Utf8PathBuf> {
 }
 
 fn inner_cli_args(settings: &ProjectSettings, args: &SubTestCommand) -> Vec<String> {
-    let mut cli_args = Vec::new();
+    let mut cli_args: Vec<String> = Vec::new();
 
     if let Some(arg) = args.verbosity.level().cli_arg() {
-        cli_args.push(arg);
+        cli_args.push(arg.to_string());
     }
 
-    if settings.test().fail_fast {
-        cli_args.push("--fail-fast");
+    // Forward the resolved max-fail limit to workers. Omitting the flag
+    // means "no limit", which matches the default when the user supplies
+    // neither `--max-fail` nor a `max-fail` entry in `karva.toml`.
+    if let Some(limit) = settings.test().max_fail.limit() {
+        cli_args.push(format!("--max-fail={limit}"));
     }
 
     if settings.terminal().show_python_output {
-        cli_args.push("-s");
+        cli_args.push("-s".to_string());
     }
 
-    cli_args.push("--output-format");
-    cli_args.push(settings.terminal().output_format.as_str());
+    cli_args.push("--output-format".to_string());
+    cli_args.push(settings.terminal().output_format.as_str().to_string());
 
     if args.no_progress.is_some_and(|no_progress| no_progress) {
-        cli_args.push("--no-progress");
+        cli_args.push("--no-progress".to_string());
     }
 
     if let Some(color) = args.color {
-        cli_args.push("--color");
-        cli_args.push(color.as_str());
+        cli_args.push("--color".to_string());
+        cli_args.push(color.as_str().to_string());
     }
 
     if settings.test().try_import_fixtures {
-        cli_args.push("--try-import-fixtures");
+        cli_args.push("--try-import-fixtures".to_string());
     }
 
     if args.snapshot_update.unwrap_or(false) {
-        cli_args.push("--snapshot-update");
+        cli_args.push("--snapshot-update".to_string());
     }
 
-    let retry_str = args.retry.map(|r| r.to_string());
-    if let Some(ref retry) = retry_str {
-        cli_args.push("--retry");
-        cli_args.push(retry);
+    if let Some(retry) = args.retry {
+        cli_args.push("--retry".to_string());
+        cli_args.push(retry.to_string());
     }
 
     for expr in &args.filter_expressions {
-        cli_args.push("--filter");
-        cli_args.push(expr);
+        cli_args.push("--filter".to_string());
+        cli_args.push(expr.clone());
     }
 
-    cli_args.iter().map(ToString::to_string).collect()
+    cli_args
 }
 
 #[cfg(test)]
