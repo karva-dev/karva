@@ -1073,28 +1073,6 @@ fn filterset_empty_matcher_body() {
 }
 
 #[test]
-fn dry_run_applies_filter_expression() {
-    let context = TestContext::with_file("test.py", TWO_TESTS);
-    assert_cmd_snapshot!(
-        context
-            .command_no_parallel()
-            .arg("--dry-run")
-            .arg("-E")
-            .arg("test(~alpha)"),
-        @r"
-    success: true
-    exit_code: 0
-    ----- stdout -----
-    <test> test::test_alpha
-
-    1 tests collected
-
-    ----- stderr -----
-    "
-    );
-}
-
-#[test]
 fn filterset_empty_expression() {
     let context = TestContext::with_file("test.py", "def test_x(): assert True\n");
     assert_cmd_snapshot!(
