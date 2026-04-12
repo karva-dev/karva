@@ -7,7 +7,9 @@ use thiserror::Error;
 
 use crate::filter::FiltersetSet;
 use crate::max_fail::MaxFail;
-use crate::settings::{ProjectSettings, SrcSettings, TerminalSettings, TestSettings};
+use crate::settings::{
+    ProjectSettings, RunIgnoredMode, SrcSettings, TerminalSettings, TestSettings,
+};
 
 #[derive(
     Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize, OptionsMetadata, Combine,
@@ -231,6 +233,7 @@ impl TestOptions {
             try_import_fixtures: self.try_import_fixtures.unwrap_or_default(),
             retry: self.retry.unwrap_or_default(),
             filter: FiltersetSet::default(),
+            run_ignored: RunIgnoredMode::default(),
         }
     }
 }

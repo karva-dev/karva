@@ -10,6 +10,7 @@ use karva_cache::{Cache, RunHash};
 use karva_cli::{SubTestCommand, Verbosity};
 use karva_diagnostic::{DummyReporter, Reporter, TestCaseReporter};
 use karva_logging::{Printer, set_colored_override, setup_tracing};
+use karva_metadata::RunIgnoredMode;
 use karva_metadata::filter::FiltersetSet;
 use karva_project::path::{TestPath, TestPathError, absolute};
 use karva_python_semantic::current_python_version;
@@ -137,8 +138,14 @@ fn run(f: impl FnOnce(Vec<OsString>) -> Vec<OsString>) -> anyhow::Result<ExitSta
     let filter = FiltersetSet::new(&args.sub_command.filter_expressions)
         .context("invalid `--filter` expression")?;
 
+    let run_ignored = args
+        .sub_command
+        .run_ignored
+        .map(RunIgnoredMode::from)
+        .unwrap_or_default();
     let mut settings = args.sub_command.into_options().to_settings();
     settings.set_filter(filter);
+    settings.set_run_ignored(run_ignored);
 
     let run_hash = RunHash::from_existing(&args.run_hash);
 

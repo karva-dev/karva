@@ -2,6 +2,14 @@ use crate::filter::FiltersetSet;
 use crate::max_fail::MaxFail;
 use crate::options::OutputFormat;
 
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RunIgnoredMode {
+    #[default]
+    Default,
+    Only,
+    All,
+}
+
 #[derive(Default, Debug, Clone)]
 pub struct ProjectSettings {
     pub(crate) terminal: TerminalSettings,
@@ -29,6 +37,10 @@ impl ProjectSettings {
     pub fn set_filter(&mut self, filter: FiltersetSet) {
         self.test.filter = filter;
     }
+
+    pub fn set_run_ignored(&mut self, mode: RunIgnoredMode) {
+        self.test.run_ignored = mode;
+    }
 }
 
 #[derive(Default, Debug, Clone)]
@@ -50,4 +62,5 @@ pub struct TestSettings {
     pub try_import_fixtures: bool,
     pub retry: u32,
     pub filter: FiltersetSet,
+    pub run_ignored: RunIgnoredMode,
 }

@@ -5,7 +5,7 @@ use clap::Parser;
 use clap::builder::Styles;
 use clap::builder::styling::{AnsiColor, Effects};
 use karva_logging::{TerminalColor, VerbosityLevel};
-use karva_metadata::{MaxFail, Options, SrcOptions, TerminalOptions, TestOptions};
+use karva_metadata::{MaxFail, Options, RunIgnoredMode, SrcOptions, TerminalOptions, TestOptions};
 use ruff_db::diagnostic::DiagnosticFormat;
 
 const STYLES: Styles = Styles::styled()
@@ -244,6 +244,10 @@ pub struct SubTestCommand {
     #[clap(short = 'E', long = "filter")]
     pub filter_expressions: Vec<String>,
 
+    /// Run ignored tests.
+    #[arg(long)]
+    pub run_ignored: Option<RunIgnored>,
+
     /// Update snapshots directly instead of creating pending `.snap.new` files.
     ///
     /// When set, `karva.assert_snapshot()` will write directly to `.snap` files,
@@ -373,5 +377,33 @@ impl SubTestCommand {
 impl TestCommand {
     pub fn into_options(self) -> Options {
         self.sub_command.into_options()
+    }
+}
+
+/// Whether to run ignored/skipped tests.
+#[derive(Copy, Clone, Hash, Debug, PartialEq, Eq, clap::ValueEnum)]
+pub enum RunIgnored {
+    /// Run only ignored tests.
+    Only,
+
+    /// Run both ignored and non-ignored tests.
+    All,
+}
+
+impl RunIgnored {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Only => "only",
+            Self::All => "all",
+        }
+    }
+}
+
+impl From<RunIgnored> for RunIgnoredMode {
+    fn from(value: RunIgnored) -> Self {
+        match value {
+            RunIgnored::Only => Self::Only,
+            RunIgnored::All => Self::All,
+        }
     }
 }

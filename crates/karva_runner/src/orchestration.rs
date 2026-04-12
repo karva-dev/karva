@@ -432,6 +432,11 @@ fn inner_cli_args(settings: &ProjectSettings, args: &SubTestCommand) -> Vec<Stri
         cli_args.push(expr.clone());
     }
 
+    if let Some(mode) = args.run_ignored {
+        cli_args.push("--run-ignored".to_string());
+        cli_args.push(mode.as_str().to_string());
+    }
+
     cli_args
 }
 
