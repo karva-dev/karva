@@ -970,7 +970,7 @@ dependencies = [
  "once_cell",
  "regex",
  "serde",
- "similar",
+ "similar 2.7.0",
  "tempfile",
 ]
 
@@ -1291,7 +1291,7 @@ dependencies = [
  "console",
  "insta",
  "regex",
- "similar",
+ "similar 3.1.0",
  "tempfile",
  "terminal_size",
 ]
@@ -2073,7 +2073,7 @@ dependencies = [
  "ruff_text_size",
  "rustc-hash",
  "salsa",
- "similar",
+ "similar 2.7.0",
  "supports-hyperlinks",
  "thiserror",
  "tracing",
@@ -2402,6 +2402,15 @@ name = "similar"
 version = "2.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bbbb5d9659141646ae647b42fe094daf6c6192d1620870b449d9557f748b2daa"
+
+[[package]]
+name = "similar"
+version = "3.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "04d93e861ede2e497b47833469b8ec9d5c07fa4c78ce7a00f6eb7dd8168b4b3f"
+dependencies = [
+ "bstr",
+]
 
 [[package]]
 name = "siphasher"
