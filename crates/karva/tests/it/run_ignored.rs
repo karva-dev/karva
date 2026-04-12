@@ -182,11 +182,11 @@ def test_normal():
     exit_code: 0
     ----- stdout -----
         Starting 2 tests across 1 worker
-            PASS [TIME] test::test_conditional
+            SKIP [TIME] test::test_conditional
             SKIP [TIME] test::test_normal
 
     ────────────
-         Summary [TIME] 2 tests run: 1 passed, 1 skipped
+         Summary [TIME] 2 tests run: 0 passed, 2 skipped
 
     ----- stderr -----
     ");

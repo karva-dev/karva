@@ -274,11 +274,6 @@ impl Tags {
         (false, None)
     }
 
-    /// Returns true if any skip marker exists, regardless of its condition.
-    pub(crate) fn has_skip_tag(&self) -> bool {
-        self.inner.iter().any(|tag| matches!(tag, Tag::Skip(_)))
-    }
-
     /// Return the names of all custom tags.
     pub(crate) fn custom_tag_names(&self) -> Vec<&str> {
         self.inner
