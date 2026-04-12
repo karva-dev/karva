@@ -74,15 +74,11 @@ karva test [OPTIONS] [PATH]...
 <li><code>concise</code>:  Print diagnostics concisely, one per line</li>
 </ul></dd><dt id="karva-test--quiet"><a href="#karva-test--quiet"><code>--quiet</code></a>, <code>-q</code></dt><dd><p>Use quiet output (or <code>-qq</code> for silent output)</p>
 </dd><dt id="karva-test--retry"><a href="#karva-test--retry"><code>--retry</code></a> <i>retry</i></dt><dd><p>When set, the test will retry failed tests up to this number of times</p>
-</dd><dt id="karva-test--run-ignored"><a href="#karva-test--run-ignored"><code>--run-ignored</code></a> <i>which</i></dt><dd><p>Run ignored tests.</p>
+</dd><dt id="karva-test--run-ignored"><a href="#karva-test--run-ignored"><code>--run-ignored</code></a> <i>run-ignored</i></dt><dd><p>Run ignored tests</p>
+<p>Possible values:</p>
 <ul>
-<li>default: Run non-ignored tests - only:    Run ignored tests - all:     Run both ignored and non-ignored tests</li>
-</ul>
-<p>[default: default]</p><p>Possible values:</p>
-<ul>
-<li><code>default</code></li>
-<li><code>only</code></li>
-<li><code>all</code></li>
+<li><code>only</code>:  Run only ignored tests</li>
+<li><code>all</code>:  Run both ignored and non-ignored tests</li>
 </ul></dd><dt id="karva-test--snapshot-update"><a href="#karva-test--snapshot-update"><code>--snapshot-update</code></a></dt><dd><p>Update snapshots directly instead of creating pending <code>.snap.new</code> files.</p>
 <p>When set, <code>karva.assert_snapshot()</code> will write directly to <code>.snap</code> files, accepting any changes automatically.</p>
 </dd><dt id="karva-test--test-prefix"><a href="#karva-test--test-prefix"><code>--test-prefix</code></a> <i>test-prefix</i></dt><dd><p>The prefix of the test functions</p>
