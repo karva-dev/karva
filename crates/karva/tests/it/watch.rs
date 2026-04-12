@@ -1,21 +1,4 @@
-use insta_cmd::assert_cmd_snapshot;
-
 use crate::common::TestContext;
-
-#[test]
-fn test_watch_and_dry_run_conflict() {
-    let context = TestContext::with_file("test.py", "def test_1(): pass");
-
-    assert_cmd_snapshot!(context.command().args(["--watch", "--dry-run"]), @r"
-    success: false
-    exit_code: 2
-    ----- stdout -----
-
-    ----- stderr -----
-    Karva failed
-      Cause: `--watch` and `--dry-run` cannot be used together
-    ");
-}
 
 #[cfg(unix)]
 #[test]

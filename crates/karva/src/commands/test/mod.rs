@@ -7,9 +7,8 @@ use std::time::{Duration, Instant};
 use anyhow::{Context as _, Result};
 use karva_cache::AggregatedResults;
 use karva_cli::{OutputFormat, TestCommand};
-use karva_collector::CollectedPackage;
 use karva_logging::{Printer, Stdout, set_colored_override, setup_tracing};
-use karva_metadata::filter::{EvalContext, FiltersetSet};
+use karva_metadata::filter::FiltersetSet;
 use karva_metadata::{ProjectMetadata, ProjectOptionsOverrides};
 use karva_project::Project;
 use karva_project::path::absolute;
@@ -45,12 +44,7 @@ pub fn test(args: TestCommand) -> Result<ExitStatus> {
         ProjectMetadata::discover(&cwd, python_version)?
     };
 
-    if args.watch && args.dry_run {
-        anyhow::bail!("`--watch` and `--dry-run` cannot be used together");
-    }
-
     let sub_command = args.sub_command.clone();
-    let dry_run = args.dry_run;
     let watch = args.watch;
     let durations = args.durations;
     let last_failed = args.last_failed;
@@ -67,14 +61,7 @@ pub fn test(args: TestCommand) -> Result<ExitStatus> {
 
     let project = Project::from_metadata(project_metadata);
 
-    let filter = FiltersetSet::new(&sub_command.filter_expressions)
-        .context("invalid `--filter` expression")?;
-
-    if dry_run {
-        let collected = karva_runner::collect_tests(&project)?;
-        print_collected_tests(printer, &collected, &filter)?;
-        return Ok(ExitStatus::Success);
-    }
+    FiltersetSet::new(&sub_command.filter_expressions).context("invalid `--filter` expression")?;
 
     let config = karva_runner::ParallelTestConfig {
         num_workers,
@@ -197,58 +184,4 @@ fn print_durations_section(
     writeln!(stdout)?;
 
     Ok(true)
-}
-
-/// Recursively collect test names from a `CollectedPackage` as `(module_name, function_name)` pairs.
-///
-/// Applies `filter` against each test by qualified name. Tags are unknown at
-/// collection time (they come from Python runtime state), so filters that
-/// reference `tag(...)` will match against an empty tag set.
-fn collect_test_names(
-    package: &CollectedPackage,
-    filter: &FiltersetSet,
-    tests: &mut Vec<(String, String)>,
-) {
-    for module in package.modules.values() {
-        let module_name = module.path.module_name().to_string();
-        for func in &module.test_function_defs {
-            let function_name = func.name.to_string();
-            let qualified = format!("{module_name}::{function_name}");
-            let ctx = EvalContext {
-                test_name: &qualified,
-                tags: &[],
-            };
-            if filter.matches(&ctx) {
-                tests.push((module_name.clone(), function_name));
-            }
-        }
-    }
-    for sub_package in package.packages.values() {
-        collect_test_names(sub_package, filter, tests);
-    }
-}
-
-/// Print collected tests in dry-run mode.
-fn print_collected_tests(
-    printer: Printer,
-    collected: &CollectedPackage,
-    filter: &FiltersetSet,
-) -> Result<()> {
-    let mut tests = Vec::new();
-    collect_test_names(collected, filter, &mut tests);
-    tests.sort();
-
-    let mut stdout = printer.stream_for_requested_summary().lock();
-
-    for (module_name, function_name) in &tests {
-        writeln!(stdout, "<test> {module_name}::{function_name}")?;
-    }
-
-    if !tests.is_empty() {
-        writeln!(stdout)?;
-    }
-
-    writeln!(stdout, "{} tests collected", tests.len())?;
-
-    Ok(())
 }

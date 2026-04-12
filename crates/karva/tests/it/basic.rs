@@ -1271,83 +1271,6 @@ def test_3(): pass",
 }
 
 #[test]
-fn test_dry_run() {
-    let context = TestContext::with_files([
-        (
-            "test_file1.py",
-            r"
-def test_alpha(): pass
-def test_beta(): pass
-",
-        ),
-        (
-            "test_file2.py",
-            r"
-def test_gamma(): pass
-",
-        ),
-    ]);
-
-    assert_cmd_snapshot!(context.command().arg("--dry-run"), @r"
-    success: true
-    exit_code: 0
-    ----- stdout -----
-    <test> test_file1::test_alpha
-    <test> test_file1::test_beta
-    <test> test_file2::test_gamma
-
-    3 tests collected
-
-    ----- stderr -----
-    ");
-}
-
-#[test]
-fn test_dry_run_empty() {
-    let context = TestContext::new();
-
-    assert_cmd_snapshot!(context.command().arg("--dry-run"), @r"
-    success: true
-    exit_code: 0
-    ----- stdout -----
-    0 tests collected
-
-    ----- stderr -----
-    ");
-}
-
-#[test]
-fn test_dry_run_with_path_filter() {
-    let context = TestContext::with_files([
-        (
-            "test_file1.py",
-            r"
-def test_alpha(): pass
-def test_beta(): pass
-",
-        ),
-        (
-            "test_file2.py",
-            r"
-def test_gamma(): pass
-",
-        ),
-    ]);
-
-    assert_cmd_snapshot!(context.command().args(["--dry-run", "test_file1.py"]), @r"
-    success: true
-    exit_code: 0
-    ----- stdout -----
-    <test> test_file1::test_alpha
-    <test> test_file1::test_beta
-
-    2 tests collected
-
-    ----- stderr -----
-    ");
-}
-
-#[test]
 fn test_concise_output_format_with_failure() {
     let context = TestContext::with_file(
         "test.py",
@@ -1715,36 +1638,6 @@ def test_b_pass():
     assert!(!output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("failed"), "should report failure");
-}
-
-#[test]
-fn test_dry_run_nested_packages() {
-    let context = TestContext::with_files([
-        (
-            "tests/test_root.py",
-            r"
-def test_root(): pass
-            ",
-        ),
-        (
-            "tests/sub/test_nested.py",
-            r"
-def test_nested(): pass
-            ",
-        ),
-    ]);
-
-    assert_cmd_snapshot!(context.command().arg("--dry-run"), @r"
-    success: true
-    exit_code: 0
-    ----- stdout -----
-    <test> tests.sub.test_nested::test_nested
-    <test> tests.test_root::test_root
-
-    2 tests collected
-
-    ----- stderr -----
-    ");
 }
 
 #[test]
