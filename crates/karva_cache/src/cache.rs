@@ -319,7 +319,7 @@ mod tests {
     use std::fs;
 
     use camino::Utf8PathBuf;
-    use insta::{assert_debug_snapshot, assert_snapshot};
+    use insta::assert_debug_snapshot;
 
     use super::*;
 
