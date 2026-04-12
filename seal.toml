@@ -3,6 +3,7 @@ current-version = "0.0.1-alpha.4"
 
 version-files = [
     "README.md",
+    "crates/karva/Cargo.toml",
     "crates/karva_version/Cargo.toml",
     "crates/karva_python/Cargo.toml",
     "pyproject.toml",
