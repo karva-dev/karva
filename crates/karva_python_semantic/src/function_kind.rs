@@ -16,18 +16,3 @@ impl FunctionKind {
         }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_capitalised_test() {
-        assert_eq!(FunctionKind::Test.capitalised(), "Test");
-    }
-
-    #[test]
-    fn test_capitalised_fixture() {
-        assert_eq!(FunctionKind::Fixture.capitalised(), "Fixture");
-    }
-}

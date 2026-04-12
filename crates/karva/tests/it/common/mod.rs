@@ -68,6 +68,7 @@ impl TestContext {
         settings.add_filter(r"run-\d+", "run-[TIMESTAMP]");
         settings.add_filter(r"[-─]{30,}", "[LONG-LINE]");
         settings.add_filter(r"karva \d+\.\d+\.\d+[a-zA-Z0-9._-]*", "karva [VERSION]");
+        settings.add_filter(r"karva\.exe", "karva");
 
         let settings_scope = settings.bind_to_scope();
 

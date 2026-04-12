@@ -1574,73 +1574,6 @@ def test_third():
 }
 
 #[test]
-fn test_fail_fast() {
-    let context = TestContext::with_file(
-        "test.py",
-        r"
-def test_1():
-    assert True
-
-def test_2():
-    assert False
-
-def test_3():
-    assert True
-        ",
-    );
-
-    let output = context
-        .command_no_parallel()
-        .arg("--fail-fast")
-        .output()
-        .expect("failed to run");
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(!output.status.success());
-    assert!(
-        stdout.contains("PASS") && stdout.contains("test::test_1"),
-        "first test should pass"
-    );
-    assert!(
-        stdout.contains("FAIL") && stdout.contains("test::test_2"),
-        "second test should fail"
-    );
-    assert!(
-        !stdout.contains("test::test_3"),
-        "third test should not run due to --fail-fast"
-    );
-}
-
-#[test]
-fn test_fail_fast_across_modules() {
-    let context = TestContext::with_files([
-        (
-            "test_a.py",
-            r"
-def test_a_fail():
-    assert False
-            ",
-        ),
-        (
-            "test_b.py",
-            r"
-def test_b_pass():
-    assert True
-            ",
-        ),
-    ]);
-
-    let output = context
-        .command_no_parallel()
-        .arg("--fail-fast")
-        .arg("-q")
-        .output()
-        .expect("failed to run");
-    assert!(!output.status.success());
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("failed"), "should report failure");
-}
-
-#[test]
 fn test_show_python_output() {
     let context = TestContext::with_file(
         "test.py",
@@ -1832,5 +1765,454 @@ def test_fail(): assert False
     ----- stdout -----
 
     ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_color_never_strips_ansi() {
+    let context = TestContext::with_file("test.py", "def test_1(): pass");
+
+    assert_cmd_snapshot!(context.command_no_parallel().args(["--color", "never"]), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_1
+
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_color_invalid_value() {
+    let context = TestContext::with_file("test.py", "def test_1(): pass");
+
+    assert_cmd_snapshot!(context.command().args(["--color", "rainbow"]), @r"
+    success: false
+    exit_code: 2
+    ----- stdout -----
+
+    ----- stderr -----
+    error: invalid value 'rainbow' for '--color <COLOR>'
+      [possible values: auto, always, never]
+
+    For more information, try '--help'.
+    ");
+}
+
+/// `--no-cache` disables reading duration history but the run should still succeed.
+#[test]
+fn test_no_cache_flag() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+def test_1(): pass
+def test_2(): pass
+",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--no-cache"), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+        Starting 2 tests across 1 worker
+            PASS [TIME] test::test_1
+            PASS [TIME] test::test_2
+
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_no_progress_hides_per_test_lines() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+def test_1(): pass
+def test_2(): pass
+def test_3(): pass
+",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--no-progress"), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+
+    ────────────
+         Summary [TIME] 3 tests run: 3 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+/// `--no-progress` still emits diagnostics for failing tests.
+#[test]
+fn test_no_progress_with_failure_shows_diagnostics() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+def test_1(): pass
+def test_2(): assert False
+",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--no-progress"), @"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+
+    diagnostics:
+
+    error[test-failure]: Test `test_2` failed
+     --> test.py:3:5
+      |
+    2 | def test_1(): pass
+    3 | def test_2(): assert False
+      |     ^^^^^^
+      |
+    info: Test failed here
+     --> test.py:3:1
+      |
+    2 | def test_1(): pass
+    3 | def test_2(): assert False
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^
+      |
+
+    ────────────
+         Summary [TIME] 2 tests run: 1 passed, 1 failed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+/// `--retry 0` is a no-op — failing tests still fail and are not re-run.
+#[test]
+fn test_retry_zero_is_noop() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+def test_fail(): assert False
+",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--retry").arg("0"), @"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+        Starting 1 test across 1 worker
+            FAIL [TIME] test::test_fail
+
+    diagnostics:
+
+    error[test-failure]: Test `test_fail` failed
+     --> test.py:2:5
+      |
+    2 | def test_fail(): assert False
+      |     ^^^^^^^^^
+      |
+    info: Test failed here
+     --> test.py:2:1
+      |
+    2 | def test_fail(): assert False
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      |
+
+    ────────────
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+/// A test that always fails exhausts retries and ends up reported as failed.
+#[test]
+fn test_retry_exhausts_on_always_failing_test() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+def test_always_fails(): assert False
+",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--retry").arg("2"), @"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+        Starting 1 test across 1 worker
+            FAIL [TIME] test::test_always_fails
+
+    diagnostics:
+
+    error[test-failure]: Test `test_always_fails` failed
+     --> test.py:2:5
+      |
+    2 | def test_always_fails(): assert False
+      |     ^^^^^^^^^^^^^^^^^
+      |
+    info: Test failed here
+     --> test.py:2:1
+      |
+    2 | def test_always_fails(): assert False
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      |
+
+    ────────────
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+/// `--max-fail` must reject zero because the underlying type is `NonZeroU32`.
+#[test]
+fn test_max_fail_zero_is_rejected() {
+    let context = TestContext::with_file("test.py", "def test_1(): pass");
+
+    assert_cmd_snapshot!(context.command().args(["--max-fail", "0"]), @r"
+    success: false
+    exit_code: 2
+    ----- stdout -----
+
+    ----- stderr -----
+    error: invalid value '0' for '--max-fail <N>': number would be zero for non-zero type
+
+    For more information, try '--help'.
+    ");
+}
+
+/// `--num-workers` followed by a non-numeric value should trigger clap's parser.
+#[test]
+fn test_num_workers_invalid_value() {
+    let context = TestContext::with_file("test.py", "def test_1(): pass");
+
+    assert_cmd_snapshot!(context.command().args(["--num-workers", "abc"]), @r"
+    success: false
+    exit_code: 2
+    ----- stdout -----
+
+    ----- stderr -----
+    error: invalid value 'abc' for '--num-workers <NUM_WORKERS>': invalid digit found in string
+
+    For more information, try '--help'.
+    ");
+}
+
+/// `--num-workers 1` behaves like `--no-parallel`: one worker handles every test.
+#[test]
+fn test_num_workers_one_matches_no_parallel() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+def test_1(): pass
+def test_2(): pass
+",
+    );
+
+    assert_cmd_snapshot!(context.command().args(["--num-workers", "1"]), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+        Starting 2 tests across 1 worker
+            PASS [TIME] test::test_1
+            PASS [TIME] test::test_2
+
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+/// `--durations` requires a numeric argument.
+#[test]
+fn test_durations_invalid_value() {
+    let context = TestContext::with_file("test.py", "def test_1(): pass");
+
+    assert_cmd_snapshot!(context.command().args(["--durations", "abc"]), @r"
+    success: false
+    exit_code: 2
+    ----- stdout -----
+
+    ----- stderr -----
+    error: invalid value 'abc' for '--durations <N>': invalid digit found in string
+
+    For more information, try '--help'.
+    ");
+}
+
+/// When `--fail-fast` and `--no-fail-fast` are mixed, clap's `overrides_with`
+/// wires them so that whichever flag appears last wins.
+#[test]
+fn test_no_fail_fast_after_fail_fast_wins() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+def test_1(): assert False
+def test_2(): assert False
+def test_3(): pass
+",
+    );
+
+    assert_cmd_snapshot!(
+        context
+            .command_no_parallel()
+            .args(["--fail-fast", "--no-fail-fast", "-q"]),
+        @"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+    ────────────
+         Summary [TIME] 3 tests run: 1 passed, 2 failed, 0 skipped
+
+    ----- stderr -----
+    "
+    );
+}
+
+#[test]
+fn test_fail_fast_after_no_fail_fast_wins() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+def test_1(): assert False
+def test_2(): assert False
+def test_3(): pass
+",
+    );
+
+    assert_cmd_snapshot!(
+        context
+            .command_no_parallel()
+            .args(["--no-fail-fast", "--fail-fast", "-q"]),
+        @"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+    ────────────
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
+
+    ----- stderr -----
+    "
+    );
+}
+
+/// `--max-fail` wins over `--no-fail-fast` regardless of order.
+#[test]
+fn test_max_fail_beats_no_fail_fast() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+def test_1(): assert False
+def test_2(): assert False
+def test_3(): assert False
+",
+    );
+
+    assert_cmd_snapshot!(
+        context
+            .command_no_parallel()
+            .args(["--no-fail-fast", "--max-fail=2", "-q"]),
+        @"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+    ────────────
+         Summary [TIME] 2 tests run: 0 passed, 2 failed, 0 skipped
+
+    ----- stderr -----
+    "
+    );
+}
+
+/// `karva test nonexistent.py` should exit with code 2 and an error message
+/// that points at the missing path.
+#[test]
+fn test_nonexistent_path_exits_nonzero() {
+    let context = TestContext::new();
+
+    assert_cmd_snapshot!(context.command().arg("missing.py"), @r"
+    success: false
+    exit_code: 2
+    ----- stdout -----
+
+    ----- stderr -----
+    Karva failed
+      Cause: path `<temp_dir>/missing.py` could not be found
+    ");
+}
+
+/// `karva` with no subcommand is a clap error: exit code 2, help on stderr.
+#[test]
+fn test_no_subcommand_prints_help() {
+    let context = TestContext::new();
+
+    assert_cmd_snapshot!(context.karva_command_in(context.root()), @"
+    success: false
+    exit_code: 2
+    ----- stdout -----
+
+    ----- stderr -----
+    A Python test runner.
+
+    Usage: karva <COMMAND>
+
+    Commands:
+      test      Run tests
+      snapshot  Manage snapshots created by `karva.assert_snapshot()`
+      cache     Manage the karva cache
+      version   Display Karva's version
+      help      Print this message or the help of the given subcommand(s)
+
+    Options:
+      -h, --help     Print help
+      -V, --version  Print version
+    ");
+}
+
+/// `karva testx` (typo of `test`) should suggest the closest subcommand.
+#[test]
+fn test_unknown_subcommand_suggests_correction() {
+    let context = TestContext::new();
+
+    let mut command = context.karva_command_in(context.root());
+    command.arg("testx");
+
+    assert_cmd_snapshot!(command, @r"
+    success: false
+    exit_code: 2
+    ----- stdout -----
+
+    ----- stderr -----
+    error: unrecognized subcommand 'testx'
+
+      tip: a similar subcommand exists: 'test'
+
+    Usage: karva <COMMAND>
+
+    For more information, try '--help'.
+    ");
+}
+
+/// `--test-prefix` requires a value.
+#[test]
+fn test_test_prefix_requires_value() {
+    let context = TestContext::with_file("test.py", "def test_1(): pass");
+
+    assert_cmd_snapshot!(context.command().arg("--test-prefix"), @r"
+    success: false
+    exit_code: 2
+    ----- stdout -----
+
+    ----- stderr -----
+    error: a value is required for '--test-prefix <TEST_PREFIX>' but none was supplied
+
+    For more information, try '--help'.
     ");
 }

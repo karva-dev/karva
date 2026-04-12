@@ -297,6 +297,246 @@ impl Combine for OutputFormat {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use std::num::NonZeroU32;
+
+    use insta::{assert_debug_snapshot, assert_snapshot};
+    use karva_combine::Combine;
+
+    use super::*;
+
+    #[test]
+    fn to_settings_fail_fast_true_becomes_max_fail_one() {
+        let options = TestOptions {
+            fail_fast: Some(true),
+            ..TestOptions::default()
+        };
+        assert_debug_snapshot!(options.to_settings().max_fail, @"
+        MaxFail(
+            Some(
+                1,
+            ),
+        )
+        ");
+    }
+
+    #[test]
+    fn to_settings_fail_fast_false_is_unlimited() {
+        let options = TestOptions {
+            fail_fast: Some(false),
+            ..TestOptions::default()
+        };
+        assert_debug_snapshot!(options.to_settings().max_fail, @"
+        MaxFail(
+            None,
+        )
+        ");
+    }
+
+    #[test]
+    fn to_settings_max_fail_takes_precedence_over_fail_fast() {
+        let options = TestOptions {
+            fail_fast: Some(true),
+            max_fail: Some(MaxFail::from(NonZeroU32::new(5).expect("non-zero"))),
+            ..TestOptions::default()
+        };
+        assert_debug_snapshot!(options.to_settings().max_fail, @"
+        MaxFail(
+            Some(
+                5,
+            ),
+        )
+        ");
+    }
+
+    #[test]
+    fn from_toml_str_rejects_unknown_key() {
+        let toml = r"
+[test]
+fail-fast = true
+nonsense = 42
+";
+        assert_snapshot!(
+            Options::from_toml_str(toml).expect_err("unknown field"),
+            @"
+        TOML parse error at line 4, column 1
+          |
+        4 | nonsense = 42
+          | ^^^^^^^^
+        unknown field `nonsense`, expected one of `test-function-prefix`, `fail-fast`, `max-fail`, `try-import-fixtures`, `retry`
+        "
+        );
+    }
+
+    #[test]
+    fn from_toml_str_rejects_unknown_top_level_section() {
+        let toml = r"
+[bogus]
+foo = 1
+";
+        assert_snapshot!(
+            Options::from_toml_str(toml).expect_err("unknown section"),
+            @"
+        TOML parse error at line 2, column 2
+          |
+        2 | [bogus]
+          |  ^^^^^
+        unknown field `bogus`, expected one of `src`, `terminal`, `test`
+        "
+        );
+    }
+
+    #[test]
+    fn from_toml_str_empty_is_default() {
+        assert_debug_snapshot!(Options::from_toml_str("").expect("parse"), @"
+        Options {
+            src: None,
+            terminal: None,
+            test: None,
+        }
+        ");
+    }
+
+    /// `MaxFail` wraps `NonZeroU32`, so raw `0` must be rejected by the
+    /// deserializer rather than silently producing `unlimited`.
+    #[test]
+    fn from_toml_str_rejects_max_fail_zero() {
+        let toml = r"
+[test]
+max-fail = 0
+";
+        assert_snapshot!(
+            Options::from_toml_str(toml).expect_err("zero rejected"),
+            @"
+        TOML parse error at line 3, column 12
+          |
+        3 | max-fail = 0
+          |            ^
+        invalid value: integer `0`, expected a nonzero u32
+        "
+        );
+    }
+
+    #[test]
+    fn combine_prefers_self_for_scalars() {
+        let cli = TestOptions {
+            test_function_prefix: Some("cli_prefix".to_string()),
+            retry: Some(5),
+            ..TestOptions::default()
+        };
+        let file = TestOptions {
+            test_function_prefix: Some("file_prefix".to_string()),
+            retry: Some(1),
+            try_import_fixtures: Some(true),
+            ..TestOptions::default()
+        };
+        assert_debug_snapshot!(cli.combine(file), @r#"
+        TestOptions {
+            test_function_prefix: Some(
+                "cli_prefix",
+            ),
+            fail_fast: None,
+            max_fail: None,
+            try_import_fixtures: Some(
+                true,
+            ),
+            retry: Some(
+                5,
+            ),
+        }
+        "#);
+    }
+
+    #[test]
+    fn combine_fills_missing_fields_from_other() {
+        let cli = TestOptions::default();
+        let file = TestOptions {
+            test_function_prefix: Some("from_file".to_string()),
+            fail_fast: Some(true),
+            retry: Some(3),
+            ..TestOptions::default()
+        };
+        assert_debug_snapshot!(cli.combine(file), @r#"
+        TestOptions {
+            test_function_prefix: Some(
+                "from_file",
+            ),
+            fail_fast: Some(
+                true,
+            ),
+            max_fail: None,
+            try_import_fixtures: None,
+            retry: Some(
+                3,
+            ),
+        }
+        "#);
+    }
+
+    /// `Vec::combine` appends `self` after `other`, so CLI entries take
+    /// precedence at the tail.
+    #[test]
+    fn combine_merges_include_paths_with_cli_taking_precedence() {
+        let cli = SrcOptions {
+            include: Some(vec!["cli_only".to_string()]),
+            ..SrcOptions::default()
+        };
+        let file = SrcOptions {
+            include: Some(vec!["file_only".to_string()]),
+            respect_ignore_files: Some(false),
+        };
+        assert_debug_snapshot!(cli.combine(file), @r#"
+        SrcOptions {
+            respect_ignore_files: Some(
+                false,
+            ),
+            include: Some(
+                [
+                    "file_only",
+                    "cli_only",
+                ],
+            ),
+        }
+        "#);
+    }
+
+    #[test]
+    fn project_overrides_apply_cli_over_file() {
+        let cli_options = Options {
+            test: Some(TestOptions {
+                test_function_prefix: Some("cli".to_string()),
+                ..TestOptions::default()
+            }),
+            ..Options::default()
+        };
+        let file_options = Options {
+            test: Some(TestOptions {
+                test_function_prefix: Some("file".to_string()),
+                retry: Some(2),
+                ..TestOptions::default()
+            }),
+            ..Options::default()
+        };
+        let overrides = ProjectOptionsOverrides::new(None, cli_options);
+        assert_debug_snapshot!(overrides.apply_to(file_options).test, @r#"
+        Some(
+            TestOptions {
+                test_function_prefix: Some(
+                    "cli",
+                ),
+                fail_fast: None,
+                max_fail: None,
+                try_import_fixtures: None,
+                retry: Some(
+                    2,
+                ),
+            },
+        )
+        "#);
+    }
+}
+
 #[derive(Debug, Default, PartialEq, Eq, Clone)]
 pub struct ProjectOptionsOverrides {
     pub config_file_override: Option<Utf8PathBuf>,

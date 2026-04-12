@@ -156,20 +156,16 @@ File "test.py", line 1, in <module>
     raise Exception('Test error')
 Exception: Test error
 "#;
-            let filtered = filter_traceback(traceback);
-            assert_eq!(
-                filtered,
-                r#"File "test.py", line 1, in <module>
-  raise Exception('Test error')
-Exception: Test error"#
-            );
+            insta::assert_snapshot!(filter_traceback(traceback), @r#"
+            File "test.py", line 1, in <module>
+              raise Exception('Test error')
+            Exception: Test error
+            "#);
         }
 
         #[test]
         fn test_filter_traceback_empty() {
-            let traceback = "";
-            let filtered = filter_traceback(traceback);
-            assert_eq!(filtered, "");
+            insta::assert_snapshot!(filter_traceback(""), @"");
         }
     }
 
@@ -179,55 +175,63 @@ Exception: Test error"#
         #[test]
         fn test_parse_traceback_line_valid() {
             let line = r#"  File "test.py", line 10, in <module>"#;
-            let location = parse_traceback_line(line);
-            let expected_location = Some(TracebackLocation {
-                file_path: "test.py".into(),
-                line_number: OneIndexed::new(10).unwrap(),
-            });
-            assert_eq!(location, expected_location);
+            insta::assert_debug_snapshot!(parse_traceback_line(line), @r#"
+            Some(
+                TracebackLocation {
+                    file_path: "test.py",
+                    line_number: OneIndexed(
+                        10,
+                    ),
+                },
+            )
+            "#);
         }
 
         #[test]
         fn test_parse_traceback_line_with_path() {
             let line = r#"  File "/path/to/script.py", line 42, in function_name"#;
-            let location = parse_traceback_line(line);
-            let expected_location = Some(TracebackLocation {
-                file_path: "/path/to/script.py".into(),
-                line_number: OneIndexed::new(42).unwrap(),
-            });
-            assert_eq!(location, expected_location);
+            insta::assert_debug_snapshot!(parse_traceback_line(line), @r#"
+            Some(
+                TracebackLocation {
+                    file_path: "/path/to/script.py",
+                    line_number: OneIndexed(
+                        42,
+                    ),
+                },
+            )
+            "#);
         }
 
         #[test]
         fn test_parse_traceback_line_no_file_prefix() {
-            let line = "Some random line";
-            let location = parse_traceback_line(line);
-            assert_eq!(location, None);
+            insta::assert_debug_snapshot!(parse_traceback_line("Some random line"), @"None");
         }
 
         #[test]
         fn test_parse_traceback_line_missing_line_number() {
             let line = r#"  File "test.py", in <module>"#;
-            let location = parse_traceback_line(line);
-            assert_eq!(location, None);
+            insta::assert_debug_snapshot!(parse_traceback_line(line), @"None");
         }
 
         #[test]
         fn test_parse_traceback_line_malformed_quote() {
             let line = r#"  File "test.py, line 10, in <module>"#;
-            let location = parse_traceback_line(line);
-            assert_eq!(location, None);
+            insta::assert_debug_snapshot!(parse_traceback_line(line), @"None");
         }
 
         #[test]
         fn test_parse_traceback_line_large_line_number() {
             let line = r#"  File "test.py", line 99999, in <module>"#;
-            let location = parse_traceback_line(line);
-            let expected_location = Some(TracebackLocation {
-                file_path: "test.py".into(),
-                line_number: OneIndexed::new(99999).unwrap(),
-            });
-            assert_eq!(location, expected_location);
+            insta::assert_debug_snapshot!(parse_traceback_line(line), @r#"
+            Some(
+                TracebackLocation {
+                    file_path: "test.py",
+                    line_number: OneIndexed(
+                        99999,
+                    ),
+                },
+            )
+            "#);
         }
     }
 
@@ -240,12 +244,16 @@ Exception: Test error"#
   File "test.py", line 10, in <module>
     raise Exception('Test error')
 Exception: Test error"#;
-            let location = get_traceback_location(traceback);
-            let expected_location = Some(TracebackLocation {
-                file_path: "test.py".into(),
-                line_number: OneIndexed::new(10).unwrap(),
-            });
-            assert_eq!(location, expected_location);
+            insta::assert_debug_snapshot!(get_traceback_location(traceback), @r#"
+            Some(
+                TracebackLocation {
+                    file_path: "test.py",
+                    line_number: OneIndexed(
+                        10,
+                    ),
+                },
+            )
+            "#);
         }
 
         #[test]
@@ -256,26 +264,26 @@ Exception: Test error"#;
   File "helper.py", line 15, in foo
     bar()
 ValueError: Invalid value"#;
-            let location = get_traceback_location(traceback);
-            let expected_location = Some(TracebackLocation {
-                file_path: "helper.py".into(),
-                line_number: OneIndexed::new(15).unwrap(),
-            });
-            assert_eq!(location, expected_location);
+            insta::assert_debug_snapshot!(get_traceback_location(traceback), @r#"
+            Some(
+                TracebackLocation {
+                    file_path: "helper.py",
+                    line_number: OneIndexed(
+                        15,
+                    ),
+                },
+            )
+            "#);
         }
 
         #[test]
         fn test_get_traceback_location_empty() {
-            let traceback = "";
-            let location = get_traceback_location(traceback);
-            assert_eq!(location, None);
+            insta::assert_debug_snapshot!(get_traceback_location(""), @"None");
         }
 
         #[test]
         fn test_get_traceback_location_no_file_lines() {
-            let traceback = "Exception: Test error";
-            let location = get_traceback_location(traceback);
-            assert_eq!(location, None);
+            insta::assert_debug_snapshot!(get_traceback_location("Exception: Test error"), @"None");
         }
     }
 
@@ -285,45 +293,58 @@ ValueError: Invalid value"#;
         #[test]
         fn test_calculate_line_range_first_line() {
             let source = "line 1\nline 2\nline 3";
-            let range = calculate_line_range(source, OneIndexed::new(1).unwrap());
-            assert_eq!(range, Some(TextRange::new(0.into(), 6.into())));
+            insta::assert_debug_snapshot!(calculate_line_range(source, OneIndexed::new(1).unwrap()), @"
+            Some(
+                0..6,
+            )
+            ");
         }
 
         #[test]
         fn test_calculate_line_range_middle_line() {
             let source = "line 1\nline 2\nline 3";
-            let range = calculate_line_range(source, OneIndexed::new(2).unwrap());
-            assert_eq!(range, Some(TextRange::new(7.into(), 13.into())));
+            insta::assert_debug_snapshot!(calculate_line_range(source, OneIndexed::new(2).unwrap()), @"
+            Some(
+                7..13,
+            )
+            ");
         }
 
         #[test]
         fn test_calculate_line_range_last_line() {
             let source = "line 1\nline 2\nline 3";
-            let range = calculate_line_range(source, OneIndexed::new(3).unwrap());
-            assert_eq!(range, Some(TextRange::new(14.into(), 20.into())));
+            insta::assert_debug_snapshot!(calculate_line_range(source, OneIndexed::new(3).unwrap()), @"
+            Some(
+                14..20,
+            )
+            ");
         }
 
+        /// "indented line" is 13 characters, starting at position 11 (after 4 spaces),
+        /// and leading/trailing whitespace should be trimmed from the range.
         #[test]
         fn test_calculate_line_range_with_whitespace() {
             let source = "line 1\n    indented line\nline 3";
-            let range = calculate_line_range(source, OneIndexed::new(2).unwrap());
-            // Should trim leading/trailing whitespace
-            // "indented line" is 13 characters, starting at position 11 (after 4 spaces)
-            assert_eq!(range, Some(TextRange::new(11.into(), 24.into())));
+            insta::assert_debug_snapshot!(calculate_line_range(source, OneIndexed::new(2).unwrap()), @"
+            Some(
+                11..24,
+            )
+            ");
         }
 
         #[test]
         fn test_calculate_line_range_out_of_bounds() {
             let source = "line 1\nline 2";
-            let range = calculate_line_range(source, OneIndexed::new(10).unwrap());
-            assert_eq!(range, None);
+            insta::assert_debug_snapshot!(calculate_line_range(source, OneIndexed::new(10).unwrap()), @"None");
         }
 
         #[test]
         fn test_calculate_line_range_single_line() {
-            let source = "single line";
-            let range = calculate_line_range(source, OneIndexed::new(1).unwrap());
-            assert_eq!(range, Some(TextRange::new(0.into(), 11.into())));
+            insta::assert_debug_snapshot!(calculate_line_range("single line", OneIndexed::new(1).unwrap()), @"
+            Some(
+                0..11,
+            )
+            ");
         }
     }
 }
