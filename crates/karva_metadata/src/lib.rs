@@ -14,7 +14,7 @@ pub use options::{
     Options, OutputFormat, ProjectOptionsOverrides, SrcOptions, TerminalOptions, TestOptions,
 };
 pub use pyproject::{PyProject, PyProjectError};
-pub use settings::ProjectSettings;
+pub use settings::{ProjectSettings, RunIgnoredMode};
 
 use crate::options::KarvaTomlError;
 

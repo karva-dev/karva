@@ -13,7 +13,7 @@ use karva_cache::{
     AggregatedResults, CACHE_DIR, Cache, RunHash, read_last_failed, read_recent_durations,
     write_last_failed,
 };
-use karva_cli::SubTestCommand;
+use karva_cli::{RunIgnored, SubTestCommand};
 use karva_collector::{CollectedPackage, CollectionSettings};
 use karva_logging::Printer;
 use karva_logging::time::format_duration;
@@ -430,6 +430,18 @@ fn inner_cli_args(settings: &ProjectSettings, args: &SubTestCommand) -> Vec<Stri
     for expr in &args.filter_expressions {
         cli_args.push("--filter".to_string());
         cli_args.push(expr.clone());
+    }
+
+    match args.run_ignored {
+        RunIgnored::Default => {}
+        RunIgnored::Only => {
+            cli_args.push("--run-ignored".to_string());
+            cli_args.push("only".to_string());
+        }
+        RunIgnored::All => {
+            cli_args.push("--run-ignored".to_string());
+            cli_args.push("all".to_string());
+        }
     }
 
     cli_args

@@ -244,6 +244,14 @@ pub struct SubTestCommand {
     #[clap(short = 'E', long = "filter")]
     pub filter_expressions: Vec<String>,
 
+    /// Run ignored tests.
+    ///
+    /// - default: Run non-ignored tests
+    /// - only:    Run ignored tests
+    /// - all:     Run both ignored and non-ignored tests
+    #[clap(long, value_name = "WHICH", default_value = "default")]
+    pub run_ignored: RunIgnored,
+
     /// Update snapshots directly instead of creating pending `.snap.new` files.
     ///
     /// When set, `karva.assert_snapshot()` will write directly to `.snap` files,
@@ -374,4 +382,16 @@ impl TestCommand {
     pub fn into_options(self) -> Options {
         self.sub_command.into_options()
     }
+}
+
+/// Whether to run ignored/skipped tests.
+#[derive(Copy, Clone, Hash, Debug, PartialEq, Eq, Default, clap::ValueEnum)]
+pub enum RunIgnored {
+    #[default]
+    #[value(name = "default")]
+    Default,
+    #[value(name = "only")]
+    Only,
+    #[value(name = "all")]
+    All,
 }

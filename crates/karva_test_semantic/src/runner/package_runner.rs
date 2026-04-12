@@ -6,6 +6,7 @@ use std::sync::Arc;
 type FixtureArguments = HashMap<String, Py<PyAny>>;
 
 use karva_diagnostic::IndividualTestResultKind;
+use karva_metadata::RunIgnoredMode;
 use karva_metadata::filter::EvalContext;
 use karva_python_semantic::{FunctionKind, QualifiedFunctionName, QualifiedTestName};
 use pyo3::prelude::*;
@@ -212,6 +213,8 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
         tags: &crate::extensions::tags::Tags,
     ) -> Option<bool> {
         let filter = &self.context.settings().test().filter;
+        let run_ignored = self.context.settings().test().run_ignored;
+
         if !filter.is_empty() {
             let qualified = QualifiedTestName::new(name.clone(), None);
             let display_name = qualified.to_string();
@@ -229,12 +232,29 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
             }
         }
 
-        if let (true, reason) = tags.should_skip() {
-            return Some(self.context.register_test_case_result(
-                &QualifiedTestName::new(name.clone(), None),
-                IndividualTestResultKind::Skipped { reason },
-                std::time::Duration::ZERO,
-            ));
+        match run_ignored {
+            RunIgnoredMode::Default => {
+                if let (true, reason) = tags.should_skip() {
+                    return Some(self.context.register_test_case_result(
+                        &QualifiedTestName::new(name.clone(), None),
+                        IndividualTestResultKind::Skipped { reason },
+                        std::time::Duration::ZERO,
+                    ));
+                }
+            }
+            RunIgnoredMode::Only => {
+                if !tags.has_skip_tag() {
+                    return Some(self.context.register_test_case_result(
+                        &QualifiedTestName::new(name.clone(), None),
+                        IndividualTestResultKind::Skipped { reason: None },
+                        std::time::Duration::ZERO,
+                    ));
+                }
+                // has skip tag → override skip, let the test run
+            }
+            RunIgnoredMode::All => {
+                // run everything regardless of skip tags
+            }
         }
 
         None
