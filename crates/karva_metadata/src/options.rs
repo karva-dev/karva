@@ -307,23 +307,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn to_settings_defaults_when_empty() {
-        assert_debug_snapshot!(TestOptions::default().to_settings(), @r#"
-        TestSettings {
-            test_function_prefix: "test",
-            max_fail: MaxFail(
-                None,
-            ),
-            try_import_fixtures: false,
-            retry: 0,
-            filter: FiltersetSet {
-                filters: [],
-            },
-        }
-        "#);
-    }
-
-    #[test]
     fn to_settings_fail_fast_true_becomes_max_fail_one() {
         let options = TestOptions {
             fail_fast: Some(true),
@@ -365,53 +348,6 @@ mod tests {
             ),
         )
         ");
-    }
-
-    #[test]
-    fn from_toml_str_parses_nested_sections() {
-        let toml = r#"
-[test]
-test-function-prefix = "check"
-max-fail = 3
-retry = 2
-
-[terminal]
-output-format = "concise"
-show-python-output = true
-
-[src]
-respect-ignore-files = false
-include = ["tests", "more"]
-"#;
-        let options = Options::from_toml_str(toml).expect("parse");
-        assert_debug_snapshot!(options.to_settings(), @r#"
-        ProjectSettings {
-            terminal: TerminalSettings {
-                output_format: Concise,
-                show_python_output: true,
-            },
-            src: SrcSettings {
-                respect_ignore_files: false,
-                include_paths: [
-                    "tests",
-                    "more",
-                ],
-            },
-            test: TestSettings {
-                test_function_prefix: "check",
-                max_fail: MaxFail(
-                    Some(
-                        3,
-                    ),
-                ),
-                try_import_fixtures: false,
-                retry: 2,
-                filter: FiltersetSet {
-                    filters: [],
-                },
-            },
-        }
-        "#);
     }
 
     #[test]

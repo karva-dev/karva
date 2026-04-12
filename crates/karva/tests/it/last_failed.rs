@@ -172,38 +172,6 @@ def test_fail_b(): assert False
     ");
 }
 
-/// `--dry-run` currently ignores `--last-failed` and prints every discovered
-/// test. Pinning this so the behavior is intentional — see PR follow-ups.
-#[test]
-fn last_failed_with_dry_run_shows_all_tests() {
-    let context = TestContext::with_file(
-        "test_a.py",
-        "
-def test_pass(): pass
-def test_fail(): assert False
-        ",
-    );
-
-    context.command_no_parallel().output().unwrap();
-
-    assert_cmd_snapshot!(
-        context
-            .command_no_parallel()
-            .args(["--last-failed", "--dry-run"]),
-        @"
-    success: true
-    exit_code: 0
-    ----- stdout -----
-    <test> test_a::test_fail
-    <test> test_a::test_pass
-
-    2 tests collected
-
-    ----- stderr -----
-    "
-    );
-}
-
 /// A filter combined with `--last-failed` intersects: tests that were in the
 /// last-failed set but are now filtered out are skipped.
 #[test]

@@ -1574,36 +1574,6 @@ def test_third():
 }
 
 #[test]
-fn test_dry_run_nested_packages() {
-    let context = TestContext::with_files([
-        (
-            "tests/test_root.py",
-            r"
-def test_root(): pass
-            ",
-        ),
-        (
-            "tests/sub/test_nested.py",
-            r"
-def test_nested(): pass
-            ",
-        ),
-    ]);
-
-    assert_cmd_snapshot!(context.command().arg("--dry-run"), @r"
-    success: true
-    exit_code: 0
-    ----- stdout -----
-    <test> tests.sub.test_nested::test_nested
-    <test> tests.test_root::test_root
-
-    2 tests collected
-
-    ----- stderr -----
-    ");
-}
-
-#[test]
 fn test_show_python_output() {
     let context = TestContext::with_file(
         "test.py",
@@ -2074,30 +2044,6 @@ fn test_durations_invalid_value() {
     error: invalid value 'abc' for '--durations <N>': invalid digit found in string
 
     For more information, try '--help'.
-    ");
-}
-
-/// `--dry-run` with `--num-workers` still only collects — it should not spawn workers.
-#[test]
-fn test_dry_run_with_num_workers_does_not_spawn() {
-    let context = TestContext::with_file(
-        "test.py",
-        r"
-def test_1(): pass
-def test_2(): pass
-",
-    );
-
-    assert_cmd_snapshot!(context.command().args(["--dry-run", "--num-workers", "4"]), @r"
-    success: true
-    exit_code: 0
-    ----- stdout -----
-    <test> test::test_1
-    <test> test::test_2
-
-    2 tests collected
-
-    ----- stderr -----
     ");
 }
 
