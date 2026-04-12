@@ -67,7 +67,6 @@ impl TestContext {
         settings.add_filter(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}", "[DATETIME]");
         settings.add_filter(r"run-\d+", "run-[TIMESTAMP]");
         settings.add_filter(r"[-─]{30,}", "[LONG-LINE]");
-        settings.add_filter(r"(?m)^ +$", "");
         settings.add_filter(r"karva \d+\.\d+\.\d+[a-zA-Z0-9._-]*", "karva [VERSION]");
 
         let settings_scope = settings.bind_to_scope();
