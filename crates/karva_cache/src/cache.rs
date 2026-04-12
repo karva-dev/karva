@@ -386,16 +386,9 @@ mod tests {
         let cache = Cache::new(&cache_dir, &run_hash);
         let results = cache.aggregate_results().unwrap();
 
-        assert_debug_snapshot!(
-            (results.stats.passed(), results.stats.failed(), results.stats.skipped()),
-            @r"
-        (
-            5,
-            1,
-            1,
-        )
-        "
-        );
+        assert_eq!(results.stats.passed(), 5);
+        assert_eq!(results.stats.failed(), 1);
+        assert_eq!(results.stats.skipped(), 1);
     }
 
     #[test]
@@ -410,8 +403,8 @@ mod tests {
         let cache = Cache::new(&cache_dir, &run_hash);
         let results = cache.aggregate_results().unwrap();
 
-        assert_debug_snapshot!(results.stats.total(), @"0");
-        assert_snapshot!(results.diagnostics, @"");
+        assert_eq!(results.stats.total(), 0);
+        assert!(results.diagnostics.is_empty());
     }
 
     #[test]
