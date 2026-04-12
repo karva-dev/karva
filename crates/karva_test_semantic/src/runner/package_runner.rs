@@ -243,14 +243,15 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
                 }
             }
             RunIgnoredMode::Only => {
-                if !tags.should_skip().0 {
+                // Skip tests whose skip condition is not active; only tests
+                // that would actually be skipped in a normal run are included.
+                if let (false, _) = tags.should_skip() {
                     return Some(self.context.register_test_case_result(
                         &QualifiedTestName::new(name.clone(), None),
                         IndividualTestResultKind::Skipped { reason: None },
                         std::time::Duration::ZERO,
                     ));
                 }
-                // skip condition is active → override skip, let the test run
             }
             RunIgnoredMode::All => {
                 // run everything regardless of skip tags
