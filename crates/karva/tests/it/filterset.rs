@@ -1031,7 +1031,7 @@ fn filterset_unknown_predicate() {
     ----- stderr -----
     Karva failed
       Cause: invalid `--filter` expression
-      Cause: unknown predicate `package` in filter expression `package(foo)` (expected `test` or `tag`)
+      Cause: unknown predicate `package` in filter expression `package(foo)` (expected `test`, `tag`, or `runignored`)
     "
     );
 }

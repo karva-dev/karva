@@ -29,6 +29,13 @@ impl Matcher {
     }
 }
 
+/// The mode for the `runignored(mode)` predicate.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RunIgnoredMode {
+    Only,
+    All,
+}
+
 /// A single predicate in the filter DSL, e.g. `test(~login)` or `tag(slow)`.
 #[derive(Debug, Clone)]
 pub enum Predicate {
@@ -36,6 +43,8 @@ pub enum Predicate {
     Test(Matcher),
     /// Evaluated against each custom tag on the test; matches if any tag matches.
     Tag(Matcher),
+    /// Matches tests based on their `@karva.tags.skip` decorator.
+    RunIgnored(RunIgnoredMode),
 }
 
 /// The value a [`Filterset`] is evaluated against.
@@ -43,6 +52,7 @@ pub enum Predicate {
 pub struct EvalContext<'a> {
     pub test_name: &'a str,
     pub tags: &'a [&'a str],
+    pub has_skip_tag: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -60,9 +70,22 @@ impl Expr {
             Self::Predicate(Predicate::Tag(matcher)) => {
                 ctx.tags.iter().any(|tag| matcher.matches(tag))
             }
+            Self::Predicate(Predicate::RunIgnored(RunIgnoredMode::Only)) => ctx.has_skip_tag,
+            Self::Predicate(Predicate::RunIgnored(RunIgnoredMode::All)) => true,
             Self::Not(inner) => !inner.matches(ctx),
             Self::And(lhs, rhs) => lhs.matches(ctx) && rhs.matches(ctx),
             Self::Or(lhs, rhs) => lhs.matches(ctx) || rhs.matches(ctx),
+        }
+    }
+
+    fn contains_runignored(&self) -> bool {
+        match self {
+            Self::Predicate(Predicate::RunIgnored(_)) => true,
+            Self::Predicate(_) => false,
+            Self::Not(inner) => inner.contains_runignored(),
+            Self::And(lhs, rhs) | Self::Or(lhs, rhs) => {
+                lhs.contains_runignored() || rhs.contains_runignored()
+            }
         }
     }
 }
@@ -90,6 +113,10 @@ impl Filterset {
     pub fn matches(&self, ctx: &EvalContext<'_>) -> bool {
         self.expr.matches(ctx)
     }
+
+    pub fn contains_runignored(&self) -> bool {
+        self.expr.contains_runignored()
+    }
 }
 
 /// A set of filterset expressions combined with OR semantics (matches if any
@@ -106,6 +133,10 @@ impl FiltersetSet {
             .map(|expr| Filterset::new(expr))
             .collect::<Result<_, _>>()?;
         Ok(Self { filters })
+    }
+
+    pub fn contains_runignored(&self) -> bool {
+        self.filters.iter().any(|filter| filter.contains_runignored())
     }
 
     pub fn is_empty(&self) -> bool {
@@ -146,13 +177,17 @@ pub enum FilterError {
         expression: String,
     },
     #[error(
-        "unknown predicate `{name}` in filter expression `{expression}` (expected `test` or `tag`)"
+        "unknown predicate `{name}` in filter expression `{expression}` (expected `test`, `tag`, or `runignored`)"
     )]
     UnknownPredicate { name: String, expression: String },
     #[error("expected `(` after predicate in filter expression `{expression}`")]
     ExpectedPredicateOpenParen { expression: String },
     #[error("expected a matcher body in filter expression `{expression}`")]
     ExpectedMatcher { expression: String },
+    #[error(
+        "expected `only` or `all` inside `runignored(...)` in filter expression `{expression}`"
+    )]
+    ExpectedRunIgnoredMode { expression: String },
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -418,6 +453,37 @@ impl<'a> Parser<'a> {
                 let kind = match name.as_str() {
                     "test" => PredicateKind::Test,
                     "tag" => PredicateKind::Tag,
+                    "runignored" => {
+                        self.advance();
+                        if self.peek() != Some(&Token::LParen) {
+                            return Err(FilterError::ExpectedPredicateOpenParen {
+                                expression: self.expr_str(),
+                            });
+                        }
+                        self.advance();
+                        let mode = match self.peek() {
+                            Some(Token::Ident(s)) if s == "only" => {
+                                self.advance();
+                                RunIgnoredMode::Only
+                            }
+                            Some(Token::Ident(s)) if s == "all" => {
+                                self.advance();
+                                RunIgnoredMode::All
+                            }
+                            _ => {
+                                return Err(FilterError::ExpectedRunIgnoredMode {
+                                    expression: self.expr_str(),
+                                });
+                            }
+                        };
+                        if self.peek() != Some(&Token::RParen) {
+                            return Err(FilterError::UnclosedParenthesis {
+                                expression: self.expr_str(),
+                            });
+                        }
+                        self.advance();
+                        return Ok(Expr::Predicate(Predicate::RunIgnored(mode)));
+                    }
                     _ => {
                         return Err(FilterError::UnknownPredicate {
                             name,
@@ -531,6 +597,7 @@ mod tests {
         EvalContext {
             test_name,
             tags: tag_list,
+            has_skip_tag: false,
         }
     }
 
@@ -855,5 +922,46 @@ mod tests {
         assert!(f.matches(&ctx("x", &["test"])));
         let f = Filterset::new("test(tag)").expect("parse");
         assert!(f.matches(&ctx("mod::test_tag_something", &[])));
+    }
+
+    fn ctx_with_skip<'a>(test_name: &'a str, tag_list: &'a [&'a str]) -> EvalContext<'a> {
+        EvalContext {
+            test_name,
+            tags: tag_list,
+            has_skip_tag: true,
+        }
+    }
+
+    #[test]
+    fn runignored_matches_skip_tagged() {
+        let f = Filterset::new("runignored(only)").expect("parse");
+        assert!(f.matches(&ctx_with_skip("mod::test_slow", &[])));
+        assert!(!f.matches(&ctx("mod::test_fast", &[])));
+    }
+
+    #[test]
+    fn runignored_all_matches_everything() {
+        let f = Filterset::new("runignored(all)").expect("parse");
+        assert!(f.matches(&ctx_with_skip("mod::test_slow", &[])));
+        assert!(f.matches(&ctx("mod::test_fast", &[])));
+    }
+
+    #[test]
+    fn runignored_with_not() {
+        let f = Filterset::new("not runignored(only)").expect("parse");
+        assert!(!f.matches(&ctx_with_skip("mod::test_slow", &[])));
+        assert!(f.matches(&ctx("mod::test_fast", &[])));
+    }
+
+    #[test]
+    fn runignored_requires_valid_mode() {
+        assert!(matches!(
+            Filterset::new("runignored()"),
+            Err(FilterError::ExpectedRunIgnoredMode { .. })
+        ));
+        assert!(matches!(
+            Filterset::new("runignored(foo)"),
+            Err(FilterError::ExpectedRunIgnoredMode { .. })
+        ));
     }
 }

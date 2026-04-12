@@ -262,6 +262,11 @@ impl Tags {
             .collect()
     }
 
+    /// Returns true if the test has any skip decorator, regardless of conditions.
+    pub(crate) fn has_skip_tag(&self) -> bool {
+        self.inner.iter().any(|tag| matches!(tag, Tag::Skip(_)))
+    }
+
     /// Returns true if any skip tag should be skipped.
     pub(crate) fn should_skip(&self) -> (bool, Option<String>) {
         for tag in &self.inner {

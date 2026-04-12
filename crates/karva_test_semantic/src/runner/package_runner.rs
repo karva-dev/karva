@@ -219,7 +219,9 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
             let ctx = EvalContext {
                 test_name: &display_name,
                 tags: &custom_names,
+                has_skip_tag: tags.has_skip_tag(),
             };
+            let should_skip = tags.should_skip();
             if !filter.matches(&ctx) {
                 return Some(self.context.register_test_case_result(
                     &qualified,
@@ -227,6 +229,14 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
                     std::time::Duration::ZERO,
                 ));
             }
+            if should_skip.0 && !filter.contains_runignored() {
+                return Some(self.context.register_test_case_result(
+                    &qualified,
+                    IndividualTestResultKind::Skipped { reason: None },
+                    std::time::Duration::ZERO,
+                ));
+            }
+            return None;
         }
 
         if let (true, reason) = tags.should_skip() {

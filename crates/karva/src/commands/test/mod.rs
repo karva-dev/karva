@@ -217,6 +217,7 @@ fn collect_test_names(
             let ctx = EvalContext {
                 test_name: &qualified,
                 tags: &[],
+                has_skip_tag: false,
             };
             if filter.matches(&ctx) {
                 tests.push((module_name.clone(), function_name));
