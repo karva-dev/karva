@@ -8,6 +8,7 @@ mod discovery;
 mod durations;
 mod extensions;
 mod filterset;
+mod help;
 mod last_failed;
 mod run_ignored;
 mod version;

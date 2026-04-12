@@ -78,7 +78,8 @@ karva test [OPTIONS] [PATH]...
 <ul>
 <li><code>only</code>:  Run only ignored tests</li>
 <li><code>all</code>:  Run both ignored and non-ignored tests</li>
-</ul></dd><dt id="karva-test--snapshot-update"><a href="#karva-test--snapshot-update"><code>--snapshot-update</code></a></dt><dd><p>Update snapshots directly instead of creating pending <code>.snap.new</code> files.</p>
+</ul></dd><dt id="karva-test--show-output"><a href="#karva-test--show-output"><code>--show-output</code></a>, <code>-s</code></dt><dd><p>Show Python stdout during test execution</p>
+</dd><dt id="karva-test--snapshot-update"><a href="#karva-test--snapshot-update"><code>--snapshot-update</code></a></dt><dd><p>Update snapshots directly instead of creating pending <code>.snap.new</code> files.</p>
 <p>When set, <code>karva.assert_snapshot()</code> will write directly to <code>.snap</code> files, accepting any changes automatically.</p>
 </dd><dt id="karva-test--test-prefix"><a href="#karva-test--test-prefix"><code>--test-prefix</code></a> <i>test-prefix</i></dt><dd><p>The prefix of the test functions</p>
 </dd><dt id="karva-test--try-import-fixtures"><a href="#karva-test--try-import-fixtures"><code>--try-import-fixtures</code></a></dt><dd><p>When set, we will try to import functions in each test file as well as parsing the ast to find them.</p>

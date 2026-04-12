@@ -164,63 +164,26 @@ pub struct SubTestCommand {
     )]
     pub paths: Vec<String>,
 
+    /// Control when colored output is used.
+    #[arg(long)]
+    pub color: Option<TerminalColor>,
+
+    #[clap(flatten)]
+    pub verbosity: Verbosity,
+
     /// The prefix of the test functions.
-    #[clap(long)]
+    #[clap(long, help_heading = "Filter options")]
     pub test_prefix: Option<String>,
 
-    /// The format to use for printing diagnostic messages.
-    #[arg(long)]
-    pub output_format: Option<OutputFormat>,
-
-    /// Show Python stdout during test execution.
-    #[clap(short = 's', default_missing_value = "true", num_args=0..1)]
-    pub show_output: Option<bool>,
-
     /// When set, .gitignore files will not be respected.
-    #[clap(long, default_missing_value = "true", num_args=0..1)]
+    #[clap(long, default_missing_value = "true", num_args=0..1, help_heading = "Filter options")]
     pub no_ignore: Option<bool>,
-
-    /// Stop scheduling new tests after this many failures.
-    ///
-    /// Accepts a positive integer such as `--max-fail=3`. `--max-fail=1` is
-    /// equivalent to the legacy `--fail-fast`, and `--no-fail-fast` clears
-    /// the limit. When `--max-fail` is provided alongside `--fail-fast` or
-    /// `--no-fail-fast`, `--max-fail` takes precedence.
-    #[clap(long, value_name = "N")]
-    pub max_fail: Option<NonZeroU32>,
-
-    /// Stop scheduling new tests after the first failure.
-    ///
-    /// Equivalent to `--max-fail=1`. Use `--no-fail-fast` to keep running
-    /// after failures.
-    #[clap(long, default_missing_value = "true", num_args=0..1, overrides_with = "no_fail_fast")]
-    pub fail_fast: Option<bool>,
-
-    /// Run every test regardless of how many fail.
-    ///
-    /// Clears any `fail-fast` or `max-fail` value set in configuration. When
-    /// `--max-fail` is provided alongside `--no-fail-fast`, `--max-fail`
-    /// takes precedence.
-    #[clap(long, action = clap::ArgAction::SetTrue, overrides_with = "fail_fast")]
-    pub no_fail_fast: bool,
-
-    /// When set, the test will retry failed tests up to this number of times.
-    #[clap(long)]
-    pub retry: Option<u32>,
-
-    /// When set, we will not show individual test case results during execution.
-    #[clap(long, default_missing_value = "true", num_args=0..1)]
-    pub no_progress: Option<bool>,
 
     /// When set, we will try to import functions in each test file as well as parsing the ast to find them.
     ///
     /// This is often slower, so it is not recommended for most projects.
-    #[clap(long, default_missing_value = "true", num_args=0..1)]
+    #[clap(long, default_missing_value = "true", num_args=0..1, help_heading = "Filter options")]
     pub try_import_fixtures: Option<bool>,
-
-    /// Control when colored output is used.
-    #[arg(long)]
-    pub color: Option<TerminalColor>,
 
     /// Filter tests using a filterset expression.
     ///
@@ -241,22 +204,59 @@ pub struct SubTestCommand {
     /// Examples: `-E 'tag(slow)'`, `-E 'test(/^mod::test_login$/)'`,
     /// `-E 'tag(slow) & test(~login)'`,
     /// `-E '(tag(fast) | tag(unit)) - tag(flaky)'`.
-    #[clap(short = 'E', long = "filter")]
+    #[clap(short = 'E', long = "filter", help_heading = "Filter options")]
     pub filter_expressions: Vec<String>,
 
     /// Run ignored tests.
-    #[arg(long)]
+    #[arg(long, help_heading = "Filter options")]
     pub run_ignored: Option<RunIgnored>,
+
+    /// Stop scheduling new tests after this many failures.
+    ///
+    /// Accepts a positive integer such as `--max-fail=3`. `--max-fail=1` is
+    /// equivalent to the legacy `--fail-fast`, and `--no-fail-fast` clears
+    /// the limit. When `--max-fail` is provided alongside `--fail-fast` or
+    /// `--no-fail-fast`, `--max-fail` takes precedence.
+    #[clap(long, value_name = "N", help_heading = "Runner options")]
+    pub max_fail: Option<NonZeroU32>,
+
+    /// Stop scheduling new tests after the first failure.
+    ///
+    /// Equivalent to `--max-fail=1`. Use `--no-fail-fast` to keep running
+    /// after failures.
+    #[clap(long, default_missing_value = "true", num_args=0..1, overrides_with = "no_fail_fast", help_heading = "Runner options")]
+    pub fail_fast: Option<bool>,
+
+    /// Run every test regardless of how many fail.
+    ///
+    /// Clears any `fail-fast` or `max-fail` value set in configuration. When
+    /// `--max-fail` is provided alongside `--no-fail-fast`, `--max-fail`
+    /// takes precedence.
+    #[clap(long, action = clap::ArgAction::SetTrue, overrides_with = "fail_fast", help_heading = "Runner options")]
+    pub no_fail_fast: bool,
+
+    /// When set, the test will retry failed tests up to this number of times.
+    #[clap(long, help_heading = "Runner options")]
+    pub retry: Option<u32>,
 
     /// Update snapshots directly instead of creating pending `.snap.new` files.
     ///
     /// When set, `karva.assert_snapshot()` will write directly to `.snap` files,
     /// accepting any changes automatically.
-    #[clap(long, default_missing_value = "true", num_args=0..1)]
+    #[clap(long, default_missing_value = "true", num_args=0..1, help_heading = "Runner options")]
     pub snapshot_update: Option<bool>,
 
-    #[clap(flatten)]
-    pub verbosity: Verbosity,
+    /// The format to use for printing diagnostic messages.
+    #[arg(long, help_heading = "Reporter options")]
+    pub output_format: Option<OutputFormat>,
+
+    /// Show Python stdout during test execution.
+    #[clap(short = 's', long, default_missing_value = "true", num_args=0..1, help_heading = "Reporter options")]
+    pub show_output: Option<bool>,
+
+    /// When set, we will not show individual test case results during execution.
+    #[clap(long, default_missing_value = "true", num_args=0..1, help_heading = "Reporter options")]
+    pub no_progress: Option<bool>,
 }
 
 #[derive(Debug, Parser)]
@@ -264,35 +264,40 @@ pub struct TestCommand {
     #[clap(flatten)]
     pub sub_command: SubTestCommand,
 
-    /// The path to a `karva.toml` file to use for configuration.
-    ///
-    /// While karva configuration can be included in a `pyproject.toml` file, it is not allowed in this context.
-    #[arg(long, env = "KARVA_CONFIG_FILE", value_name = "PATH")]
-    pub config_file: Option<Utf8PathBuf>,
+    /// Re-run only the tests that failed in the previous run.
+    #[clap(long, alias = "lf", help_heading = "Filter options")]
+    pub last_failed: bool,
 
     /// Number of parallel workers (default: number of CPU cores)
-    #[clap(short = 'n', long)]
+    #[clap(short = 'n', long, help_heading = "Runner options")]
     pub num_workers: Option<usize>,
 
     /// Disable parallel execution (equivalent to `--num-workers 1`)
-    #[clap(long, default_missing_value = "true", num_args=0..1)]
+    #[clap(long, default_missing_value = "true", num_args=0..1, help_heading = "Runner options")]
     pub no_parallel: Option<bool>,
 
     /// Disable reading the karva cache for test duration history
-    #[clap(long, default_missing_value = "true", num_args=0..1)]
+    #[clap(long, default_missing_value = "true", num_args=0..1, help_heading = "Runner options")]
     pub no_cache: Option<bool>,
 
-    /// Show the N slowest tests after the run completes.
-    #[clap(long, value_name = "N")]
-    pub durations: Option<usize>,
-
     /// Re-run tests when Python source files change.
-    #[clap(long)]
+    #[clap(long, help_heading = "Runner options")]
     pub watch: bool,
 
-    /// Re-run only the tests that failed in the previous run.
-    #[clap(long, alias = "lf")]
-    pub last_failed: bool,
+    /// Show the N slowest tests after the run completes.
+    #[clap(long, value_name = "N", help_heading = "Reporter options")]
+    pub durations: Option<usize>,
+
+    /// The path to a `karva.toml` file to use for configuration.
+    ///
+    /// While karva configuration can be included in a `pyproject.toml` file, it is not allowed in this context.
+    #[arg(
+        long,
+        env = "KARVA_CONFIG_FILE",
+        value_name = "PATH",
+        help_heading = "Config options"
+    )]
+    pub config_file: Option<Utf8PathBuf>,
 }
 
 impl TestCommand {
