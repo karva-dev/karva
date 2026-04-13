@@ -12,6 +12,7 @@ license.workspace = true
 [dependencies]
 karva_logging = { workspace = true }
 karva_metadata = { workspace = true }
+karva_version = { workspace = true }
 
 camino = { workspace = true }
 clap = { workspace = true, features = ["wrap_help", "string", "env"] }

@@ -9,7 +9,6 @@ use karva_cli::{Args, Command};
 
 mod commands;
 mod utils;
-mod version;
 
 pub fn karva_main(f: impl FnOnce(Vec<OsString>) -> Vec<OsString>) -> ExitStatus {
     run(f).unwrap_or_else(|error| {

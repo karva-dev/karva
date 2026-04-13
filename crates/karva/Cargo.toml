@@ -26,6 +26,7 @@ karva_python_semantic = { workspace = true }
 karva_runner = { workspace = true }
 karva_snapshot = { workspace = true }
 karva_static = { workspace = true }
+karva_version = { workspace = true }
 
 anyhow = { workspace = true }
 argfile = { workspace = true }

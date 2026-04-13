@@ -61,7 +61,7 @@ impl Verbosity {
 
 #[derive(Debug, Parser)]
 #[command(author, name = "karva", about = "A Python test runner.")]
-#[command(version)]
+#[command(version = karva_version::version())]
 #[command(styles = STYLES)]
 pub struct Args {
     #[command(subcommand)]
