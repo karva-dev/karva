@@ -71,15 +71,15 @@ impl NormalizedFixture {
         py: Python,
         fixture_arguments: &HashMap<String, Py<PyAny>>,
     ) -> PyResult<Py<PyAny>> {
-        let kwargs_dict = PyDict::new(py);
-
-        for (key, value) in fixture_arguments {
-            kwargs_dict.set_item(key, value)?;
-        }
-
-        let result = if kwargs_dict.is_empty() {
+        let result = if fixture_arguments.is_empty() {
             self.py_function.call0(py)
         } else {
+            let kwargs_dict = PyDict::new(py);
+
+            for (key, value) in fixture_arguments {
+                kwargs_dict.set_item(key, value)?;
+            }
+
             self.py_function.call(py, (), Some(&kwargs_dict))
         };
 

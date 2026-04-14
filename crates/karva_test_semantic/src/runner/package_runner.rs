@@ -131,9 +131,7 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
             let mut test_resolver = RuntimeFixtureResolver::new(parents, module);
 
             // Iterate over all test variants (parametrize combinations × fixture combinations).
-            // Uses next_with_py so each variant gets fresh function-scoped built-in fixtures.
-            let mut iterator = TestVariantIterator::new(py, test_function, &mut test_resolver);
-            while let Some(variant) = iterator.next_with_py(py) {
+            for variant in TestVariantIterator::new(py, test_function, &mut test_resolver) {
                 let variant_passed = self.execute_test_variant(py, variant);
                 self.record_outcome(variant_passed);
                 passed &= variant_passed;
@@ -399,7 +397,7 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
     }
 
     /// Run a test variant (a specific combination of parametrize values and fixtures).
-    fn execute_test_variant(&self, py: Python<'_>, variant: TestVariant) -> bool {
+    fn execute_test_variant(&self, py: Python<'_>, variant: TestVariant<'_>) -> bool {
         let tags = variant.resolved_tags();
         let test_module_path = variant.module_path().clone();
 
@@ -543,34 +541,27 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
             }
         }
 
-        let fixture_call_result = match fixture.call(py, &function_arguments) {
-            Ok(fixture_call_result) => fixture_call_result,
-            Err(err) => {
-                return Err(FixtureCallError {
+        let fixture_call_result =
+            fixture
+                .call(py, &function_arguments)
+                .map_err(|err| FixtureCallError {
                     fixture_name: fixture.name.function_name().to_string(),
                     error: err,
                     stmt_function_def: fixture.stmt_function_def.clone(),
                     source_file: source_file(fixture.name.module_path().path()),
                     arguments: function_arguments,
                     dependency_chain: Vec::new(),
-                });
-            }
-        };
+                })?;
 
-        let (final_result, finalizer) =
-            match get_value_and_finalizer(py, fixture, fixture_call_result) {
-                Ok((final_result, finalizer)) => (final_result, finalizer),
-                Err(err) => {
-                    return Err(FixtureCallError {
-                        fixture_name: fixture.name.function_name().to_string(),
-                        error: err,
-                        stmt_function_def: fixture.stmt_function_def.clone(),
-                        source_file: source_file(fixture.name.module_path().path()),
-                        arguments: HashMap::new(),
-                        dependency_chain: Vec::new(),
-                    });
-                }
-            };
+        let (final_result, finalizer) = get_value_and_finalizer(py, fixture, fixture_call_result)
+            .map_err(|err| FixtureCallError {
+            fixture_name: fixture.name.function_name().to_string(),
+            error: err,
+            stmt_function_def: fixture.stmt_function_def.clone(),
+            source_file: source_file(fixture.name.module_path().path()),
+            arguments: HashMap::new(),
+            dependency_chain: Vec::new(),
+        })?;
 
         self.fixture_cache.insert(
             fixture.function_name().to_string(),

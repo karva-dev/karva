@@ -16,27 +16,34 @@ use crate::runner::fixture_resolver::RuntimeFixtureResolver;
 /// - A specific set of parametrize values
 /// - Resolved fixture dependencies
 /// - Combined tags from the test and parameter set
-pub(super) struct TestVariant {
-    /// Reference to the original discovered test function.
-    pub test: Rc<DiscoveredTestFunction>,
+///
+/// The fixture lists are shared between every variant of a test via `Rc<[…]>`,
+/// so producing a new variant is a handful of refcount bumps rather than a
+/// full `Vec` clone per fixture set.
+pub(super) struct TestVariant<'a> {
+    /// Reference to the original discovered test function. Borrowed from the
+    /// surrounding module, which outlives the iterator.
+    pub test: &'a DiscoveredTestFunction,
 
-    /// Parameter values for this variant (from @parametrize).
+    /// Parameter values for this variant (from @parametrize). Moved out of
+    /// the owning `ParametrizationArgs` so that `Arc::try_unwrap` in the
+    /// caller can unwrap without a Python refcount bump.
     pub params: HashMap<String, Arc<Py<PyAny>>>,
 
     /// Fixtures to be passed as arguments to the test function.
-    pub fixture_dependencies: Vec<Rc<NormalizedFixture>>,
+    pub fixture_dependencies: Rc<[Rc<NormalizedFixture>]>,
 
     /// Fixtures from @usefixtures (run for side effects, not passed as args).
-    pub use_fixture_dependencies: Vec<Rc<NormalizedFixture>>,
+    pub use_fixture_dependencies: Rc<[Rc<NormalizedFixture>]>,
 
     /// Auto-use fixtures that run automatically before this test.
-    pub auto_use_fixtures: Vec<Rc<NormalizedFixture>>,
+    pub auto_use_fixtures: Rc<[Rc<NormalizedFixture>]>,
 
     /// Combined tags from the test and its parameter set.
     pub tags: Tags,
 }
 
-impl TestVariant {
+impl TestVariant<'_> {
     /// Get the module path for diagnostics.
     pub(super) fn module_path(&self) -> &camino::Utf8PathBuf {
         self.test.name.module_path().path()
@@ -46,15 +53,15 @@ impl TestVariant {
     pub(super) fn resolved_tags(&self) -> Tags {
         let mut tags = self.tags.clone();
 
-        for dependency in &self.fixture_dependencies {
+        for dependency in self.fixture_dependencies.iter() {
             tags.extend(&dependency.resolved_tags());
         }
 
-        for dependency in &self.use_fixture_dependencies {
+        for dependency in self.use_fixture_dependencies.iter() {
             tags.extend(&dependency.resolved_tags());
         }
 
-        for dependency in &self.auto_use_fixtures {
+        for dependency in self.auto_use_fixtures.iter() {
             tags.extend(&dependency.resolved_tags());
         }
 
@@ -65,23 +72,26 @@ impl TestVariant {
 /// Iterates over all variants of a test function.
 ///
 /// Expands parametrize combinations to produce all concrete test invocations.
-pub(super) struct TestVariantIterator {
-    test: Rc<DiscoveredTestFunction>,
-    param_args: Vec<ParametrizationArgs>,
-    fixture_dependencies: Vec<Rc<NormalizedFixture>>,
-    use_fixture_dependencies: Vec<Rc<NormalizedFixture>>,
-    auto_use_fixtures: Vec<Rc<NormalizedFixture>>,
-
-    param_index: usize,
+/// The iterator borrows the underlying `DiscoveredTestFunction` from the
+/// module and shares fixture lists between variants via `Rc<[…]>`, so
+/// producing N variants costs N refcount bumps rather than N deep clones.
+pub(super) struct TestVariantIterator<'a> {
+    test: &'a DiscoveredTestFunction,
+    /// Consumed as we iterate, so `values` and `tags` on each
+    /// `ParametrizationArgs` are moved into the emitted variant (not cloned).
+    param_args: std::vec::IntoIter<ParametrizationArgs>,
+    fixture_dependencies: Rc<[Rc<NormalizedFixture>]>,
+    use_fixture_dependencies: Rc<[Rc<NormalizedFixture>]>,
+    auto_use_fixtures: Rc<[Rc<NormalizedFixture>]>,
 }
 
-impl TestVariantIterator {
+impl<'a> TestVariantIterator<'a> {
     /// Create a new iterator for the given test function.
     ///
     /// Resolves fixtures and computes all parametrize variants.
     pub(super) fn new(
         py: Python,
-        test: &DiscoveredTestFunction,
+        test: &'a DiscoveredTestFunction,
         resolver: &mut RuntimeFixtureResolver,
     ) -> Self {
         let test_params = test.tags.parametrize_args();
@@ -95,7 +105,7 @@ impl TestVariantIterator {
         // use_fixtures are run for side effects but not passed as arguments.
         let function_param_names = test.stmt_function_def.required_fixtures(py);
 
-        let function_auto_use_fixtures = resolver.get_normalized_auto_use_fixtures(
+        let auto_use_fixtures = resolver.get_normalized_auto_use_fixtures(
             py,
             crate::extensions::fixtures::FixtureScope::Function,
         );
@@ -106,51 +116,44 @@ impl TestVariantIterator {
         let use_fixture_names = test.tags.required_fixtures_names();
         let use_fixture_dependencies = resolver.resolve_use_fixtures(py, &use_fixture_names);
 
-        let param_args: Vec<ParametrizationArgs> = if test_params.is_empty() {
+        let param_args = if test_params.is_empty() {
             vec![ParametrizationArgs::default()]
         } else {
             test_params
         };
 
         Self {
-            test: Rc::new(DiscoveredTestFunction {
-                name: test.name.clone(),
-                stmt_function_def: Rc::clone(&test.stmt_function_def),
-                py_function: test.py_function.clone_ref(py),
-                tags: test.tags.clone(),
-            }),
-            param_args,
-            fixture_dependencies,
-            use_fixture_dependencies,
-            auto_use_fixtures: function_auto_use_fixtures,
-            param_index: 0,
+            test,
+            param_args: param_args.into_iter(),
+            fixture_dependencies: Rc::from(fixture_dependencies),
+            use_fixture_dependencies: Rc::from(use_fixture_dependencies),
+            auto_use_fixtures: Rc::from(auto_use_fixtures),
         }
     }
 }
 
-impl TestVariantIterator {
-    /// Returns the next test variant for the current parametrize combination.
-    pub(super) fn next_with_py(&mut self, _py: Python<'_>) -> Option<TestVariant> {
-        if self.param_index >= self.param_args.len() {
-            return None;
-        }
+impl<'a> Iterator for TestVariantIterator<'a> {
+    type Item = TestVariant<'a>;
 
-        let param_args = &self.param_args[self.param_index];
+    fn next(&mut self) -> Option<Self::Item> {
+        let param_args = self.param_args.next()?;
 
-        let mut new_tags = self.test.tags.clone();
-        new_tags.extend(&param_args.tags);
+        let mut tags = self.test.tags.clone();
+        tags.extend(&param_args.tags);
 
-        let variant = TestVariant {
-            test: Rc::clone(&self.test),
-            params: param_args.values.clone(),
-            fixture_dependencies: self.fixture_dependencies.clone(),
-            use_fixture_dependencies: self.use_fixture_dependencies.clone(),
-            auto_use_fixtures: self.auto_use_fixtures.clone(),
-            tags: new_tags,
-        };
+        Some(TestVariant {
+            test: self.test,
+            params: param_args.values,
+            fixture_dependencies: Rc::clone(&self.fixture_dependencies),
+            use_fixture_dependencies: Rc::clone(&self.use_fixture_dependencies),
+            auto_use_fixtures: Rc::clone(&self.auto_use_fixtures),
+            tags,
+        })
+    }
 
-        self.param_index += 1;
-
-        Some(variant)
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.param_args.size_hint()
     }
 }
+
+impl ExactSizeIterator for TestVariantIterator<'_> {}
