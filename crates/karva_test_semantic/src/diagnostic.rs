@@ -115,10 +115,13 @@ fn report_dependency_chain(
     dependency_chain: &[FixtureChainEntry],
     fixture_name: &str,
 ) {
-    let reversed: Vec<_> = dependency_chain.iter().rev().collect();
-
-    for (i, entry) in reversed.iter().enumerate() {
-        let next_name = reversed.get(i + 1).map_or(fixture_name, |next| &next.name);
+    // Walk the chain top-down, pairing each entry with the fixture it depends on.
+    // The final entry depends on `fixture_name` (the one that actually failed).
+    let mut entries = dependency_chain.iter().rev().peekable();
+    while let Some(entry) = entries.next() {
+        let next_name = entries
+            .peek()
+            .map_or(fixture_name, |next| next.name.as_str());
 
         let mut sub = SubDiagnostic::new(
             SubDiagnosticSeverity::Info,

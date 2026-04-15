@@ -1,3 +1,7 @@
+//! `PyO3` bindings for the `@karva.fixture` decorator and its companion types
+//! (`FixtureFunctionMarker`, `FixtureFunctionDefinition`), plus the
+//! `InvalidFixtureError` exception surfaced to Python.
+
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyTuple};
 

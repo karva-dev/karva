@@ -1,3 +1,9 @@
+//! `PyO3` bindings for the `@karva.tags.*` decorator API.
+//!
+//! Exposes the `tag` enum, the `Tags` builder, the nested `tags` submodule
+//! with built-in tags (`parametrize`, `use_fixtures`, `skip`, `expect_fail`),
+//! and the dynamic `CustomTagBuilder` / `TestFunction` classes.
+
 use pyo3::IntoPyObjectExt;
 use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;

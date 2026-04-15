@@ -307,93 +307,75 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
     }
 
     /// Classify a test result, handling `expect_fail` logic and error reporting.
-    #[expect(clippy::too_many_arguments)]
     fn classify_test_result(
         &self,
         py: Python<'_>,
         test_result: PyResult<Py<PyAny>>,
-        expect_fail: bool,
-        expect_fail_tag: Option<ExpectFailTag>,
-        qualified_test_name: &QualifiedTestName,
-        name: &QualifiedFunctionName,
-        test_module_path: &camino::Utf8PathBuf,
-        stmt_function_def: &StmtFunctionDef,
-        function_arguments: &FixtureArguments,
         fixture_call_errors: Vec<FixtureCallError>,
-        start_time: std::time::Instant,
+        ctx: &VariantReportCtx<'_>,
     ) -> bool {
-        match test_result {
-            Ok(_) => {
-                if expect_fail {
-                    let reason = expect_fail_tag.and_then(|tag| tag.reason());
+        let register = |kind: IndividualTestResultKind| {
+            self.context.register_test_case_result(
+                ctx.qualified_test_name,
+                kind,
+                ctx.start_time.elapsed(),
+            )
+        };
 
-                    report_test_pass_on_expect_failure(
-                        self.context,
-                        source_file(test_module_path),
-                        stmt_function_def,
-                        reason,
-                    );
+        let expect_fail = ctx
+            .expect_fail_tag
+            .as_ref()
+            .is_some_and(ExpectFailTag::should_expect_fail);
 
-                    self.context.register_test_case_result(
-                        qualified_test_name,
-                        IndividualTestResultKind::Failed,
-                        start_time.elapsed(),
-                    )
-                } else {
-                    self.context.register_test_case_result(
-                        qualified_test_name,
-                        IndividualTestResultKind::Passed,
-                        start_time.elapsed(),
-                    )
-                }
+        let err = match test_result {
+            Ok(_) if expect_fail => {
+                let reason = ctx.expect_fail_tag.as_ref().and_then(ExpectFailTag::reason);
+                report_test_pass_on_expect_failure(
+                    self.context,
+                    source_file(ctx.test_module_path),
+                    ctx.stmt_function_def,
+                    reason,
+                );
+                return register(IndividualTestResultKind::Failed);
             }
-            Err(err) => {
-                if is_skip_exception(py, &err) {
-                    let reason = extract_skip_reason(py, &err);
-                    self.context.register_test_case_result(
-                        qualified_test_name,
-                        IndividualTestResultKind::Skipped { reason },
-                        start_time.elapsed(),
-                    )
-                } else if expect_fail {
-                    self.context.register_test_case_result(
-                        qualified_test_name,
-                        IndividualTestResultKind::Passed,
-                        start_time.elapsed(),
-                    )
-                } else {
-                    let missing_args =
-                        missing_arguments_from_error(name.function_name(), &err.to_string());
+            Ok(_) => return register(IndividualTestResultKind::Passed),
+            Err(err) => err,
+        };
 
-                    if missing_args.is_empty() {
-                        report_test_failure(
-                            self.context,
-                            py,
-                            source_file(test_module_path),
-                            stmt_function_def,
-                            function_arguments,
-                            &err,
-                        );
-                    } else {
-                        report_missing_fixtures(
-                            self.context,
-                            py,
-                            source_file(test_module_path),
-                            stmt_function_def,
-                            &missing_args,
-                            FunctionKind::Test,
-                            fixture_call_errors,
-                        );
-                    }
-
-                    self.context.register_test_case_result(
-                        qualified_test_name,
-                        IndividualTestResultKind::Failed,
-                        start_time.elapsed(),
-                    )
-                }
-            }
+        if is_skip_exception(py, &err) {
+            return register(IndividualTestResultKind::Skipped {
+                reason: extract_skip_reason(py, &err),
+            });
         }
+
+        if expect_fail {
+            return register(IndividualTestResultKind::Passed);
+        }
+
+        let missing_args = missing_arguments_from_error(ctx.name.function_name(), &err.to_string());
+
+        if missing_args.is_empty() {
+            report_test_failure(
+                self.context,
+                py,
+                source_file(ctx.test_module_path),
+                ctx.stmt_function_def,
+                ctx.function_arguments,
+                &err,
+            );
+        } else {
+            report_missing_fixtures(
+                self.context,
+                py,
+                source_file(ctx.test_module_path),
+                ctx.stmt_function_def,
+                &missing_args,
+                FunctionKind::Test,
+                fixture_call_errors,
+            );
+        }
+
+        register(IndividualTestResultKind::Failed)
     }
 
     /// Run a test variant (a specific combination of parametrize values and fixtures).
@@ -419,11 +401,7 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
         }
 
         let start_time = std::time::Instant::now();
-
         let expect_fail_tag = tags.expect_fail_tag();
-        let expect_fail = expect_fail_tag
-            .as_ref()
-            .is_some_and(ExpectFailTag::should_expect_fail);
 
         let (function_arguments, fixture_call_errors, test_finalizers) = self.setup_test_fixtures(
             py,
@@ -482,19 +460,16 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
             test_result = run_test();
         }
 
-        let passed = self.classify_test_result(
-            py,
-            test_result,
-            expect_fail,
+        let report_ctx = VariantReportCtx {
+            name: &name,
+            qualified_test_name: &qualified_test_name,
+            test_module_path: &test_module_path,
+            stmt_function_def: &stmt_function_def,
+            function_arguments: &function_arguments,
             expect_fail_tag,
-            &qualified_test_name,
-            &name,
-            &test_module_path,
-            &stmt_function_def,
-            &function_arguments,
-            fixture_call_errors,
             start_time,
-        );
+        };
+        let passed = self.classify_test_result(py, test_result, fixture_call_errors, &report_ctx);
 
         for finalizer in test_finalizers.into_iter().rev() {
             finalizer.run(self.context, py);
@@ -669,6 +644,17 @@ fn get_value_and_finalizer(
     } else {
         Ok((fixture_call_result, None))
     }
+}
+
+/// Immutable per-variant state threaded into [`PackageRunner::classify_test_result`].
+struct VariantReportCtx<'a> {
+    name: &'a QualifiedFunctionName,
+    qualified_test_name: &'a QualifiedTestName,
+    test_module_path: &'a camino::Utf8Path,
+    stmt_function_def: &'a StmtFunctionDef,
+    function_arguments: &'a FixtureArguments,
+    expect_fail_tag: Option<ExpectFailTag>,
+    start_time: std::time::Instant,
 }
 
 pub struct FixtureCallError {

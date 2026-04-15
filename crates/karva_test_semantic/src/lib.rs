@@ -3,6 +3,7 @@ mod context;
 pub(crate) mod diagnostic;
 pub(crate) mod discovery;
 pub(crate) mod extensions;
+mod py_attach;
 mod python;
 mod runner;
 pub mod utils;
@@ -17,8 +18,8 @@ use karva_project::path::{TestPath, TestPathError};
 use ruff_python_ast::PythonVersion;
 
 use crate::discovery::StandardDiscoverer;
+use crate::py_attach::attach_with_output;
 use crate::runner::PackageRunner;
-use crate::utils::attach_with_project;
 
 /// Run tests given the system, settings, Python version, reporter, and test paths.
 ///
@@ -33,7 +34,7 @@ pub fn run_tests(
 ) -> TestRunResult {
     let context = Context::new(cwd, settings, python_version, reporter);
 
-    attach_with_project(settings.terminal().show_python_output, |py| {
+    attach_with_output(settings.terminal().show_python_output, |py| {
         let session = StandardDiscoverer::new(&context).discover_with_py(py, test_paths);
 
         PackageRunner::new(&context).execute(py, &session);

@@ -8,7 +8,6 @@ use crate::extensions::fixtures::{
     DiscoveredFixture, FixtureScope, HasFixtures, NormalizedFixture, RequiresFixtures,
     get_auto_use_fixtures,
 };
-use crate::utils::iter_with_ancestors;
 
 /// Resolves fixtures at runtime during test execution.
 ///
@@ -150,7 +149,7 @@ fn find_fixture<'a>(
         return Some(fixture);
     }
 
-    for (parent, _ancestors) in iter_with_ancestors(parents) {
+    for parent in parents {
         if let Some(fixture) = parent.get_fixture(name)
             && current_fixture
                 .is_none_or(|current_fixture| current_fixture.name() != fixture.name())
