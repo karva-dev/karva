@@ -1,5 +1,4 @@
 use std::collections::{HashMap, HashSet};
-use std::time::Duration;
 
 /// Test metadata used for partitioning decisions
 #[derive(Debug, Clone)]
@@ -8,61 +7,25 @@ struct TestInfo {
     /// The qualified name of the test (e.g., `test_a::test_1`), used for last-failed filtering.
     qualified_name: String,
     path: String,
-    /// Actual runtime from previous test run (if available)
-    duration: Option<Duration>,
-}
-
-/// Calculate the weight of a test for partitioning.
-///
-/// Uses the actual duration in microseconds if available, otherwise defaults to 1.
-fn test_weight(duration: Option<Duration>) -> u128 {
-    duration.map_or(1, |d| d.as_micros())
-}
-
-/// A group of tests from the same module with calculated weight
-#[derive(Debug)]
-struct ModuleGroup {
-    tests: Vec<TestInfo>,
-    /// Total weight of all tests in this module
-    total_weight: u128,
-}
-
-impl ModuleGroup {
-    fn new(tests: Vec<TestInfo>, total_weight: u128) -> Self {
-        Self {
-            tests,
-            total_weight,
-        }
-    }
-
-    fn weight(&self) -> u128 {
-        self.total_weight
-    }
 }
 
 /// A partition of tests assigned to a single worker
 #[derive(Debug)]
 pub struct Partition {
     tests: Vec<String>,
-    /// Cumulative weight (duration in microseconds or 1 for unknown tests)
-    weight: u128,
 }
 
 impl Partition {
     fn new() -> Self {
-        Self {
-            tests: Vec::new(),
-            weight: 0,
-        }
+        Self { tests: Vec::new() }
     }
 
-    fn add_test(&mut self, test: TestInfo, test_weight: u128) {
+    fn add_test(&mut self, test: TestInfo) {
         self.tests.push(test.path);
-        self.weight += test_weight;
     }
 
-    fn weight(&self) -> u128 {
-        self.weight
+    fn len(&self) -> usize {
+        self.tests.len()
     }
 
     pub(crate) fn tests(&self) -> &[String] {
@@ -70,177 +33,107 @@ impl Partition {
     }
 }
 
-/// Partition collected tests into N groups using module-aware greedy bin-packing
+/// Partition collected tests into N groups using module-aware greedy bin-packing.
 ///
-/// # Algorithm: Hybrid Module-Aware LPT (Longest Processing Time First)
+/// Tests from the same module stay together in one partition when the module is
+/// small, so each worker imports fewer unique modules and shares fixture setup.
+/// Large modules (with more tests than `total / workers / 2`) are split across
+/// workers to keep partition sizes balanced.
 ///
-/// This implements a hybrid approach that balances load while minimizing module imports:
-///
-/// 1. **Group**: Tests are grouped by module and module weights are calculated
-/// 2. **Classify**: Modules are classified as "small" or "large" based on a threshold
-/// 3. **Assign Small Modules**: Small modules are assigned atomically to partitions (no splitting)
-/// 4. **Split Large Modules**: Large modules are split using LPT to prevent imbalance
-///
-/// ## Module Grouping Benefits
-/// - **Reduced imports**: Tests from the same module stay together in one partition
-/// - **Faster startup**: Each partition loads fewer unique modules
-/// - **Shared fixtures**: Fixture setup/teardown happens once per module per partition
-///
-/// ## Threshold Strategy
-/// The split threshold is set to `(total_weight / num_workers) / 2`:
-/// - Modules below this are kept together (typical case)
-/// - Modules above this are split to prevent worker imbalance
-///
-/// ## Complexity
-/// - Time: O(n log n + m log m + n*w) where n = tests, m = modules, w = workers
-/// - Space: O(n + m + w)
-/// - Since m ≤ n and w is small (4-16), this is effectively O(n log n)
-///
-/// ## Weighting Strategy
-/// - **With historical data**: Uses actual test duration in microseconds
-/// - **Without historical data**: Tests are shuffled randomly and assigned with equal weight
+/// Every test is weighted equally — the runner previously persisted per-test
+/// durations to weight this smarter, but the added complexity wasn't paying off.
 pub fn partition_collected_tests(
     package: &karva_collector::CollectedPackage,
     num_workers: usize,
-    previous_durations: &HashMap<String, Duration>,
     last_failed: &HashSet<String>,
 ) -> Vec<Partition> {
     let mut test_infos = Vec::new();
-    collect_test_paths_recursive(package, &mut test_infos, previous_durations);
+    collect_test_paths_recursive(package, &mut test_infos);
 
     if !last_failed.is_empty() {
         test_infos.retain(|info| last_failed.contains(&info.qualified_name));
     }
 
-    // Shuffle tests without durations so they distribute randomly across partitions
-    shuffle_tests_without_durations(&mut test_infos);
+    shuffle_tests(&mut test_infos);
 
-    // Step 1: Group tests by module and calculate module weights
     let mut module_groups: HashMap<String, Vec<TestInfo>> = HashMap::new();
-    let mut module_weights: HashMap<String, u128> = HashMap::new();
-
     for test_info in test_infos {
-        let weight = test_weight(test_info.duration);
-
-        *module_weights
-            .entry(test_info.module_name.clone())
-            .or_default() += weight;
         module_groups
             .entry(test_info.module_name.clone())
             .or_default()
             .push(test_info);
     }
 
-    // Step 2: Calculate threshold for splitting decision
-    let total_weight: u128 = module_weights.values().sum();
-    let target_partition_weight = total_weight / num_workers.max(1) as u128;
-    let split_threshold = target_partition_weight / 2;
+    let total_tests: usize = module_groups.values().map(Vec::len).sum();
+    let split_threshold = total_tests / num_workers.max(1) / 2;
 
-    // Step 3: Classify modules as small (keep together) or large (allow splitting)
-    let mut small_modules = Vec::new();
-    let mut large_modules = Vec::new();
+    let mut small_modules: Vec<Vec<TestInfo>> = Vec::new();
+    let mut large_modules: Vec<Vec<TestInfo>> = Vec::new();
 
-    for (module_name, tests) in module_groups {
-        let weight = module_weights[&module_name];
-        let module_group = ModuleGroup::new(tests, weight);
-
-        if module_group.weight() < split_threshold {
-            small_modules.push(module_group);
+    for (_, tests) in module_groups {
+        if tests.len() < split_threshold {
+            small_modules.push(tests);
         } else {
-            large_modules.push(module_group);
+            large_modules.push(tests);
         }
     }
 
-    // Sort small modules by weight (descending) for better bin-packing
-    small_modules.sort_by_key(|module| std::cmp::Reverse(module.weight()));
+    // Pack heaviest small modules first for a better bin-packing fit.
+    small_modules.sort_by_key(|tests| std::cmp::Reverse(tests.len()));
 
     let mut partitions: Vec<Partition> = (0..num_workers).map(|_| Partition::new()).collect();
 
-    // Step 4: Assign small modules atomically (entire module to one partition)
-    for module_group in small_modules {
-        let min_partition_idx = find_lightest_partition(&partitions);
-        for test_info in module_group.tests {
-            let weight = test_weight(test_info.duration);
-            partitions[min_partition_idx].add_test(test_info, weight);
+    for tests in small_modules {
+        let idx = find_lightest_partition(&partitions);
+        for test_info in tests {
+            partitions[idx].add_test(test_info);
         }
     }
 
-    // Step 5: Split large modules using LPT to prevent imbalance
-    for mut module_group in large_modules {
-        // Sort tests within large modules by weight (descending)
-        module_group.tests.sort_by(compare_test_weights);
-
-        for test_info in module_group.tests {
-            let weight = test_weight(test_info.duration);
-            let min_partition_idx = find_lightest_partition(&partitions);
-            partitions[min_partition_idx].add_test(test_info, weight);
+    for tests in large_modules {
+        for test_info in tests {
+            let idx = find_lightest_partition(&partitions);
+            partitions[idx].add_test(test_info);
         }
     }
 
     partitions
 }
 
-/// Finds the index of the partition with the smallest weight
+/// Finds the index of the partition with the fewest tests.
 fn find_lightest_partition(partitions: &[Partition]) -> usize {
     partitions
         .iter()
         .enumerate()
-        .min_by_key(|(_, partition)| partition.weight())
+        .min_by_key(|(_, partition)| partition.len())
         .map_or(0, |(idx, _)| idx)
 }
 
-/// Compares two tests by duration descending; tests without durations are considered equal
-fn compare_test_weights(a: &TestInfo, b: &TestInfo) -> std::cmp::Ordering {
-    match (&a.duration, &b.duration) {
-        (Some(dur_a), Some(dur_b)) => dur_b.cmp(dur_a),
-        (None, None) => std::cmp::Ordering::Equal,
-        (None, _) => std::cmp::Ordering::Greater,
-        (_, None) => std::cmp::Ordering::Less,
-    }
-}
-
-/// Shuffles only the tests that have no historical duration data.
-///
-/// This ensures tests without timing info are randomly distributed across partitions
-/// rather than always landing in the same order.
-fn shuffle_tests_without_durations(test_infos: &mut [TestInfo]) {
-    let no_duration_indices: Vec<usize> = test_infos
-        .iter()
-        .enumerate()
-        .filter(|(_, t)| t.duration.is_none())
-        .map(|(i, _)| i)
-        .collect();
-
-    // Fisher-Yates shuffle on the indices
-    for i in (1..no_duration_indices.len()).rev() {
+/// Shuffles tests so they distribute randomly across partitions rather than
+/// always landing in discovery order.
+fn shuffle_tests(test_infos: &mut [TestInfo]) {
+    for i in (1..test_infos.len()).rev() {
         let j = fastrand::usize(..=i);
-        let idx_a = no_duration_indices[i];
-        let idx_b = no_duration_indices[j];
-        test_infos.swap(idx_a, idx_b);
+        test_infos.swap(i, j);
     }
 }
 
-/// Recursively collects test information from a package and all its subpackages
+/// Recursively collects test information from a package and all its subpackages.
 fn collect_test_paths_recursive(
     package: &karva_collector::CollectedPackage,
     test_infos: &mut Vec<TestInfo>,
-    previous_durations: &HashMap<String, Duration>,
 ) {
     for module in package.modules.values() {
         for test_fn_def in &module.test_function_defs {
-            let qualified_name = format!("{}::{}", module.path.module_name(), test_fn_def.name);
-            let duration = previous_durations.get(&qualified_name).copied();
-
             test_infos.push(TestInfo {
                 module_name: module.path.module_name().to_string(),
-                qualified_name,
+                qualified_name: format!("{}::{}", module.path.module_name(), test_fn_def.name),
                 path: format!("{}::{}", module.path.path(), test_fn_def.name),
-                duration,
             });
         }
     }
 
     for subpackage in package.packages.values() {
-        collect_test_paths_recursive(subpackage, test_infos, previous_durations);
+        collect_test_paths_recursive(subpackage, test_infos);
     }
 }

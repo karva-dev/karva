@@ -10,8 +10,7 @@ use crossbeam_channel::{Receiver, TryRecvError};
 
 use crate::shutdown::shutdown_receiver;
 use karva_cache::{
-    AggregatedResults, CACHE_DIR, Cache, RunHash, read_last_failed, read_recent_durations,
-    write_last_failed,
+    AggregatedResults, CACHE_DIR, Cache, RunHash, read_last_failed, write_last_failed,
 };
 use karva_cli::SubTestCommand;
 use karva_collector::{CollectedPackage, CollectionSettings};
@@ -280,20 +279,6 @@ pub fn run_parallel_tests(
 
     let cache_dir = project.cwd().join(CACHE_DIR);
 
-    // Read durations from the most recent run to optimize partitioning
-    let previous_durations = if config.no_cache {
-        std::collections::HashMap::new()
-    } else {
-        read_recent_durations(&cache_dir).unwrap_or_default()
-    };
-
-    if !previous_durations.is_empty() {
-        tracing::debug!(
-            "Found {} previous test durations to guide partitioning",
-            previous_durations.len()
-        );
-    }
-
     let last_failed_set: HashSet<String> = if config.last_failed {
         read_last_failed(&cache_dir)
             .unwrap_or_default()
@@ -303,12 +288,7 @@ pub fn run_parallel_tests(
         HashSet::new()
     };
 
-    let partitions = partition_collected_tests(
-        &collected,
-        num_workers,
-        &previous_durations,
-        &last_failed_set,
-    );
+    let partitions = partition_collected_tests(&collected, num_workers, &last_failed_set);
 
     let run_hash = RunHash::current_time();
 
