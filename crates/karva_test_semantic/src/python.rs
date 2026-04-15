@@ -1,17 +1,3 @@
-//! Registration hub for the `PyO3` surface exposed to Python as `karva._karva`.
-//!
-//! Each extension family owns its own Python-facing file:
-//! - [`crate::extensions::tags::python`] — the `@karva.tags.*` decorator API
-//! - [`crate::extensions::fixtures::python`] — the `@karva.fixture` decorator and companion types
-//! - [`crate::extensions::functions::python`] — top-level `karva.{skip, fail, param}` plus their exceptions
-//! - [`crate::extensions::functions::raises`] and [`crate::extensions::functions::snapshot`]
-//!   — cohesive `PyO3` + Rust modules that stay together because their classes
-//!   are tightly coupled to private state in the same file
-//!
-//! [`init_module`] below is the single place every `#[pyclass]`,
-//! `#[pyfunction]`, and `create_exception!` gets handed to the interpreter —
-//! grep here first when adding or removing a binding.
-
 use pyo3::prelude::*;
 use pyo3::wrap_pymodule;
 

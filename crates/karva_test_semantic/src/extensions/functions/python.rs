@@ -1,11 +1,3 @@
-//! `PyO3` bindings for the top-level `karva.*` test API — runtime test-control
-//! functions (`skip`, `fail`, `param`), the value types they produce, and the
-//! exception classes the runner understands.
-//!
-//! The more involved `PyO3` types for this module live next to their Rust
-//! helpers in [`super::raises`] and [`super::snapshot`], where splitting them
-//! would only add `pub(super)` noise.
-
 use std::sync::Arc;
 
 use pyo3::exceptions::PyTypeError;
