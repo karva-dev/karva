@@ -51,8 +51,7 @@ impl Param {
 #[pyfunction]
 #[pyo3(signature = (reason = None))]
 pub fn skip(_py: Python<'_>, reason: Option<String>) -> PyResult<()> {
-    let message = reason.unwrap_or_default();
-    Err(SkipError::new_err(message))
+    Err(SkipError::new_err(reason))
 }
 
 /// Fail the current test at runtime with an optional reason.
