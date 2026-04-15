@@ -204,38 +204,33 @@ impl DiscoveredFixture {
     }
 }
 
+const MISSING_FIXTURE_INFO: &str = "Could not find fixture information";
+
 /// Get the fixture function marker from a function.
+///
+/// The second name is for older versions of pytest.
 fn get_fixture_function_marker<'py>(function: &Bound<'py, PyAny>) -> PyResult<Bound<'py, PyAny>> {
-    let attribute_names = ["_fixture_function_marker", "_pytestfixturefunction"];
-
-    // Older versions of pytest
-    for name in attribute_names {
-        if let Ok(attr) = function.getattr(name) {
-            return Ok(attr);
-        }
-    }
-
-    Err(PyAttributeError::new_err(
-        "Could not find fixture information",
-    ))
+    ["_fixture_function_marker", "_pytestfixturefunction"]
+        .iter()
+        .find_map(|name| function.getattr(*name).ok())
+        .ok_or_else(|| PyAttributeError::new_err(MISSING_FIXTURE_INFO))
 }
 
 /// Get the fixture function from a function.
+///
+/// Falls back to the pre-8.0 pytest `__pytest_wrapped__.obj` path.
 fn get_fixture_function<'py>(function: &Bound<'py, PyAny>) -> PyResult<Bound<'py, PyAny>> {
     if let Ok(attr) = function.getattr("_fixture_function") {
         return Ok(attr);
     }
 
-    // Older versions of pytest
-    if let Ok(attr) = function.getattr("__pytest_wrapped__") {
-        if let Ok(attr) = attr.getattr("obj") {
-            return Ok(attr);
-        }
+    if let Ok(wrapped) = function.getattr("__pytest_wrapped__")
+        && let Ok(obj) = wrapped.getattr("obj")
+    {
+        return Ok(obj);
     }
 
-    Err(PyAttributeError::new_err(
-        "Could not find fixture information",
-    ))
+    Err(PyAttributeError::new_err(MISSING_FIXTURE_INFO))
 }
 
 pub fn get_auto_use_fixtures<'a>(
@@ -243,39 +238,17 @@ pub fn get_auto_use_fixtures<'a>(
     current: &'a dyn HasFixtures<'a>,
     scope: FixtureScope,
 ) -> Vec<&'a DiscoveredFixture> {
-    let mut auto_use_fixtures_called = Vec::new();
-    let auto_use_fixtures = current.auto_use_fixtures(&scope.scopes_above());
+    let current_fixtures = current.auto_use_fixtures(&scope.scopes_above());
+    let parent_fixtures = parents
+        .iter()
+        .flat_map(|parent| parent.auto_use_fixtures(&[scope]));
 
-    for fixture in auto_use_fixtures {
-        let fixture_name = fixture.name().function_name().to_string();
-
-        if auto_use_fixtures_called
-            .iter()
-            .any(|fixture: &&DiscoveredFixture| fixture.name().function_name() == fixture_name)
-        {
-            continue;
-        }
-
-        auto_use_fixtures_called.push(fixture);
-    }
-
-    for parent in parents {
-        let parent_fixtures = parent.auto_use_fixtures(&[scope]);
-        for fixture in parent_fixtures {
-            let fixture_name = fixture.name().function_name().to_string();
-
-            if auto_use_fixtures_called
-                .iter()
-                .any(|fixture: &&DiscoveredFixture| fixture.name().function_name() == fixture_name)
-            {
-                continue;
-            }
-
-            auto_use_fixtures_called.push(fixture);
-        }
-    }
-
-    auto_use_fixtures_called
+    let mut seen: std::collections::HashSet<&str> = std::collections::HashSet::new();
+    current_fixtures
+        .into_iter()
+        .chain(parent_fixtures)
+        .filter(|fixture| seen.insert(fixture.name().function_name()))
+        .collect()
 }
 
 #[cfg(test)]
