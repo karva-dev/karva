@@ -10,6 +10,11 @@ def test_beta():
     assert True
 ";
 
+const NO_TESTS: &str = r"
+def helper():
+    pass
+";
+
 #[test]
 fn filterset_test_substring() {
     let context = TestContext::with_file("test.py", TWO_TESTS);
@@ -74,20 +79,52 @@ fn filterset_test_multiple_flags_or_semantics() {
 
 #[test]
 fn filterset_test_no_matches() {
-    let context = TestContext::with_file("test.py", TWO_TESTS);
-    assert_cmd_snapshot!(context.command_no_parallel().arg("-E").arg("test(~nonexistent)"), @"
-    success: true
-    exit_code: 0
+    let context = TestContext::with_file("test.py", NO_TESTS);
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
+    success: false
+    exit_code: 1
     ----- stdout -----
-        Starting 2 tests across 1 worker
-            SKIP [TIME] test::test_alpha
-            SKIP [TIME] test::test_beta
-
     ────────────
-         Summary [TIME] 2 tests run: 0 passed, 2 skipped
+         Summary [TIME] 0 tests run: 0 passed, 0 skipped
+    error: no tests matched the provided filters (use --no-tests=pass or --no-tests=warn)
 
     ----- stderr -----
     ");
+}
+
+#[test]
+fn filterset_test_no_matches_pass() {
+    let context = TestContext::with_file("test.py", NO_TESTS);
+    assert_cmd_snapshot!(
+        context.command_no_parallel().arg("--no-tests").arg("pass"),
+        @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    ────────────
+         Summary [TIME] 0 tests run: 0 passed, 0 skipped
+
+    ----- stderr -----
+    "
+    );
+}
+
+#[test]
+fn filterset_test_no_matches_warn() {
+    let context = TestContext::with_file("test.py", NO_TESTS);
+    assert_cmd_snapshot!(
+        context.command_no_parallel().arg("--no-tests").arg("warn"),
+        @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    ────────────
+         Summary [TIME] 0 tests run: 0 passed, 0 skipped
+    warning: no tests matched the provided filters
+
+    ----- stderr -----
+    "
+    );
 }
 
 #[test]
@@ -618,8 +655,8 @@ def test_fast():
     );
 
     assert_cmd_snapshot!(context.command_no_parallel().arg("-E").arg("tag(slow)"), @"
-    success: true
-    exit_code: 0
+    success: false
+    exit_code: 1
     ----- stdout -----
         Starting 2 tests across 1 worker
             SKIP [TIME] test::test_untagged
@@ -627,6 +664,7 @@ def test_fast():
 
     ────────────
          Summary [TIME] 2 tests run: 0 passed, 2 skipped
+    error: no tests matched the provided filters (use --no-tests=pass or --no-tests=warn)
 
     ----- stderr -----
     ");

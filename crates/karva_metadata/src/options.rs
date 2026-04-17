@@ -8,7 +8,7 @@ use thiserror::Error;
 use crate::filter::FiltersetSet;
 use crate::max_fail::MaxFail;
 use crate::settings::{
-    ProjectSettings, RunIgnoredMode, SrcSettings, TerminalSettings, TestSettings,
+    NoTestsMode, ProjectSettings, RunIgnoredMode, SrcSettings, TerminalSettings, TestSettings,
 };
 
 #[derive(
@@ -215,6 +215,19 @@ pub struct TestOptions {
         "#
     )]
     pub retry: Option<u32>,
+
+    /// Configures behavior when filters match no runnable tests.
+    ///
+    /// Defaults to `fail`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[option(
+        default = r#"fail"#,
+        value_type = "pass | warn | fail",
+        example = r#"
+            no-tests = "warn"
+        "#
+    )]
+    pub no_tests: Option<NoTestsMode>,
 }
 
 impl TestOptions {
@@ -234,6 +247,7 @@ impl TestOptions {
             retry: self.retry.unwrap_or_default(),
             filter: FiltersetSet::default(),
             run_ignored: RunIgnoredMode::default(),
+            no_tests: self.no_tests.unwrap_or_default(),
         }
     }
 }

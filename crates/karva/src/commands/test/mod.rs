@@ -9,7 +9,7 @@ use karva_cache::AggregatedResults;
 use karva_cli::{OutputFormat, TestCommand};
 use karva_logging::{Printer, Stdout, set_colored_override, setup_tracing};
 use karva_metadata::filter::FiltersetSet;
-use karva_metadata::{ProjectMetadata, ProjectOptionsOverrides};
+use karva_metadata::{NoTestsMode, ProjectMetadata, ProjectOptionsOverrides};
 use karva_project::Project;
 use karva_project::path::absolute;
 use karva_python_semantic::current_python_version;
@@ -87,11 +87,37 @@ pub fn test(args: TestCommand) -> Result<ExitStatus> {
         durations,
     )?;
 
+    if no_tests_matched_filters(&result) {
+        match project.settings().test().no_tests {
+            NoTestsMode::Pass => return Ok(ExitStatus::Success),
+            NoTestsMode::Warn => {
+                let mut stdout = printer.stream_for_requested_summary().lock();
+                writeln!(stdout, "warning: no tests matched the provided filters")?;
+                return Ok(ExitStatus::Success);
+            }
+            NoTestsMode::Fail => {
+                let mut stdout = printer.stream_for_failure_summary().lock();
+                writeln!(
+                    stdout,
+                    "error: no tests matched the provided filters (use --no-tests=pass or --no-tests=warn)"
+                )?;
+                return Ok(ExitStatus::Failure);
+            }
+        }
+    }
+
     if result.stats.is_success() && result.discovery_diagnostics.is_empty() {
         Ok(ExitStatus::Success)
     } else {
         Ok(ExitStatus::Failure)
     }
+}
+
+fn no_tests_matched_filters(result: &AggregatedResults) -> bool {
+    result.stats.passed() == 0
+        && result.stats.failed() == 0
+        && result.discovery_diagnostics.is_empty()
+        && result.diagnostics.is_empty()
 }
 
 /// Print test output: diagnostics, durations, and result summary.

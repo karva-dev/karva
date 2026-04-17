@@ -5,7 +5,9 @@ use clap::Parser;
 use clap::builder::Styles;
 use clap::builder::styling::{AnsiColor, Effects};
 use karva_logging::{TerminalColor, VerbosityLevel};
-use karva_metadata::{MaxFail, Options, RunIgnoredMode, SrcOptions, TerminalOptions, TestOptions};
+use karva_metadata::{
+    MaxFail, NoTestsMode, Options, RunIgnoredMode, SrcOptions, TerminalOptions, TestOptions,
+};
 use ruff_db::diagnostic::DiagnosticFormat;
 
 const STYLES: Styles = Styles::styled()
@@ -207,6 +209,10 @@ pub struct SubTestCommand {
     #[clap(short = 'E', long = "filter", help_heading = "Filter options")]
     pub filter_expressions: Vec<String>,
 
+    /// Configure behavior when filters match no runnable tests.
+    #[arg(long, value_name = "WHEN", help_heading = "Filter options")]
+    pub no_tests: Option<NoTests>,
+
     /// Run ignored tests.
     #[arg(long, help_heading = "Filter options")]
     pub run_ignored: Option<RunIgnored>,
@@ -370,6 +376,7 @@ impl SubTestCommand {
                 max_fail,
                 try_import_fixtures: self.try_import_fixtures,
                 retry: self.retry,
+                no_tests: self.no_tests.map(Into::into),
             }),
         }
     }
@@ -405,6 +412,39 @@ impl From<RunIgnored> for RunIgnoredMode {
         match value {
             RunIgnored::Only => Self::Only,
             RunIgnored::All => Self::All,
+        }
+    }
+}
+
+/// Behavior when no tests match filters.
+#[derive(Copy, Clone, Hash, Debug, PartialEq, Eq, clap::ValueEnum)]
+pub enum NoTests {
+    /// Exit successfully without extra output.
+    Pass,
+
+    /// Exit successfully and print a warning.
+    Warn,
+
+    /// Exit with failure status.
+    Fail,
+}
+
+impl NoTests {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Pass => "pass",
+            Self::Warn => "warn",
+            Self::Fail => "fail",
+        }
+    }
+}
+
+impl From<NoTests> for NoTestsMode {
+    fn from(value: NoTests) -> Self {
+        match value {
+            NoTests::Pass => Self::Pass,
+            NoTests::Warn => Self::Warn,
+            NoTests::Fail => Self::Fail,
         }
     }
 }

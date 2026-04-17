@@ -133,6 +133,25 @@ max-fail = 3
 
 ---
 
+### `no-tests`
+
+Configures behavior when filters match no runnable tests.
+
+Defaults to `fail`.
+
+**Default value**: `fail`
+
+**Type**: `pass | warn | fail`
+
+**Example usage** (`pyproject.toml`):
+
+```toml
+[tool.karva.test]
+no-tests = "warn"
+```
+
+---
+
 ### `retry`
 
 When set, we will retry failed tests up to this number of times.
