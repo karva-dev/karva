@@ -378,7 +378,7 @@ nonsense = 42
           |
         4 | nonsense = 42
           | ^^^^^^^^
-        unknown field `nonsense`, expected one of `test-function-prefix`, `fail-fast`, `max-fail`, `try-import-fixtures`, `retry`
+        unknown field `nonsense`, expected one of `test-function-prefix`, `fail-fast`, `max-fail`, `try-import-fixtures`, `retry`, `no-tests`
         "
         );
     }
@@ -458,6 +458,7 @@ max-fail = 0
             retry: Some(
                 5,
             ),
+            no_tests: None,
         }
         "#);
     }
@@ -484,6 +485,7 @@ max-fail = 0
             retry: Some(
                 3,
             ),
+            no_tests: None,
         }
         "#);
     }
@@ -545,6 +547,7 @@ max-fail = 0
                 retry: Some(
                     2,
                 ),
+                no_tests: None,
             },
         )
         "#);

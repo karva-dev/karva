@@ -114,8 +114,7 @@ pub fn test(args: TestCommand) -> Result<ExitStatus> {
 }
 
 fn no_tests_matched_filters(result: &AggregatedResults) -> bool {
-    result.stats.passed() == 0
-        && result.stats.failed() == 0
+    result.stats.total() == 0
         && result.discovery_diagnostics.is_empty()
         && result.diagnostics.is_empty()
 }

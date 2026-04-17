@@ -655,8 +655,8 @@ def test_fast():
     );
 
     assert_cmd_snapshot!(context.command_no_parallel().arg("-E").arg("tag(slow)"), @"
-    success: false
-    exit_code: 1
+    success: true
+    exit_code: 0
     ----- stdout -----
         Starting 2 tests across 1 worker
             SKIP [TIME] test::test_untagged
@@ -664,7 +664,6 @@ def test_fast():
 
     ────────────
          Summary [TIME] 2 tests run: 0 passed, 2 skipped
-    error: no tests matched the provided filters (use --no-tests=pass or --no-tests=warn)
 
     ----- stderr -----
     ");

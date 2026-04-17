@@ -39,11 +39,12 @@ fn test_empty_file() {
     let context = TestContext::with_file("test.py", "");
 
     assert_cmd_snapshot!(context.command(), @"
-    success: true
-    exit_code: 0
+    success: false
+    exit_code: 1
     ----- stdout -----
     ────────────
          Summary [TIME] 0 tests run: 0 passed, 0 skipped
+    error: no tests matched the provided filters (use --no-tests=pass or --no-tests=warn)
 
     ----- stderr -----
     ");
@@ -54,11 +55,12 @@ fn test_empty_directory() {
     let context = TestContext::new();
 
     assert_cmd_snapshot!(context.command(), @"
-    success: true
-    exit_code: 0
+    success: false
+    exit_code: 1
     ----- stdout -----
     ────────────
          Summary [TIME] 0 tests run: 0 passed, 0 skipped
+    error: no tests matched the provided filters (use --no-tests=pass or --no-tests=warn)
 
     ----- stderr -----
     ");
@@ -140,11 +142,12 @@ fn test_no_tests_found() {
     let context = TestContext::with_file("test_no_tests.py", r"");
 
     assert_cmd_snapshot!(context.command(), @"
-    success: true
-    exit_code: 0
+    success: false
+    exit_code: 1
     ----- stdout -----
     ────────────
          Summary [TIME] 0 tests run: 0 passed, 0 skipped
+    error: no tests matched the provided filters (use --no-tests=pass or --no-tests=warn)
 
     ----- stderr -----
     ");
