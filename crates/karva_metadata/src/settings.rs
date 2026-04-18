@@ -16,9 +16,10 @@ pub enum RunIgnoredMode {
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case", deny_unknown_fields)]
 pub enum NoTestsMode {
+    #[default]
+    Auto,
     Pass,
     Warn,
-    #[default]
     Fail,
 }
 

@@ -88,7 +88,19 @@ pub fn test(args: TestCommand) -> Result<ExitStatus> {
     )?;
 
     if no_tests_matched_filters(&result) {
+        let has_filters = !sub_command.filter_expressions.is_empty();
         match project.settings().test().no_tests {
+            NoTestsMode::Auto => {
+                if has_filters {
+                    return Ok(ExitStatus::Success);
+                }
+                let mut stdout = printer.stream_for_failure_summary().lock();
+                writeln!(
+                    stdout,
+                    "error: no tests matched the provided filters (use --no-tests=pass or --no-tests=warn)"
+                )?;
+                return Ok(ExitStatus::Failure);
+            }
             NoTestsMode::Pass => return Ok(ExitStatus::Success),
             NoTestsMode::Warn => {
                 let mut stdout = printer.stream_for_requested_summary().lock();

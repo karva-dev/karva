@@ -216,13 +216,15 @@ pub struct TestOptions {
     )]
     pub retry: Option<u32>,
 
-    /// Configures behavior when filters match no runnable tests.
+    /// Configures behavior when no tests are found to run.
     ///
-    /// Defaults to `fail`.
+    /// `auto` (the default) fails when no filter expressions were given, and
+    /// passes silently when filters were given. Use `fail` to always fail,
+    /// `warn` to always warn, or `pass` to always succeed silently.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[option(
-        default = r#"fail"#,
-        value_type = "pass | warn | fail",
+        default = r#"auto"#,
+        value_type = "auto | pass | warn | fail",
         example = r#"
             no-tests = "warn"
         "#

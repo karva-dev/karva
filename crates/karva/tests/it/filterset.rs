@@ -93,6 +93,23 @@ fn filterset_test_no_matches() {
 }
 
 #[test]
+fn filterset_test_no_matches_auto_with_filter() {
+    let context = TestContext::with_file("test.py", NO_TESTS);
+    assert_cmd_snapshot!(
+        context.command_no_parallel().arg("-E").arg("test(~helper)"),
+        @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    ────────────
+         Summary [TIME] 0 tests run: 0 passed, 0 skipped
+
+    ----- stderr -----
+    "
+    );
+}
+
+#[test]
 fn filterset_test_no_matches_pass() {
     let context = TestContext::with_file("test.py", NO_TESTS);
     assert_cmd_snapshot!(

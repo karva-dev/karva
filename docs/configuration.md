@@ -135,13 +135,15 @@ max-fail = 3
 
 ### `no-tests`
 
-Configures behavior when filters match no runnable tests.
+Configures behavior when no tests are found to run.
 
-Defaults to `fail`.
+`auto` (the default) fails when no filter expressions were given, and
+passes silently when filters were given. Use `fail` to always fail,
+`warn` to always warn, or `pass` to always succeed silently.
 
-**Default value**: `fail`
+**Default value**: `auto`
 
-**Type**: `pass | warn | fail`
+**Type**: `auto | pass | warn | fail`
 
 **Example usage** (`pyproject.toml`):
 

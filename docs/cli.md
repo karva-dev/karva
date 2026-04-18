@@ -65,12 +65,14 @@ karva test [OPTIONS] [PATH]...
 </dd><dt id="karva-test--no-ignore"><a href="#karva-test--no-ignore"><code>--no-ignore</code></a></dt><dd><p>When set, .gitignore files will not be respected</p>
 </dd><dt id="karva-test--no-parallel"><a href="#karva-test--no-parallel"><code>--no-parallel</code></a></dt><dd><p>Disable parallel execution (equivalent to <code>--num-workers 1</code>)</p>
 </dd><dt id="karva-test--no-progress"><a href="#karva-test--no-progress"><code>--no-progress</code></a></dt><dd><p>When set, we will not show individual test case results during execution</p>
-</dd><dt id="karva-test--no-tests"><a href="#karva-test--no-tests"><code>--no-tests</code></a> <i>when</i></dt><dd><p>Configure behavior when filters match no runnable tests</p>
-<p>Possible values:</p>
+</dd><dt id="karva-test--no-tests"><a href="#karva-test--no-tests"><code>--no-tests</code></a> <i>action</i></dt><dd><p>Behavior when no tests are found to run.</p>
+<p><code>auto</code> (the default) fails if no filter expressions were given, and passes silently if filters were given (the filter may legitimately match nothing on some platforms or configurations).</p>
+<p>May also be set with the <code>KARVA_NO_TESTS</code> environment variable.</p><p>Possible values:</p>
 <ul>
-<li><code>pass</code>:  Exit successfully without extra output</li>
-<li><code>warn</code>:  Exit successfully and print a warning</li>
-<li><code>fail</code>:  Exit with failure status</li>
+<li><code>auto</code>:  Automatically determine behavior: fail if no filter expressions were given, pass silently if filters were given</li>
+<li><code>pass</code>:  Silently exit with code 0</li>
+<li><code>warn</code>:  Produce a warning and exit with code 0</li>
+<li><code>fail</code>:  Produce an error message and exit with a non-zero code</li>
 </ul></dd><dt id="karva-test--num-workers"><a href="#karva-test--num-workers"><code>--num-workers</code></a>, <code>-n</code> <i>num-workers</i></dt><dd><p>Number of parallel workers (default: number of CPU cores)</p>
 </dd><dt id="karva-test--output-format"><a href="#karva-test--output-format"><code>--output-format</code></a> <i>output-format</i></dt><dd><p>The format to use for printing diagnostic messages</p>
 <p>Possible values:</p>

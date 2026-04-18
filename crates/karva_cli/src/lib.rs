@@ -209,8 +209,12 @@ pub struct SubTestCommand {
     #[clap(short = 'E', long = "filter", help_heading = "Filter options")]
     pub filter_expressions: Vec<String>,
 
-    /// Configure behavior when filters match no runnable tests.
-    #[arg(long, value_name = "WHEN", help_heading = "Filter options")]
+    /// Behavior when no tests are found to run [default: auto]
+    ///
+    /// `auto` fails if no filter expressions were given, and passes silently
+    /// if filters were given (the filter may legitimately match nothing on
+    /// some platforms or configurations).
+    #[arg(long, value_name = "ACTION", env = "KARVA_NO_TESTS", help_heading = "Filter options")]
     pub no_tests: Option<NoTests>,
 
     /// Run ignored tests.
@@ -419,19 +423,24 @@ impl From<RunIgnored> for RunIgnoredMode {
 /// Behavior when no tests match filters.
 #[derive(Copy, Clone, Hash, Debug, PartialEq, Eq, clap::ValueEnum)]
 pub enum NoTests {
-    /// Exit successfully without extra output.
+    /// Automatically determine behavior: fail if no filter expressions were
+    /// given, pass silently if filters were given.
+    Auto,
+
+    /// Silently exit with code 0.
     Pass,
 
-    /// Exit successfully and print a warning.
+    /// Produce a warning and exit with code 0.
     Warn,
 
-    /// Exit with failure status.
+    /// Produce an error message and exit with a non-zero code.
     Fail,
 }
 
 impl NoTests {
     pub fn as_str(self) -> &'static str {
         match self {
+            Self::Auto => "auto",
             Self::Pass => "pass",
             Self::Warn => "warn",
             Self::Fail => "fail",
@@ -442,6 +451,7 @@ impl NoTests {
 impl From<NoTests> for NoTestsMode {
     fn from(value: NoTests) -> Self {
         match value {
+            NoTests::Auto => Self::Auto,
             NoTests::Pass => Self::Pass,
             NoTests::Warn => Self::Warn,
             NoTests::Fail => Self::Fail,
