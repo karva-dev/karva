@@ -214,7 +214,12 @@ pub struct SubTestCommand {
     /// `auto` fails if no filter expressions were given, and passes silently
     /// if filters were given (the filter may legitimately match nothing on
     /// some platforms or configurations).
-    #[arg(long, value_name = "ACTION", env = "KARVA_NO_TESTS", help_heading = "Filter options")]
+    #[arg(
+        long,
+        value_name = "ACTION",
+        env = "KARVA_NO_TESTS",
+        help_heading = "Filter options"
+    )]
     pub no_tests: Option<NoTests>,
 
     /// Run ignored tests.
