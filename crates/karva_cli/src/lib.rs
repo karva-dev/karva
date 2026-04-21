@@ -210,10 +210,6 @@ pub struct SubTestCommand {
     pub filter_expressions: Vec<String>,
 
     /// Behavior when no tests are found to run [default: auto]
-    ///
-    /// `auto` fails if no filter expressions were given, and passes silently
-    /// if filters were given (the filter may legitimately match nothing on
-    /// some platforms or configurations).
     #[arg(
         long,
         value_name = "ACTION",
@@ -440,17 +436,6 @@ pub enum NoTests {
 
     /// Produce an error message and exit with a non-zero code.
     Fail,
-}
-
-impl NoTests {
-    pub fn as_str(self) -> &'static str {
-        match self {
-            Self::Auto => "auto",
-            Self::Pass => "pass",
-            Self::Warn => "warn",
-            Self::Fail => "fail",
-        }
-    }
 }
 
 impl From<NoTests> for NoTestsMode {

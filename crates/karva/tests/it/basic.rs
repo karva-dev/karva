@@ -44,7 +44,8 @@ fn test_empty_file() {
     ----- stdout -----
     ────────────
          Summary [TIME] 0 tests run: 0 passed, 0 skipped
-    error: no tests matched the provided filters (use --no-tests=pass or --no-tests=warn)
+    error: no tests to run
+    (hint: use `--no-tests` to customize)
 
     ----- stderr -----
     ");
@@ -60,7 +61,8 @@ fn test_empty_directory() {
     ----- stdout -----
     ────────────
          Summary [TIME] 0 tests run: 0 passed, 0 skipped
-    error: no tests matched the provided filters (use --no-tests=pass or --no-tests=warn)
+    error: no tests to run
+    (hint: use `--no-tests` to customize)
 
     ----- stderr -----
     ");
@@ -147,7 +149,8 @@ fn test_no_tests_found() {
     ----- stdout -----
     ────────────
          Summary [TIME] 0 tests run: 0 passed, 0 skipped
-    error: no tests matched the provided filters (use --no-tests=pass or --no-tests=warn)
+    error: no tests to run
+    (hint: use `--no-tests` to customize)
 
     ----- stderr -----
     ");

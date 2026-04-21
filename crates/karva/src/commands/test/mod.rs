@@ -87,32 +87,20 @@ pub fn test(args: TestCommand) -> Result<ExitStatus> {
         durations,
     )?;
 
-    if no_tests_matched_filters(&result) {
+    if no_tests_collected(&result) {
         let has_filters = !sub_command.filter_expressions.is_empty();
         match project.settings().test().no_tests {
-            NoTestsMode::Auto => {
-                if has_filters {
-                    return Ok(ExitStatus::Success);
-                }
-                let mut stdout = printer.stream_for_failure_summary().lock();
-                writeln!(
-                    stdout,
-                    "error: no tests matched the provided filters (use --no-tests=pass or --no-tests=warn)"
-                )?;
-                return Ok(ExitStatus::Failure);
-            }
             NoTestsMode::Pass => return Ok(ExitStatus::Success),
+            NoTestsMode::Auto if has_filters => return Ok(ExitStatus::Success),
             NoTestsMode::Warn => {
                 let mut stdout = printer.stream_for_requested_summary().lock();
-                writeln!(stdout, "warning: no tests matched the provided filters")?;
+                writeln!(stdout, "warning: no tests to run")?;
                 return Ok(ExitStatus::Success);
             }
-            NoTestsMode::Fail => {
+            NoTestsMode::Auto | NoTestsMode::Fail => {
                 let mut stdout = printer.stream_for_failure_summary().lock();
-                writeln!(
-                    stdout,
-                    "error: no tests matched the provided filters (use --no-tests=pass or --no-tests=warn)"
-                )?;
+                writeln!(stdout, "error: no tests to run")?;
+                writeln!(stdout, "(hint: use `--no-tests` to customize)")?;
                 return Ok(ExitStatus::Failure);
             }
         }
@@ -125,7 +113,7 @@ pub fn test(args: TestCommand) -> Result<ExitStatus> {
     }
 }
 
-fn no_tests_matched_filters(result: &AggregatedResults) -> bool {
+fn no_tests_collected(result: &AggregatedResults) -> bool {
     result.stats.total() == 0
         && result.discovery_diagnostics.is_empty()
         && result.diagnostics.is_empty()

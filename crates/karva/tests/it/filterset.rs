@@ -79,6 +79,24 @@ fn filterset_test_multiple_flags_or_semantics() {
 
 #[test]
 fn filterset_test_no_matches() {
+    let context = TestContext::with_file("test.py", TWO_TESTS);
+    assert_cmd_snapshot!(context.command_no_parallel().arg("-E").arg("test(~nonexistent)"), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+        Starting 2 tests across 1 worker
+            SKIP [TIME] test::test_alpha
+            SKIP [TIME] test::test_beta
+
+    ────────────
+         Summary [TIME] 2 tests run: 0 passed, 2 skipped
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn no_tests_collected_default_fails() {
     let context = TestContext::with_file("test.py", NO_TESTS);
     assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: false
@@ -86,14 +104,15 @@ fn filterset_test_no_matches() {
     ----- stdout -----
     ────────────
          Summary [TIME] 0 tests run: 0 passed, 0 skipped
-    error: no tests matched the provided filters (use --no-tests=pass or --no-tests=warn)
+    error: no tests to run
+    (hint: use `--no-tests` to customize)
 
     ----- stderr -----
     ");
 }
 
 #[test]
-fn filterset_test_no_matches_auto_with_filter() {
+fn no_tests_collected_auto_with_filter_passes() {
     let context = TestContext::with_file("test.py", NO_TESTS);
     assert_cmd_snapshot!(
         context.command_no_parallel().arg("-E").arg("test(~helper)"),
@@ -110,7 +129,7 @@ fn filterset_test_no_matches_auto_with_filter() {
 }
 
 #[test]
-fn filterset_test_no_matches_pass() {
+fn no_tests_collected_pass() {
     let context = TestContext::with_file("test.py", NO_TESTS);
     assert_cmd_snapshot!(
         context.command_no_parallel().arg("--no-tests").arg("pass"),
@@ -127,7 +146,7 @@ fn filterset_test_no_matches_pass() {
 }
 
 #[test]
-fn filterset_test_no_matches_warn() {
+fn no_tests_collected_warn() {
     let context = TestContext::with_file("test.py", NO_TESTS);
     assert_cmd_snapshot!(
         context.command_no_parallel().arg("--no-tests").arg("warn"),
@@ -137,7 +156,26 @@ fn filterset_test_no_matches_warn() {
     ----- stdout -----
     ────────────
          Summary [TIME] 0 tests run: 0 passed, 0 skipped
-    warning: no tests matched the provided filters
+    warning: no tests to run
+
+    ----- stderr -----
+    "
+    );
+}
+
+#[test]
+fn no_tests_collected_fail_explicit() {
+    let context = TestContext::with_file("test.py", NO_TESTS);
+    assert_cmd_snapshot!(
+        context.command_no_parallel().arg("--no-tests").arg("fail"),
+        @"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+    ────────────
+         Summary [TIME] 0 tests run: 0 passed, 0 skipped
+    error: no tests to run
+    (hint: use `--no-tests` to customize)
 
     ----- stderr -----
     "
