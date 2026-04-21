@@ -8,7 +8,7 @@ use thiserror::Error;
 use crate::filter::FiltersetSet;
 use crate::max_fail::MaxFail;
 use crate::settings::{
-    ProjectSettings, RunIgnoredMode, SrcSettings, TerminalSettings, TestSettings,
+    NoTestsMode, ProjectSettings, RunIgnoredMode, SrcSettings, TerminalSettings, TestSettings,
 };
 
 #[derive(
@@ -215,6 +215,21 @@ pub struct TestOptions {
         "#
     )]
     pub retry: Option<u32>,
+
+    /// Configures behavior when no tests are found to run.
+    ///
+    /// `auto` (the default) fails when no filter expressions were given, and
+    /// passes silently when filters were given. Use `fail` to always fail,
+    /// `warn` to always warn, or `pass` to always succeed silently.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[option(
+        default = r#"auto"#,
+        value_type = "auto | pass | warn | fail",
+        example = r#"
+            no-tests = "warn"
+        "#
+    )]
+    pub no_tests: Option<NoTestsMode>,
 }
 
 impl TestOptions {
@@ -234,6 +249,7 @@ impl TestOptions {
             retry: self.retry.unwrap_or_default(),
             filter: FiltersetSet::default(),
             run_ignored: RunIgnoredMode::default(),
+            no_tests: self.no_tests.unwrap_or_default(),
         }
     }
 }
@@ -364,7 +380,7 @@ nonsense = 42
           |
         4 | nonsense = 42
           | ^^^^^^^^
-        unknown field `nonsense`, expected one of `test-function-prefix`, `fail-fast`, `max-fail`, `try-import-fixtures`, `retry`
+        unknown field `nonsense`, expected one of `test-function-prefix`, `fail-fast`, `max-fail`, `try-import-fixtures`, `retry`, `no-tests`
         "
         );
     }
@@ -444,6 +460,7 @@ max-fail = 0
             retry: Some(
                 5,
             ),
+            no_tests: None,
         }
         "#);
     }
@@ -470,6 +487,7 @@ max-fail = 0
             retry: Some(
                 3,
             ),
+            no_tests: None,
         }
         "#);
     }
@@ -531,6 +549,7 @@ max-fail = 0
                 retry: Some(
                     2,
                 ),
+                no_tests: None,
             },
         )
         "#);

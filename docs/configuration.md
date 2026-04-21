@@ -133,6 +133,27 @@ max-fail = 3
 
 ---
 
+### `no-tests`
+
+Configures behavior when no tests are found to run.
+
+`auto` (the default) fails when no filter expressions were given, and
+passes silently when filters were given. Use `fail` to always fail,
+`warn` to always warn, or `pass` to always succeed silently.
+
+**Default value**: `auto`
+
+**Type**: `auto | pass | warn | fail`
+
+**Example usage** (`pyproject.toml`):
+
+```toml
+[tool.karva.test]
+no-tests = "warn"
+```
+
+---
+
 ### `retry`
 
 When set, we will retry failed tests up to this number of times.

@@ -10,6 +10,11 @@ def test_beta():
     assert True
 ";
 
+const NO_TESTS: &str = r"
+def helper():
+    pass
+";
+
 #[test]
 fn filterset_test_substring() {
     let context = TestContext::with_file("test.py", TWO_TESTS);
@@ -88,6 +93,93 @@ fn filterset_test_no_matches() {
 
     ----- stderr -----
     ");
+}
+
+#[test]
+fn no_tests_collected_default_fails() {
+    let context = TestContext::with_file("test.py", NO_TESTS);
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+    ────────────
+         Summary [TIME] 0 tests run: 0 passed, 0 skipped
+    error: no tests to run
+    (hint: use `--no-tests` to customize)
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn no_tests_collected_auto_with_filter_passes() {
+    let context = TestContext::with_file("test.py", NO_TESTS);
+    assert_cmd_snapshot!(
+        context.command_no_parallel().arg("-E").arg("test(~helper)"),
+        @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    ────────────
+         Summary [TIME] 0 tests run: 0 passed, 0 skipped
+
+    ----- stderr -----
+    "
+    );
+}
+
+#[test]
+fn no_tests_collected_pass() {
+    let context = TestContext::with_file("test.py", NO_TESTS);
+    assert_cmd_snapshot!(
+        context.command_no_parallel().arg("--no-tests").arg("pass"),
+        @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    ────────────
+         Summary [TIME] 0 tests run: 0 passed, 0 skipped
+
+    ----- stderr -----
+    "
+    );
+}
+
+#[test]
+fn no_tests_collected_warn() {
+    let context = TestContext::with_file("test.py", NO_TESTS);
+    assert_cmd_snapshot!(
+        context.command_no_parallel().arg("--no-tests").arg("warn"),
+        @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    ────────────
+         Summary [TIME] 0 tests run: 0 passed, 0 skipped
+    warning: no tests to run
+
+    ----- stderr -----
+    "
+    );
+}
+
+#[test]
+fn no_tests_collected_fail_explicit() {
+    let context = TestContext::with_file("test.py", NO_TESTS);
+    assert_cmd_snapshot!(
+        context.command_no_parallel().arg("--no-tests").arg("fail"),
+        @"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+    ────────────
+         Summary [TIME] 0 tests run: 0 passed, 0 skipped
+    error: no tests to run
+    (hint: use `--no-tests` to customize)
+
+    ----- stderr -----
+    "
+    );
 }
 
 #[test]
