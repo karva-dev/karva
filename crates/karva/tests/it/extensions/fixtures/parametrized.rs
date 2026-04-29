@@ -223,7 +223,7 @@ fn test_fixture_session_scope(#[values("pytest", "karva")] framework: &str) {
     ]);
 
     allow_duplicates! {
-        assert_cmd_snapshot!(context.command().arg("-q"), @"
+        assert_cmd_snapshot!(context.command().arg("--status-level=none"), @"
         success: true
         exit_code: 0
         ----- stdout -----
@@ -393,7 +393,7 @@ fn test_fixture_package_scope(#[values("pytest", "karva")] framework: &str) {
     ]);
 
     allow_duplicates! {
-        assert_cmd_snapshot!(context.command().arg("-q"), @"
+        assert_cmd_snapshot!(context.command().arg("--status-level=none"), @"
         success: true
         exit_code: 0
         ----- stdout -----

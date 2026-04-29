@@ -11,26 +11,26 @@ use tracing_subscriber::fmt::{FmtContext, FormatEvent, FormatFields};
 use tracing_subscriber::registry::LookupSpan;
 
 mod printer;
+mod status_level;
 pub mod time;
 mod verbosity;
 
 pub use printer::{Printer, Stdout};
+pub use status_level::{FinalStatusLevel, StatusLevel};
 pub use verbosity::VerbosityLevel;
 
 pub fn setup_tracing(level: VerbosityLevel) -> TracingGuard {
     use tracing_subscriber::prelude::*;
 
-    let filter = match level {
-        VerbosityLevel::Default => EnvFilter::default().add_directive(LevelFilter::WARN.into()),
-        level => {
-            let level_filter = level.level_filter();
-
-            EnvFilter::default().add_directive(
-                format!("karva={level_filter}")
-                    .parse()
-                    .expect("Hardcoded directive to be valid"),
-            )
-        }
+    let filter = if level.is_default() {
+        EnvFilter::default().add_directive(LevelFilter::WARN.into())
+    } else {
+        let level_filter = level.level_filter();
+        EnvFilter::default().add_directive(
+            format!("karva={level_filter}")
+                .parse()
+                .expect("Hardcoded directive to be valid"),
+        )
     };
 
     let (profiling_layer, guard) = setup_profile();

@@ -457,7 +457,7 @@ def test_username(username):
         ),
     ]);
 
-    assert_cmd_snapshot!(context.command().arg("-q"), @"
+    assert_cmd_snapshot!(context.command().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
@@ -711,7 +711,7 @@ def test_third(make_subdir):
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("-q"), @"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----

@@ -1,75 +1,70 @@
 use std::io::StdoutLock;
 
-use crate::VerbosityLevel;
+use crate::status_level::{FinalStatusLevel, StatusLevel};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct Printer {
-    verbosity: VerbosityLevel,
-    no_progress: bool,
+    status_level: StatusLevel,
+    final_status_level: FinalStatusLevel,
 }
 
 impl Printer {
-    pub fn new(verbosity: VerbosityLevel, no_progress: bool) -> Self {
+    pub fn new(status_level: StatusLevel, final_status_level: FinalStatusLevel) -> Self {
         Self {
-            verbosity,
-            no_progress,
+            status_level,
+            final_status_level,
         }
     }
 
-    /// Return the [`Stdout`] stream for important messages.
+    pub fn status_level(self) -> StatusLevel {
+        self.status_level
+    }
+
+    pub fn final_status_level(self) -> FinalStatusLevel {
+        self.final_status_level
+    }
+
+    /// Stream for the "Starting N tests" header and per-test result lines.
     ///
-    /// Unlike [`Self::stdout_general`], the returned stream will be enabled when
-    /// [`VerbosityLevel::Quiet`] is used.
-    fn stdout_important(self) -> Stdout {
-        match self.verbosity {
-            VerbosityLevel::Silent => Stdout::disabled(),
-            VerbosityLevel::Quiet
-            | VerbosityLevel::Default
-            | VerbosityLevel::Verbose
-            | VerbosityLevel::ExtraVerbose
-            | VerbosityLevel::Trace => Stdout::enabled(),
-        }
-    }
-
-    /// Return the [`Stdout`] stream for general messages.
-    ///
-    /// The returned stream will be disabled when [`VerbosityLevel::Quiet`] is used.
-    fn stdout_general(self) -> Stdout {
-        match self.verbosity {
-            VerbosityLevel::Silent | VerbosityLevel::Quiet => Stdout::disabled(),
-            VerbosityLevel::Default
-            | VerbosityLevel::Verbose
-            | VerbosityLevel::ExtraVerbose
-            | VerbosityLevel::Trace => Stdout::enabled(),
-        }
-    }
-
-    /// Return the [`Stdout`] stream for a summary message that was explicitly requested by the
-    /// user.
-    pub fn stream_for_requested_summary(self) -> Stdout {
-        self.stdout_important()
-    }
-
-    /// Return the [`Stdout`] stream for a summary message on failure.
-    pub fn stream_for_failure_summary(self) -> Stdout {
-        self.stdout_important()
-    }
-
-    /// Return the [`Stdout`] stream for a summary message on success.
-    pub fn stream_for_success_summary(self) -> Stdout {
-        self.stdout_general()
-    }
-
-    /// Return the [`Stdout`] stream for detailed messages.
-    pub fn stream_for_details(self) -> Stdout {
-        self.stdout_general()
-    }
-
+    /// The reporter additionally filters individual results by [`StatusLevel`].
     pub fn stream_for_test_result(self) -> Stdout {
-        if self.no_progress {
+        if matches!(self.status_level, StatusLevel::None) {
             Stdout::disabled()
         } else {
-            self.stdout_general()
+            Stdout::enabled()
+        }
+    }
+
+    /// Stream for the end-of-run summary line.
+    pub fn stream_for_summary(self, success: bool) -> Stdout {
+        match self.final_status_level {
+            FinalStatusLevel::None => Stdout::disabled(),
+            FinalStatusLevel::Fail if success => Stdout::disabled(),
+            FinalStatusLevel::Fail | FinalStatusLevel::Pass | FinalStatusLevel::All => {
+                Stdout::enabled()
+            }
+        }
+    }
+
+    /// Stream for the diagnostic block (tracebacks, durations) at the end of the run.
+    pub fn stream_for_details(self) -> Stdout {
+        match self.final_status_level {
+            FinalStatusLevel::None => Stdout::disabled(),
+            FinalStatusLevel::Fail | FinalStatusLevel::Pass | FinalStatusLevel::All => {
+                Stdout::enabled()
+            }
+        }
+    }
+
+    /// Stream for messages explicitly requested by the user, such as
+    /// `warning: no tests to run`. Suppressed only when both status levels are `none`.
+    pub fn stream_for_message(self) -> Stdout {
+        if matches!(self.status_level, StatusLevel::None)
+            && matches!(self.final_status_level, FinalStatusLevel::None)
+        {
+            Stdout::disabled()
+        } else {
+            Stdout::enabled()
         }
     }
 }

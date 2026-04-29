@@ -161,7 +161,7 @@ def test_fail_b(): assert False
 
     context.command_no_parallel().output().unwrap();
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--last-failed").arg("-q"), @"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--last-failed").arg("--status-level=none"), @"
     success: false
     exit_code: 1
     ----- stdout -----
@@ -244,7 +244,7 @@ def test_fail_b(): assert False
     assert_cmd_snapshot!(
         context
             .command_no_parallel()
-            .args(["--last-failed", "--max-fail=1", "-q"]),
+            .args(["--last-failed", "--max-fail=1", "--status-level=none"]),
         @"
     success: false
     exit_code: 1
@@ -281,7 +281,7 @@ def test_new_fail(): assert False
     );
 
     assert_cmd_snapshot!(
-        context.command_no_parallel().args(["--last-failed", "-q"]),
+        context.command_no_parallel().args(["--last-failed", "--status-level=none"]),
         @"
     success: false
     exit_code: 1

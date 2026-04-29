@@ -2,8 +2,8 @@ use std::fmt::Write;
 use std::time::Duration;
 
 use colored::Colorize;
-use karva_logging::Printer;
 use karva_logging::time::format_duration_bracketed;
+use karva_logging::{Printer, StatusLevel};
 use karva_python_semantic::QualifiedTestName;
 
 use crate::result::IndividualTestResultKind;
@@ -17,6 +17,18 @@ pub trait Reporter: Send + Sync {
         result_kind: IndividualTestResultKind,
         duration: Duration,
     );
+}
+
+fn show_for_status_level(level: StatusLevel, kind: &IndividualTestResultKind) -> bool {
+    match level {
+        StatusLevel::None => false,
+        StatusLevel::Fail => matches!(kind, IndividualTestResultKind::Failed),
+        StatusLevel::Skip => matches!(
+            kind,
+            IndividualTestResultKind::Failed | IndividualTestResultKind::Skipped { .. }
+        ),
+        StatusLevel::Pass | StatusLevel::All => true,
+    }
 }
 
 /// A no-op implementation of [`Reporter`].
@@ -51,6 +63,10 @@ impl Reporter for TestCaseReporter {
         result_kind: IndividualTestResultKind,
         duration: Duration,
     ) {
+        if !show_for_status_level(self.printer.status_level(), &result_kind) {
+            return;
+        }
+
         let mut stdout = self.printer.stream_for_test_result().lock();
 
         let (label, colored_label) = match &result_kind {

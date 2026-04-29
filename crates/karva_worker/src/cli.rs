@@ -9,7 +9,7 @@ use colored::Colorize;
 use karva_cache::{Cache, RunHash};
 use karva_cli::{SubTestCommand, Verbosity};
 use karva_diagnostic::{DummyReporter, Reporter, TestCaseReporter};
-use karva_logging::{Printer, set_colored_override, setup_tracing};
+use karva_logging::{Printer, StatusLevel, set_colored_override, setup_tracing};
 use karva_metadata::RunIgnoredMode;
 use karva_metadata::filter::FiltersetSet;
 use karva_project::path::{TestPath, TestPathError, absolute};
@@ -115,7 +115,10 @@ fn run(f: impl FnOnce(Vec<OsString>) -> Vec<OsString>) -> anyhow::Result<ExitSta
 
     set_colored_override(args.sub_command.color);
 
-    let printer = Printer::new(verbosity, args.sub_command.no_progress.unwrap_or(false));
+    let printer = Printer::new(
+        args.sub_command.status_level.unwrap_or_default(),
+        args.sub_command.final_status_level.unwrap_or_default(),
+    );
 
     let _guard = setup_tracing(verbosity);
 
@@ -151,7 +154,7 @@ fn run(f: impl FnOnce(Vec<OsString>) -> Vec<OsString>) -> anyhow::Result<ExitSta
 
     let cache = Cache::new(&args.cache_dir, &run_hash);
 
-    let reporter: Box<dyn Reporter> = if verbosity.is_quiet() {
+    let reporter: Box<dyn Reporter> = if matches!(printer.status_level(), StatusLevel::None) {
         Box::new(DummyReporter)
     } else {
         Box::new(TestCaseReporter::new(printer))

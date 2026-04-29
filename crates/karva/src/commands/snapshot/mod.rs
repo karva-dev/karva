@@ -34,7 +34,7 @@ pub fn snapshot(args: SnapshotCommand) -> Result<ExitStatus> {
 fn snapshot_setup(filter_paths: &[String]) -> Result<(Stdout, Utf8PathBuf, Vec<Utf8PathBuf>)> {
     let cwd = cwd()?;
     let printer = Printer::default();
-    let stdout = printer.stream_for_requested_summary().lock();
+    let stdout = printer.stream_for_message().lock();
     let resolved = resolve_filter_paths(filter_paths, &cwd);
     Ok((stdout, cwd, resolved))
 }

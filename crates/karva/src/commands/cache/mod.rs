@@ -12,7 +12,7 @@ pub fn cache(args: &CacheCommand) -> Result<ExitStatus> {
     let cwd = cwd()?;
 
     let printer = Printer::default();
-    let mut stdout = printer.stream_for_requested_summary().lock();
+    let mut stdout = printer.stream_for_message().lock();
 
     match args.action {
         CacheAction::Prune => prune::prune(&cwd, &mut stdout),
