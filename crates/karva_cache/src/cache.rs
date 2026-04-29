@@ -240,6 +240,40 @@ fn collect_run_dirs(cache_dir: &Utf8Path) -> Result<Vec<String>> {
     Ok(run_dirs)
 }
 
+/// Reads durations from the most recent test run.
+///
+/// Finds the most recent `run-{timestamp}` directory, then aggregates
+/// all durations from all worker directories within it.
+pub fn read_recent_durations(cache_dir: &Utf8PathBuf) -> Result<HashMap<String, Duration>> {
+    let run_dirs = collect_run_dirs(cache_dir)?;
+
+    let most_recent = run_dirs
+        .last()
+        .ok_or_else(|| anyhow::anyhow!("No run directories found"))?;
+
+    let run_dir = cache_dir.join(most_recent);
+
+    let mut aggregated_durations = HashMap::new();
+
+    for entry in fs::read_dir(&run_dir)? {
+        let entry = entry?;
+        let worker_path = Utf8PathBuf::try_from(entry.path())
+            .map_err(|e| anyhow::anyhow!("Invalid UTF-8 path: {e}"))?;
+
+        if !worker_path.is_dir() {
+            continue;
+        }
+
+        if let Some(durations) =
+            read_and_parse::<HashMap<String, Duration>>(&worker_path, DURATIONS_FILE)?
+        {
+            aggregated_durations.extend(durations);
+        }
+    }
+
+    Ok(aggregated_durations)
+}
+
 /// Result of a cache prune operation.
 pub struct PruneResult {
     /// Names of the removed run directories.
@@ -289,6 +323,18 @@ mod tests {
 
     use super::*;
 
+    fn create_cache_with_durations(
+        dir: &std::path::Path,
+        run_name: &str,
+        worker_id: usize,
+        durations: &HashMap<String, Duration>,
+    ) {
+        let worker_dir = dir.join(run_name).join(format!("worker-{worker_id}"));
+        fs::create_dir_all(&worker_dir).unwrap();
+        let json = serde_json::to_string(durations).unwrap();
+        fs::write(worker_dir.join(DURATIONS_FILE), json).unwrap();
+    }
+
     fn create_cache_with_stats(
         dir: &std::path::Path,
         run_name: &str,
@@ -298,6 +344,33 @@ mod tests {
         let worker_dir = dir.join(run_name).join(format!("worker-{worker_id}"));
         fs::create_dir_all(&worker_dir).unwrap();
         fs::write(worker_dir.join(STATS_FILE), stats_json).unwrap();
+    }
+
+    #[test]
+    fn read_recent_durations_returns_from_most_recent_run() {
+        let tmp = tempfile::tempdir().unwrap();
+        let cache_dir = Utf8PathBuf::try_from(tmp.path().to_path_buf()).unwrap();
+
+        let mut old_durations = HashMap::new();
+        old_durations.insert("test_old".to_string(), Duration::from_millis(100));
+        create_cache_with_durations(tmp.path(), "run-100", 0, &old_durations);
+
+        let mut new_durations = HashMap::new();
+        new_durations.insert("test_new".to_string(), Duration::from_millis(200));
+        create_cache_with_durations(tmp.path(), "run-200", 0, &new_durations);
+
+        let result = read_recent_durations(&cache_dir).unwrap();
+        assert!(result.contains_key("test_new"));
+        assert!(!result.contains_key("test_old"));
+    }
+
+    #[test]
+    fn read_recent_durations_errors_when_no_runs() {
+        let tmp = tempfile::tempdir().unwrap();
+        let cache_dir = Utf8PathBuf::try_from(tmp.path().to_path_buf()).unwrap();
+
+        let result = read_recent_durations(&cache_dir);
+        assert!(result.is_err());
     }
 
     #[test]
