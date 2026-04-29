@@ -1,6 +1,6 @@
 //! Wall-time benchmark for karva.
 //!
-//! Clones a fixed snapshot of <https://github.com/karva-dev/karva-benchmark-1>
+//! Clones a fixed snapshot of <https://github.com/MatthewMckee4/karva-benchmark-1>
 //! into `target/benchmark_cache/`, installs its dependencies via uv, and runs
 //! `karva test` against it. The snapshot is pinned to a specific commit so
 //! results stay stable across runs.
@@ -18,7 +18,7 @@ use karva_project::Project;
 use ruff_python_ast::PythonVersion;
 
 const PROJECT_NAME: &str = "karva-benchmark-1";
-const REPOSITORY: &str = "https://github.com/karva-dev/karva-benchmark-1";
+const REPOSITORY: &str = "https://github.com/MatthewMckee4/karva-benchmark-1";
 const COMMIT: &str = "89791b99d8b13a1e104af7a0b55b3741e315268a";
 const DEPENDENCIES: &[&str] = &["pytest"];
 const MAX_DEP_DATE: &str = "2026-12-01";

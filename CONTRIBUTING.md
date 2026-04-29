@@ -5,7 +5,7 @@ are welcome, and we try to keep the development process as smooth as possible.
 
 If you hit a bug, have a feature idea, or want to suggest an improvement to
 the contributing docs themselves, please
-[open an issue](https://github.com/karva-dev/karva/issues/new).
+[open an issue](https://github.com/MatthewMckee4/karva/issues/new).
 
 For small changes like bug fixes, feel free to jump straight to a pull request.
 For anything larger, it's usually worth opening an issue first to discuss the

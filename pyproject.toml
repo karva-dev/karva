@@ -32,10 +32,10 @@ docs = ["zensical==0.0.10"]
 release = ["tbump"]
 
 [project.urls]
-Documentation = "https://karva-dev.github.io/karva/"
-Homepage = "https://karva-dev.github.io/karva/"
-Issues = "https://github.com/karva-dev/karva/issues"
-Repository = "https://github.com/karva-dev/karva"
+Documentation = "https://matthewmckee4.github.io/karva/"
+Homepage = "https://matthewmckee4.github.io/karva/"
+Issues = "https://github.com/MatthewMckee4/karva/issues"
+Repository = "https://github.com/MatthewMckee4/karva"
 
 [tool.maturin]
 manifest-path = "crates/karva_python/Cargo.toml"
