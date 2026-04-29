@@ -12,7 +12,7 @@ use anyhow::{Context, Result};
 use camino::Utf8PathBuf;
 use divan::Bencher;
 use karva_cli::{OutputFormat, SubTestCommand};
-use karva_logging::{Printer, VerbosityLevel};
+use karva_logging::{FinalStatusLevel, Printer, StatusLevel};
 use karva_metadata::ProjectMetadata;
 use karva_project::Project;
 use ruff_python_ast::PythonVersion;
@@ -45,11 +45,12 @@ pub fn run_karva(project: &Project) {
     let args = SubTestCommand {
         no_ignore: Some(true),
         output_format: Some(OutputFormat::Concise),
-        no_progress: Some(true),
+        status_level: Some(StatusLevel::None),
+        final_status_level: Some(FinalStatusLevel::None),
         ..SubTestCommand::default()
     };
 
-    let printer = Printer::new(VerbosityLevel::Silent, true);
+    let printer = Printer::new(StatusLevel::None, FinalStatusLevel::None);
     let result = karva_runner::run_parallel_tests(project, &config, &args, printer).unwrap();
 
     assert!(result.stats.total() > 0);

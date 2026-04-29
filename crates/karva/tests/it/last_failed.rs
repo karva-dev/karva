@@ -161,10 +161,43 @@ def test_fail_b(): assert False
 
     context.command_no_parallel().output().unwrap();
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--last-failed").arg("-q"), @"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--last-failed").arg("--status-level=none"), @"
     success: false
     exit_code: 1
     ----- stdout -----
+
+    diagnostics:
+
+    error[test-failure]: Test `test_fail_a` failed
+     --> test_a.py:3:5
+      |
+    2 | def test_pass(): pass
+    3 | def test_fail_a(): assert False
+      |     ^^^^^^^^^^^
+      |
+    info: Test failed here
+     --> test_a.py:3:1
+      |
+    2 | def test_pass(): pass
+    3 | def test_fail_a(): assert False
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      |
+
+    error[test-failure]: Test `test_fail_b` failed
+     --> test_b.py:3:5
+      |
+    2 | def test_pass_b(): pass
+    3 | def test_fail_b(): assert False
+      |     ^^^^^^^^^^^
+      |
+    info: Test failed here
+     --> test_b.py:3:1
+      |
+    2 | def test_pass_b(): pass
+    3 | def test_fail_b(): assert False
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      |
+
     ────────────
          Summary [TIME] 2 tests run: 0 passed, 2 failed, 0 skipped
 
@@ -244,11 +277,31 @@ def test_fail_b(): assert False
     assert_cmd_snapshot!(
         context
             .command_no_parallel()
-            .args(["--last-failed", "--max-fail=1", "-q"]),
+            .args(["--last-failed", "--max-fail=1", "--status-level=none"]),
         @"
     success: false
     exit_code: 1
     ----- stdout -----
+
+    diagnostics:
+
+    error[test-failure]: Test `test_fail_a` failed
+     --> test_a.py:3:5
+      |
+    2 | def test_pass(): pass
+    3 | def test_fail_a(): assert False
+      |     ^^^^^^^^^^^
+    4 | def test_fail_b(): assert False
+      |
+    info: Test failed here
+     --> test_a.py:3:1
+      |
+    2 | def test_pass(): pass
+    3 | def test_fail_a(): assert False
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    4 | def test_fail_b(): assert False
+      |
+
     ────────────
          Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
@@ -281,11 +334,31 @@ def test_new_fail(): assert False
     );
 
     assert_cmd_snapshot!(
-        context.command_no_parallel().args(["--last-failed", "-q"]),
+        context.command_no_parallel().args(["--last-failed", "--status-level=none"]),
         @"
     success: false
     exit_code: 1
     ----- stdout -----
+
+    diagnostics:
+
+    error[test-failure]: Test `test_fail` failed
+     --> test_a.py:3:5
+      |
+    2 | def test_pass(): pass
+    3 | def test_fail(): assert False
+      |     ^^^^^^^^^
+    4 | def test_new_fail(): assert False
+      |
+    info: Test failed here
+     --> test_a.py:3:1
+      |
+    2 | def test_pass(): pass
+    3 | def test_fail(): assert False
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    4 | def test_new_fail(): assert False
+      |
+
     ────────────
          Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 

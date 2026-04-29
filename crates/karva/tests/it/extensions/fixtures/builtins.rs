@@ -22,10 +22,11 @@ fn test_temp_directory_fixture(#[values("tmp_path", "temp_path", "temp_dir")] fi
     );
 
     allow_duplicates! {
-        assert_cmd_snapshot!(test_context.command().arg("-q"), @"
+        assert_cmd_snapshot!(test_context.command().arg("--status-level=none"), @"
         success: true
         exit_code: 0
         ----- stdout -----
+
         ────────────
              Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -49,10 +50,11 @@ def test_tmpdir(tmpdir):
         ",
     );
 
-    assert_cmd_snapshot!(test_context.command().arg("-q"), @"
+    assert_cmd_snapshot!(test_context.command().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -80,10 +82,11 @@ def test_tmp_path_factory(tmp_path_factory):
         ",
     );
 
-    assert_cmd_snapshot!(test_context.command().arg("-q"), @"
+    assert_cmd_snapshot!(test_context.command().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -110,10 +113,11 @@ def test_tmpdir_factory(tmpdir_factory):
         ",
     );
 
-    assert_cmd_snapshot!(test_context.command().arg("-q"), @"
+    assert_cmd_snapshot!(test_context.command().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -141,10 +145,11 @@ def test_check_same_base(tmp_path_factory):
         ",
     );
 
-    assert_cmd_snapshot!(test_context.command().arg("-q"), @"
+    assert_cmd_snapshot!(test_context.command().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -177,10 +182,11 @@ def test_uses_shared_dir_again(shared_dir):
         ",
     );
 
-    assert_cmd_snapshot!(test_context.command().arg("-q"), @"
+    assert_cmd_snapshot!(test_context.command().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -377,10 +383,11 @@ def test_syspath_prepend_with_path(monkeypatch, tmp_path):
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("-q"), @"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -917,17 +924,18 @@ fn test_mock_env() {
     );
 
     if cfg!(target_os = "macos") {
-        assert_cmd_snapshot!(context.command().arg("-q"), @"
+        assert_cmd_snapshot!(context.command().arg("--status-level=none"), @"
         success: true
         exit_code: 0
         ----- stdout -----
+
         ────────────
              Summary [TIME] 16 tests run: 13 passed, 3 skipped
 
         ----- stderr -----
         ");
     } else {
-        assert_cmd_snapshot!(context.command().arg("-q"), @"
+        assert_cmd_snapshot!(context.command().arg("--status-level=none"), @"
         success: true
         exit_code: 0
         ----- stdout -----
@@ -1099,10 +1107,11 @@ def test_chdir(monkeypatch, tmp_path):
         ",
     );
 
-    assert_cmd_snapshot!(context.command().arg("-q"), @"
+    assert_cmd_snapshot!(context.command().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -1235,10 +1244,11 @@ def test_caplog_records(caplog):
         ",
     );
 
-    assert_cmd_snapshot!(context.command().arg("-q"), @"
+    assert_cmd_snapshot!(context.command().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -1315,10 +1325,11 @@ def test_caplog_text(caplog):
         ",
     );
 
-    assert_cmd_snapshot!(context.command().arg("-q"), @"
+    assert_cmd_snapshot!(context.command().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -1402,10 +1413,11 @@ def test_caplog_messages(caplog):
         ",
     );
 
-    assert_cmd_snapshot!(context.command().arg("-q"), @"
+    assert_cmd_snapshot!(context.command().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -1431,10 +1443,11 @@ def test_caplog_record_tuples(caplog):
         ",
     );
 
-    assert_cmd_snapshot!(context.command().arg("-q"), @"
+    assert_cmd_snapshot!(context.command().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -1457,10 +1470,11 @@ def test_caplog_handler(caplog):
         ",
     );
 
-    assert_cmd_snapshot!(context.command().arg("-q"), @"
+    assert_cmd_snapshot!(context.command().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -1545,10 +1559,11 @@ def test_caplog_at_level_filters(caplog):
         ",
     );
 
-    assert_cmd_snapshot!(context.command().arg("-q"), @"
+    assert_cmd_snapshot!(context.command().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -1665,10 +1680,11 @@ def test_caplog_clear(caplog):
         ",
     );
 
-    assert_cmd_snapshot!(context.command().arg("-q"), @"
+    assert_cmd_snapshot!(context.command().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -1723,10 +1739,11 @@ def test_caplog_set_level(caplog):
         ",
     );
 
-    assert_cmd_snapshot!(context.command().arg("-q"), @"
+    assert_cmd_snapshot!(context.command().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -1780,10 +1797,11 @@ def test_second(caplog):
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("-q"), @"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -1814,10 +1832,11 @@ def test_level_restored():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("-q"), @"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -1876,10 +1895,11 @@ def test_creates_subdir(value, tmp_path):
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("-q"), @"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
@@ -1907,10 +1927,11 @@ def test_capfd_stderr(capfd):
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("-q"), @"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -1938,10 +1959,11 @@ def test_capsysbinary_stderr(capsysbinary):
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("-q"), @"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -1976,10 +1998,11 @@ def test_mixed_str_and_bytes_writes(capsysbinary):
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("-q"), @"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
@@ -2007,10 +2030,11 @@ def test_capfdbinary_stderr(capfdbinary):
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("-q"), @"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -2036,10 +2060,11 @@ def test_capsys_logging_warning(capsys):
         ",
     );
 
-    assert_cmd_snapshot!(context.command().arg("-q"), @"
+    assert_cmd_snapshot!(context.command().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -2066,10 +2091,11 @@ def test_capsys_with_disabled_logging(capsys):
         ",
     );
 
-    assert_cmd_snapshot!(context.command().arg("-q"), @"
+    assert_cmd_snapshot!(context.command().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -2092,10 +2118,11 @@ def test_capfd_logging_warning(capfd):
         ",
     );
 
-    assert_cmd_snapshot!(context.command().arg("-q"), @"
+    assert_cmd_snapshot!(context.command().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 

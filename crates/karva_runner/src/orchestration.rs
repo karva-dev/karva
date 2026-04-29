@@ -405,8 +405,14 @@ fn inner_cli_args(settings: &ProjectSettings, args: &SubTestCommand) -> Vec<Stri
     cli_args.push("--output-format".to_string());
     cli_args.push(settings.terminal().output_format.as_str().to_string());
 
-    if args.no_progress.is_some_and(|no_progress| no_progress) {
-        cli_args.push("--no-progress".to_string());
+    if let Some(level) = args.status_level {
+        cli_args.push("--status-level".to_string());
+        cli_args.push(level.as_str().to_string());
+    }
+
+    if let Some(level) = args.final_status_level {
+        cli_args.push("--final-status-level".to_string());
+        cli_args.push(level.as_str().to_string());
     }
 
     if let Some(color) = args.color {

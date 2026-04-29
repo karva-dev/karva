@@ -2,12 +2,6 @@ use tracing_subscriber::filter::LevelFilter;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Default)]
 pub enum VerbosityLevel {
-    /// Silent output
-    Silent,
-    /// Quiet output.  Only shows karva events up to the [`ERROR`](tracing::Level::ERROR).
-    /// Silences output except for summary information.
-    Quiet,
-
     /// Default output level. Only shows karva events up to the [`WARN`](tracing::Level::WARN).
     #[default]
     Default,
@@ -27,17 +21,11 @@ pub enum VerbosityLevel {
 impl VerbosityLevel {
     pub fn level_filter(self) -> LevelFilter {
         match self {
-            Self::Silent => LevelFilter::OFF,
-            Self::Quiet => LevelFilter::ERROR,
             Self::Default => LevelFilter::WARN,
             Self::Verbose => LevelFilter::INFO,
             Self::ExtraVerbose => LevelFilter::DEBUG,
             Self::Trace => LevelFilter::TRACE,
         }
-    }
-
-    pub fn is_quiet(self) -> bool {
-        matches!(self, Self::Quiet | Self::Silent)
     }
 
     pub fn is_default(self) -> bool {
@@ -54,8 +42,6 @@ impl VerbosityLevel {
 
     pub fn cli_arg(self) -> Option<&'static str> {
         match self {
-            Self::Silent => Some("-qq"),
-            Self::Quiet => Some("-q"),
             Self::Default => None,
             Self::Verbose => Some("-v"),
             Self::ExtraVerbose => Some("-vv"),

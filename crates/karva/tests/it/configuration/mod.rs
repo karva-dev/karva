@@ -28,10 +28,11 @@ def test_main(): pass
     ]);
 
     // With respect-ignore-files = false, the ignored file should be included
-    assert_cmd_snapshot!(context.command().arg("-q"), @"
+    assert_cmd_snapshot!(context.command().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -110,10 +111,11 @@ def test_in_other(): pass
     ]);
 
     // Only files in 'src' and 'tests' should be included
-    assert_cmd_snapshot!(context.command().arg("-q"), @"
+    assert_cmd_snapshot!(context.command().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -705,10 +707,11 @@ def test_other(): pass
     ]);
 
     // Should respect pyproject.toml configuration
-    assert_cmd_snapshot!(context.command().arg("-q"), @"
+    assert_cmd_snapshot!(context.command().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -1082,10 +1085,11 @@ def test_main(): pass
     ]);
 
     // CLI argument --no-ignore should override config and include ignored files
-    assert_cmd_snapshot!(context.command().arg("--no-ignore").arg("-q"), @"
+    assert_cmd_snapshot!(context.command().arg("--no-ignore").arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -1174,10 +1178,11 @@ def test_from_cli(): pass
     ]);
 
     // CLI path argument should add to config include
-    assert_cmd_snapshot!(context.command().arg("cli_dir").arg("-q"), @"
+    assert_cmd_snapshot!(context.command().arg("cli_dir").arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
