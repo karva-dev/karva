@@ -36,7 +36,7 @@ pub fn setup_project() -> Project {
 /// Run karva tests against the prepared project once.
 pub fn run_karva(project: &Project) {
     let config = karva_runner::ParallelTestConfig {
-        num_workers: karva_static::max_parallelism().get(),
+        num_workers: 2,
         no_cache: false,
         create_ctrlc_handler: false,
         last_failed: false,

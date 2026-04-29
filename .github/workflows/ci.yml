@@ -290,6 +290,5 @@ jobs:
         env:
           PYO3_PYTHON: ${{ steps.setup-python.outputs.python-path }}
         with:
-          token: ${{ secrets.CODSPEED_TOKEN }}
           run: cargo codspeed run --bench karva_benchmark_walltime
           mode: walltime
