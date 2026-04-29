@@ -55,7 +55,14 @@ karva test [OPTIONS] [PATH]...
 <p>Operators: <code>&amp;</code> / <code>and</code>, <code>|</code> / <code>or</code>, <code>not</code> / <code>!</code>, and <code>-</code> as shorthand for &quot;and not&quot;. Use parentheses for grouping. <code>and</code> binds tighter than <code>or</code>.</p>
 <p>When specified multiple times, a test runs if it matches any of the expressions (OR semantics across flags).</p>
 <p>Examples: <code>-E 'tag(slow)'</code>, <code>-E 'test(/^mod::test_login$/)'</code>, <code>-E 'tag(slow) &amp; test(~login)'</code>, <code>-E '(tag(fast) | tag(unit)) - tag(flaky)'</code>.</p>
-</dd><dt id="karva-test--help"><a href="#karva-test--help"><code>--help</code></a>, <code>-h</code></dt><dd><p>Print help (see a summary with '-h')</p>
+</dd><dt id="karva-test--final-status-level"><a href="#karva-test--final-status-level"><code>--final-status-level</code></a> <i>level</i></dt><dd><p>Test summary information to display at the end of the run [default: pass]</p>
+<p>May also be set with the <code>KARVA_FINAL_STATUS_LEVEL</code> environment variable.</p><p>Possible values:</p>
+<ul>
+<li><code>none</code>:  Don't display the summary line or any diagnostic blocks</li>
+<li><code>fail</code>:  Only display the summary line and diagnostics on failure</li>
+<li><code>pass</code>:  Always display the summary line; diagnostics shown when failures exist (default)</li>
+<li><code>all</code>:  Always display the summary line and diagnostics</li>
+</ul></dd><dt id="karva-test--help"><a href="#karva-test--help"><code>--help</code></a>, <code>-h</code></dt><dd><p>Print help (see a summary with '-h')</p>
 </dd><dt id="karva-test--last-failed"><a href="#karva-test--last-failed"><code>--last-failed</code></a>, <code>--lf</code></dt><dd><p>Re-run only the tests that failed in the previous run</p>
 </dd><dt id="karva-test--max-fail"><a href="#karva-test--max-fail"><code>--max-fail</code></a> <i>n</i></dt><dd><p>Stop scheduling new tests after this many failures.</p>
 <p>Accepts a positive integer such as <code>--max-fail=3</code>. <code>--max-fail=1</code> is equivalent to the legacy <code>--fail-fast</code>, and <code>--no-fail-fast</code> clears the limit. When <code>--max-fail</code> is provided alongside <code>--fail-fast</code> or <code>--no-fail-fast</code>, <code>--max-fail</code> takes precedence.</p>
@@ -64,7 +71,6 @@ karva test [OPTIONS] [PATH]...
 <p>Clears any <code>fail-fast</code> or <code>max-fail</code> value set in configuration. When <code>--max-fail</code> is provided alongside <code>--no-fail-fast</code>, <code>--max-fail</code> takes precedence.</p>
 </dd><dt id="karva-test--no-ignore"><a href="#karva-test--no-ignore"><code>--no-ignore</code></a></dt><dd><p>When set, .gitignore files will not be respected</p>
 </dd><dt id="karva-test--no-parallel"><a href="#karva-test--no-parallel"><code>--no-parallel</code></a></dt><dd><p>Disable parallel execution (equivalent to <code>--num-workers 1</code>)</p>
-</dd><dt id="karva-test--no-progress"><a href="#karva-test--no-progress"><code>--no-progress</code></a></dt><dd><p>When set, we will not show individual test case results during execution</p>
 </dd><dt id="karva-test--no-tests"><a href="#karva-test--no-tests"><code>--no-tests</code></a> <i>action</i></dt><dd><p>Behavior when no tests are found to run [default: auto]</p>
 <p>May also be set with the <code>KARVA_NO_TESTS</code> environment variable.</p><p>Possible values:</p>
 <ul>
@@ -78,8 +84,7 @@ karva test [OPTIONS] [PATH]...
 <ul>
 <li><code>full</code>:  Print diagnostics verbosely, with context and helpful hints (default)</li>
 <li><code>concise</code>:  Print diagnostics concisely, one per line</li>
-</ul></dd><dt id="karva-test--quiet"><a href="#karva-test--quiet"><code>--quiet</code></a>, <code>-q</code></dt><dd><p>Use quiet output (or <code>-qq</code> for silent output)</p>
-</dd><dt id="karva-test--retry"><a href="#karva-test--retry"><code>--retry</code></a> <i>retry</i></dt><dd><p>When set, the test will retry failed tests up to this number of times</p>
+</ul></dd><dt id="karva-test--retry"><a href="#karva-test--retry"><code>--retry</code></a> <i>retry</i></dt><dd><p>When set, the test will retry failed tests up to this number of times</p>
 </dd><dt id="karva-test--run-ignored"><a href="#karva-test--run-ignored"><code>--run-ignored</code></a> <i>run-ignored</i></dt><dd><p>Run ignored tests</p>
 <p>Possible values:</p>
 <ul>
@@ -88,7 +93,15 @@ karva test [OPTIONS] [PATH]...
 </ul></dd><dt id="karva-test--show-output"><a href="#karva-test--show-output"><code>--show-output</code></a>, <code>-s</code></dt><dd><p>Show Python stdout during test execution</p>
 </dd><dt id="karva-test--snapshot-update"><a href="#karva-test--snapshot-update"><code>--snapshot-update</code></a></dt><dd><p>Update snapshots directly instead of creating pending <code>.snap.new</code> files.</p>
 <p>When set, <code>karva.assert_snapshot()</code> will write directly to <code>.snap</code> files, accepting any changes automatically.</p>
-</dd><dt id="karva-test--test-prefix"><a href="#karva-test--test-prefix"><code>--test-prefix</code></a> <i>test-prefix</i></dt><dd><p>The prefix of the test functions</p>
+</dd><dt id="karva-test--status-level"><a href="#karva-test--status-level"><code>--status-level</code></a> <i>level</i></dt><dd><p>Test result statuses to display during the run [default: pass]</p>
+<p>May also be set with the <code>KARVA_STATUS_LEVEL</code> environment variable.</p><p>Possible values:</p>
+<ul>
+<li><code>none</code>:  Don't display any test result lines (or the &quot;Starting&quot; header)</li>
+<li><code>fail</code>:  Only display failed test results</li>
+<li><code>skip</code>:  Display failed and skipped test results</li>
+<li><code>pass</code>:  Display all test results (default)</li>
+<li><code>all</code>:  Display all test results</li>
+</ul></dd><dt id="karva-test--test-prefix"><a href="#karva-test--test-prefix"><code>--test-prefix</code></a> <i>test-prefix</i></dt><dd><p>The prefix of the test functions</p>
 </dd><dt id="karva-test--try-import-fixtures"><a href="#karva-test--try-import-fixtures"><code>--try-import-fixtures</code></a></dt><dd><p>When set, we will try to import functions in each test file as well as parsing the ast to find them.</p>
 <p>This is often slower, so it is not recommended for most projects.</p>
 </dd><dt id="karva-test--verbose"><a href="#karva-test--verbose"><code>--verbose</code></a>, <code>-v</code></dt><dd><p>Use verbose output (or <code>-vv</code> and <code>-vvv</code> for more verbose output)</p>

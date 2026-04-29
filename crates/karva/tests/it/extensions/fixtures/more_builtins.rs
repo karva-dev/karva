@@ -108,10 +108,11 @@ def test_tmp_path_still_works(tmp_path):
 ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -147,10 +148,11 @@ def test_second_sees_restored_levels():
 "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -179,10 +181,11 @@ def test_at_level_nested(caplog):
 "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -204,10 +207,11 @@ def test_child_logger_propagates(caplog):
 "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -236,10 +240,11 @@ def test_exc_info(caplog):
 "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -271,10 +276,11 @@ def test_readouterr_segments(capsys):
 "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -298,10 +304,11 @@ def test_streams_are_separate(capsys):
 "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -320,10 +327,11 @@ def test_unicode(capsys):
 "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -344,10 +352,11 @@ def test_named_tuple(capsys):
 "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -378,10 +387,11 @@ def test_filter_category(recwarn):
 "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -407,10 +417,11 @@ def test_message_attrs(recwarn):
 "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -438,10 +449,11 @@ def test_pop_subclass(recwarn):
 "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -469,10 +481,11 @@ def test_numbered_unique(tmp_path_factory):
 "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -492,10 +505,11 @@ def test_unnumbered(tmp_path_factory):
 "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -516,10 +530,11 @@ def test_escaping(tmp_path_factory):
 "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -542,10 +557,11 @@ def test_basetemp(tmp_path_factory):
 "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -570,10 +586,11 @@ def test_b(tmp_path_factory):
 ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -607,10 +624,11 @@ def test_mockenv_with():
 "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -641,10 +659,11 @@ def test_double_undo():
 "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -679,10 +698,11 @@ def test_staticmethod_restore():
 "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -713,10 +733,11 @@ def test_classmethod_restore():
 "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -747,10 +768,11 @@ def test_chdir_pathlib(tmp_path):
 ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -783,10 +805,11 @@ def test_prepend():
 "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -815,10 +838,11 @@ def test_setattr_missing_then_undo():
 "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -846,10 +870,11 @@ def test_delitem_missing():
 "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -968,10 +993,11 @@ def test_delattr_resolves_submodule_attr():
 "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 

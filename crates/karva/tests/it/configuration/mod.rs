@@ -32,6 +32,7 @@ def test_main(): pass
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -114,6 +115,7 @@ def test_in_other(): pass
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -709,6 +711,7 @@ def test_other(): pass
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -1086,6 +1089,7 @@ def test_main(): pass
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -1178,6 +1182,7 @@ def test_from_cli(): pass
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 

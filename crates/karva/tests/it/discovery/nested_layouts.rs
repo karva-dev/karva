@@ -26,6 +26,7 @@ def test_root(): pass",
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
@@ -62,6 +63,7 @@ def test_direct(): pass",
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 4 tests run: 4 passed, 0 skipped
 
@@ -93,6 +95,7 @@ def test_versioned(): pass",
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
@@ -124,6 +127,7 @@ def test_path_3(): pass",
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 3 tests run: 3 passed, 0 skipped
 

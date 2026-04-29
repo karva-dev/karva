@@ -26,6 +26,7 @@ fn test_temp_directory_fixture(#[values("tmp_path", "temp_path", "temp_dir")] fi
         success: true
         exit_code: 0
         ----- stdout -----
+
         ────────────
              Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -53,6 +54,7 @@ def test_tmpdir(tmpdir):
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -84,6 +86,7 @@ def test_tmp_path_factory(tmp_path_factory):
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -114,6 +117,7 @@ def test_tmpdir_factory(tmpdir_factory):
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -145,6 +149,7 @@ def test_check_same_base(tmp_path_factory):
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -181,6 +186,7 @@ def test_uses_shared_dir_again(shared_dir):
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -381,6 +387,7 @@ def test_syspath_prepend_with_path(monkeypatch, tmp_path):
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -921,6 +928,7 @@ fn test_mock_env() {
         success: true
         exit_code: 0
         ----- stdout -----
+
         ────────────
              Summary [TIME] 16 tests run: 13 passed, 3 skipped
 
@@ -1103,6 +1111,7 @@ def test_chdir(monkeypatch, tmp_path):
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -1239,6 +1248,7 @@ def test_caplog_records(caplog):
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -1319,6 +1329,7 @@ def test_caplog_text(caplog):
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -1406,6 +1417,7 @@ def test_caplog_messages(caplog):
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -1435,6 +1447,7 @@ def test_caplog_record_tuples(caplog):
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -1461,6 +1474,7 @@ def test_caplog_handler(caplog):
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -1549,6 +1563,7 @@ def test_caplog_at_level_filters(caplog):
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -1669,6 +1684,7 @@ def test_caplog_clear(caplog):
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -1727,6 +1743,7 @@ def test_caplog_set_level(caplog):
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -1784,6 +1801,7 @@ def test_second(caplog):
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -1818,6 +1836,7 @@ def test_level_restored():
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -1880,6 +1899,7 @@ def test_creates_subdir(value, tmp_path):
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
@@ -1911,6 +1931,7 @@ def test_capfd_stderr(capfd):
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -1942,6 +1963,7 @@ def test_capsysbinary_stderr(capsysbinary):
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -1980,6 +2002,7 @@ def test_mixed_str_and_bytes_writes(capsysbinary):
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
@@ -2011,6 +2034,7 @@ def test_capfdbinary_stderr(capfdbinary):
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -2040,6 +2064,7 @@ def test_capsys_logging_warning(capsys):
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -2070,6 +2095,7 @@ def test_capsys_with_disabled_logging(capsys):
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -2096,6 +2122,7 @@ def test_capfd_logging_warning(capfd):
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 

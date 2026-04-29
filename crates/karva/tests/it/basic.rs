@@ -530,6 +530,7 @@ fn test_quiet_output_passing() {
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -551,6 +552,24 @@ fn test_quiet_output_failing() {
     success: false
     exit_code: 1
     ----- stdout -----
+
+    diagnostics:
+
+    error[test-failure]: Test `test_quiet_output` failed
+     --> test.py:2:5
+      |
+    2 | def test_quiet_output():
+      |     ^^^^^^^^^^^^^^^^^
+    3 |     assert False
+      |
+    info: Test failed here
+     --> test.py:3:5
+      |
+    2 | def test_quiet_output():
+    3 |     assert False
+      |     ^^^^^^^^^^^^
+      |
+
     ────────────
          Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
@@ -1746,6 +1765,7 @@ def test_2(): pass
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -2074,6 +2094,43 @@ def test_3(): pass
     success: false
     exit_code: 1
     ----- stdout -----
+
+    diagnostics:
+
+    error[test-failure]: Test `test_1` failed
+     --> test.py:2:5
+      |
+    2 | def test_1(): assert False
+      |     ^^^^^^
+    3 | def test_2(): assert False
+    4 | def test_3(): pass
+      |
+    info: Test failed here
+     --> test.py:2:1
+      |
+    2 | def test_1(): assert False
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    3 | def test_2(): assert False
+    4 | def test_3(): pass
+      |
+
+    error[test-failure]: Test `test_2` failed
+     --> test.py:3:5
+      |
+    2 | def test_1(): assert False
+    3 | def test_2(): assert False
+      |     ^^^^^^
+    4 | def test_3(): pass
+      |
+    info: Test failed here
+     --> test.py:3:1
+      |
+    2 | def test_1(): assert False
+    3 | def test_2(): assert False
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    4 | def test_3(): pass
+      |
+
     ────────────
          Summary [TIME] 3 tests run: 1 passed, 2 failed, 0 skipped
 
@@ -2101,6 +2158,26 @@ def test_3(): pass
     success: false
     exit_code: 1
     ----- stdout -----
+
+    diagnostics:
+
+    error[test-failure]: Test `test_1` failed
+     --> test.py:2:5
+      |
+    2 | def test_1(): assert False
+      |     ^^^^^^
+    3 | def test_2(): assert False
+    4 | def test_3(): pass
+      |
+    info: Test failed here
+     --> test.py:2:1
+      |
+    2 | def test_1(): assert False
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    3 | def test_2(): assert False
+    4 | def test_3(): pass
+      |
+
     ────────────
          Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
@@ -2129,6 +2206,43 @@ def test_3(): assert False
     success: false
     exit_code: 1
     ----- stdout -----
+
+    diagnostics:
+
+    error[test-failure]: Test `test_1` failed
+     --> test.py:2:5
+      |
+    2 | def test_1(): assert False
+      |     ^^^^^^
+    3 | def test_2(): assert False
+    4 | def test_3(): assert False
+      |
+    info: Test failed here
+     --> test.py:2:1
+      |
+    2 | def test_1(): assert False
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    3 | def test_2(): assert False
+    4 | def test_3(): assert False
+      |
+
+    error[test-failure]: Test `test_2` failed
+     --> test.py:3:5
+      |
+    2 | def test_1(): assert False
+    3 | def test_2(): assert False
+      |     ^^^^^^
+    4 | def test_3(): assert False
+      |
+    info: Test failed here
+     --> test.py:3:1
+      |
+    2 | def test_1(): assert False
+    3 | def test_2(): assert False
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    4 | def test_3(): assert False
+      |
+
     ────────────
          Summary [TIME] 2 tests run: 0 passed, 2 failed, 0 skipped
 

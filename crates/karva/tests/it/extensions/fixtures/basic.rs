@@ -461,6 +461,7 @@ def test_username(username):
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -715,6 +716,7 @@ def test_third(make_subdir):
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
