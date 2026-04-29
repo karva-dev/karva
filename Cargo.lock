@@ -1108,7 +1108,6 @@ dependencies = [
  "karva_metadata",
  "karva_project",
  "karva_runner",
- "karva_static",
  "ruff_python_ast",
  "serde",
  "serde_json",
