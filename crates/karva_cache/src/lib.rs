@@ -3,7 +3,7 @@ pub(crate) mod hash;
 
 pub use cache::{
     AggregatedResults, Cache, PruneResult, clean_cache, prune_cache, read_last_failed,
-    read_recent_durations, write_last_failed,
+    write_last_failed,
 };
 pub use hash::RunHash;
 
