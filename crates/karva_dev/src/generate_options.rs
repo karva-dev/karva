@@ -67,7 +67,16 @@ pub(crate) fn main(args: &Args) -> anyhow::Result<()> {
 fn generate_set(output: &mut String, set: Set, parents: &mut Vec<Set>) {
     match &set {
         Set::Toplevel(_) => {
-            output.push_str("# Configuration\n");
+            output.push_str("# Configuration\n\n");
+            output.push_str(
+                "Karva is configured through `karva.toml` (or the `[tool.karva]` table in \
+                 `pyproject.toml`). All option groups live under a `[profile.<name>]` section; \
+                 see [Profiles](profiles.md) for how to define and select profiles.\n\n",
+            );
+            output.push_str(
+                "The reference below documents every field supported inside a profile. Examples \
+                 target the implicit `default` profile.\n\n",
+            );
         }
         Set::Named { name, .. } => {
             let title = parents
@@ -191,7 +200,7 @@ fn format_example(header: &str, content: &str) -> String {
 
 /// Format the TOML header for the example usage for a given option.
 ///
-/// For example: `[tool.karva.src]`.
+/// For example: `[tool.karva.profile.default.src]`.
 fn format_header(
     scope: Option<&str>,
     example: &str,

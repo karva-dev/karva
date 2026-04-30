@@ -1,6 +1,11 @@
 <!-- WARNING: This file is auto-generated (cargo dev generate-all). Update the doc comments on the 'Options' struct in 'crates/karva_project/src/metadata/options.rs' if you want to change anything here. -->
 
 # Configuration
+
+Karva is configured through `karva.toml` (or the `[tool.karva]` table in `pyproject.toml`). All option groups live under a `[profile.<name>]` section; see [Profiles](profiles.md) for how to define and select profiles.
+
+The reference below documents every field supported inside a profile. Examples target the implicit `default` profile.
+
 ## `src`
 
 ### `include`
