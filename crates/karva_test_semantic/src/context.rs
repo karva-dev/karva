@@ -121,6 +121,7 @@ impl<'a> Context<'a> {
         test_case_name: &QualifiedTestName,
         result: &IndividualTestResultKind,
         duration: std::time::Duration,
+        passed_on: u32,
         total_attempts: u32,
     ) -> bool {
         let passed = matches!(
@@ -131,6 +132,7 @@ impl<'a> Context<'a> {
             test_case_name,
             result,
             duration,
+            passed_on,
             total_attempts,
             Some(self.reporter),
         );

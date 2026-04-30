@@ -448,7 +448,9 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
         let mut attempt_start = std::time::Instant::now();
         let mut test_result = run_test();
 
-        let mut retry_count = self.context.settings().test().retry;
+        let configured_retries = self.context.settings().test().retry;
+        let max_attempts = configured_retries.saturating_add(1);
+        let mut retry_count = configured_retries;
         let mut was_retried = false;
         let mut final_attempt_duration = attempt_start.elapsed();
 
@@ -482,7 +484,12 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
         };
 
         let passed = if was_retried {
-            let total_attempts = attempt;
+            let passed_on = attempt;
+            // `total_attempts` mirrors nextest: the maximum number of attempts
+            // the test was allowed (`retries + 1`), not just the count that
+            // ran. This keeps `FLAKY M/T` readable as "passed on attempt M
+            // out of an allowed T."
+            let total_attempts = max_attempts;
             // Emit the per-attempt line for the final attempt before
             // classifying so output ordering matches nextest:
             //   TRY 1 FAIL ...
@@ -506,6 +513,7 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
                     &qualified_test_name,
                     &kind,
                     total_duration,
+                    passed_on,
                     total_attempts,
                 )
             })

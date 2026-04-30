@@ -1258,7 +1258,7 @@ def test_1():
 
     ────────────
          Summary [TIME] 1 test run: 1 passed (1 flaky), 0 skipped
-       FLAKY 4/4 [TIME] test::test_1
+       FLAKY 4/6 [TIME] test::test_1
 
     ----- stderr -----
     ");
@@ -1652,7 +1652,7 @@ def test_flaky():
 
     ────────────
          Summary [TIME] 1 test run: 1 passed (1 flaky), 0 skipped
-       FLAKY 2/2 [TIME] test::test_flaky
+       FLAKY 2/3 [TIME] test::test_flaky
 
     ----- stderr -----
     ");
@@ -2032,7 +2032,7 @@ def test_flaky():
 
     ────────────
          Summary [TIME] 1 test run: 1 passed (1 flaky), 0 skipped
-       FLAKY 2/2 [TIME] test::test_flaky
+       FLAKY 2/3 [TIME] test::test_flaky
 
     ----- stderr -----
     "
@@ -2068,7 +2068,7 @@ def test_flaky():
 
     ────────────
          Summary [TIME] 1 test run: 1 passed (1 flaky), 0 skipped
-       FLAKY 2/2 [TIME] test::test_flaky
+       FLAKY 2/3 [TIME] test::test_flaky
 
     ----- stderr -----
     "
@@ -2142,8 +2142,8 @@ def test_flaky_b():
 
     ────────────
          Summary [TIME] 2 tests run: 2 passed (2 flaky), 0 skipped
-       FLAKY 2/2 [TIME] test::test_flaky_a
-       FLAKY 2/2 [TIME] test::test_flaky_b
+       FLAKY 2/3 [TIME] test::test_flaky_a
+       FLAKY 2/3 [TIME] test::test_flaky_b
 
     ----- stderr -----
     ");
@@ -2207,7 +2207,7 @@ def test_always_fails(): assert False
 
     ────────────
          Summary [TIME] 3 tests run: 2 passed (1 flaky), 1 failed, 0 skipped
-       FLAKY 2/2 [TIME] test::test_flaky
+       FLAKY 2/3 [TIME] test::test_flaky
 
     ----- stderr -----
     "
@@ -2263,7 +2263,7 @@ def test_flaky():
 
     ────────────
          Summary [TIME] 1 test run: 1 passed (1 flaky), 0 skipped
-       FLAKY 2/2 [TIME] test::test_flaky
+       FLAKY 2/3 [TIME] test::test_flaky
 
     ----- stderr -----
     "

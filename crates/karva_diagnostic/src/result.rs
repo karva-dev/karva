@@ -125,14 +125,17 @@ impl TestRunResult {
     /// `report_test_case_result` line — the per-attempt `TRY N STATUS`
     /// lines are the user-visible output for a retried test.
     ///
-    /// `total_attempts` is the total number of attempts that ran (including
-    /// the final one). When the final outcome is `Passed`, the test is
-    /// counted as flaky.
+    /// `passed_on` is the 1-indexed attempt number that ultimately succeeded
+    /// (only meaningful when `result` is `Passed`). `total_attempts` mirrors
+    /// nextest's `FLAKY M/T` denominator: the maximum number of attempts the
+    /// test was allowed (`retries + 1`), not just the count that ran.
+    /// When the final outcome is `Passed`, the test is counted as flaky.
     pub fn register_retried_result(
         &mut self,
         test_case_name: &QualifiedTestName,
         result: &IndividualTestResultKind,
         duration: std::time::Duration,
+        passed_on: u32,
         total_attempts: u32,
         _reporter: Option<&dyn Reporter>,
     ) {
@@ -146,7 +149,7 @@ impl TestRunResult {
             self.stats.add(TestResultKind::Flaky);
             self.flaky_tests.push(FlakyTest {
                 test_name: test_case_name.clone(),
-                passed_on: total_attempts,
+                passed_on,
                 total_attempts,
                 duration,
             });
