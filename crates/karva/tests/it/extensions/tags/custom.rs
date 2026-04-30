@@ -162,7 +162,6 @@ def test_runs():
     exit_code: 0
     ----- stdout -----
         Starting 2 tests across 1 worker
-            SKIP [TIME] test::test_skipped
             PASS [TIME] test::test_runs
 
     ────────────

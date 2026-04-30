@@ -28,10 +28,11 @@ def test_main(): pass
     ]);
 
     // With respect-ignore-files = false, the ignored file should be included
-    assert_cmd_snapshot!(context.command().arg("-q"), @"
+    assert_cmd_snapshot!(context.command().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -110,10 +111,11 @@ def test_in_other(): pass
     ]);
 
     // Only files in 'src' and 'tests' should be included
-    assert_cmd_snapshot!(context.command().arg("-q"), @"
+    assert_cmd_snapshot!(context.command().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -287,6 +289,82 @@ def test_with_print():
         Starting 1 test across 1 worker
     This should be visible
             PASS [TIME] test::test_with_print
+
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_terminal_status_level_from_config() {
+    let context = TestContext::with_files([
+        (
+            "karva.toml",
+            r#"
+[terminal]
+status-level = "none"
+"#,
+        ),
+        ("test.py", "def test_pass(): pass\n"),
+    ]);
+
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_terminal_final_status_level_from_config() {
+    let context = TestContext::with_files([
+        (
+            "karva.toml",
+            r#"
+[terminal]
+final-status-level = "none"
+"#,
+        ),
+        ("test.py", "def test_pass(): pass\n"),
+    ]);
+
+    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_pass
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_cli_status_level_overrides_config() {
+    let context = TestContext::with_files([
+        (
+            "karva.toml",
+            r#"
+[terminal]
+status-level = "none"
+"#,
+        ),
+        ("test.py", "def test_pass(): pass\n"),
+    ]);
+
+    assert_cmd_snapshot!(context.command_no_parallel().args(["--status-level=pass"]), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_pass
 
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
@@ -705,10 +783,11 @@ def test_other(): pass
     ]);
 
     // Should respect pyproject.toml configuration
-    assert_cmd_snapshot!(context.command().arg("-q"), @"
+    assert_cmd_snapshot!(context.command().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -1082,10 +1161,11 @@ def test_main(): pass
     ]);
 
     // CLI argument --no-ignore should override config and include ignored files
-    assert_cmd_snapshot!(context.command().arg("--no-ignore").arg("-q"), @"
+    assert_cmd_snapshot!(context.command().arg("--no-ignore").arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -1174,10 +1254,11 @@ def test_from_cli(): pass
     ]);
 
     // CLI path argument should add to config include
-    assert_cmd_snapshot!(context.command().arg("cli_dir").arg("-q"), @"
+    assert_cmd_snapshot!(context.command().arg("cli_dir").arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 

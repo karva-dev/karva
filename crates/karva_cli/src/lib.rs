@@ -4,7 +4,7 @@ use camino::Utf8PathBuf;
 use clap::Parser;
 use clap::builder::Styles;
 use clap::builder::styling::{AnsiColor, Effects};
-use karva_logging::{TerminalColor, VerbosityLevel};
+use karva_logging::{FinalStatusLevel, StatusLevel, TerminalColor, VerbosityLevel};
 use karva_metadata::{
     MaxFail, NoTestsMode, Options, RunIgnoredMode, SrcOptions, TerminalOptions, TestOptions,
 };
@@ -25,33 +25,13 @@ pub struct Verbosity {
         help = "Use verbose output (or `-vv` and `-vvv` for more verbose output)",
         action = clap::ArgAction::Count,
         global = true,
-        overrides_with = "quiet",
     )]
     verbose: u8,
-
-    #[arg(
-        long,
-        short,
-        help = "Use quiet output (or `-qq` for silent output)",
-        action = clap::ArgAction::Count,
-        global = true,
-        overrides_with = "verbose",
-    )]
-    quiet: u8,
 }
 
 impl Verbosity {
-    /// Returns the verbosity level based on the number of `-v` and `-q` flags.
-    ///
-    /// Returns `None` if the user did not specify any verbosity flags.
+    /// Returns the verbosity level based on the number of `-v` flags.
     pub fn level(&self) -> VerbosityLevel {
-        // `--quiet` and `--verbose` are mutually exclusive in Clap, so we can just check one first.
-        match self.quiet {
-            0 => {}
-            1 => return VerbosityLevel::Quiet,
-            _ => return VerbosityLevel::Silent,
-        }
-
         match self.verbose {
             0 => VerbosityLevel::Default,
             1 => VerbosityLevel::Verbose,
@@ -265,9 +245,23 @@ pub struct SubTestCommand {
     #[clap(short = 's', long, default_missing_value = "true", num_args=0..1, help_heading = "Reporter options")]
     pub show_output: Option<bool>,
 
-    /// When set, we will not show individual test case results during execution.
-    #[clap(long, default_missing_value = "true", num_args=0..1, help_heading = "Reporter options")]
-    pub no_progress: Option<bool>,
+    /// Test result statuses to display during the run [default: pass]
+    #[arg(
+        long,
+        value_name = "LEVEL",
+        env = "KARVA_STATUS_LEVEL",
+        help_heading = "Reporter options"
+    )]
+    pub status_level: Option<StatusLevel>,
+
+    /// Test summary information to display at the end of the run [default: pass]
+    #[arg(
+        long,
+        value_name = "LEVEL",
+        env = "KARVA_FINAL_STATUS_LEVEL",
+        help_heading = "Reporter options"
+    )]
+    pub final_status_level: Option<FinalStatusLevel>,
 }
 
 #[derive(Debug, Parser)]
@@ -374,6 +368,8 @@ impl SubTestCommand {
             terminal: Some(TerminalOptions {
                 output_format: self.output_format.map(Into::into),
                 show_python_output: self.show_output,
+                status_level: self.status_level,
+                final_status_level: self.final_status_level,
             }),
             test: Some(TestOptions {
                 test_function_prefix: self.test_prefix,

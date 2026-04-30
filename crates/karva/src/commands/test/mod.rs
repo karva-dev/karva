@@ -22,8 +22,6 @@ pub fn test(args: TestCommand) -> Result<ExitStatus> {
 
     set_colored_override(args.sub_command.color);
 
-    let printer = Printer::new(verbosity, args.sub_command.no_progress.unwrap_or(false));
-
     let _guard = setup_tracing(verbosity);
 
     let cwd = cwd().map_err(|_| {
@@ -61,6 +59,11 @@ pub fn test(args: TestCommand) -> Result<ExitStatus> {
 
     let project = Project::from_metadata(project_metadata);
 
+    let printer = Printer::new(
+        project.settings().terminal().status_level,
+        project.settings().terminal().final_status_level,
+    );
+
     FiltersetSet::new(&sub_command.filter_expressions).context("invalid `--filter` expression")?;
 
     let config = karva_runner::ParallelTestConfig {
@@ -93,12 +96,12 @@ pub fn test(args: TestCommand) -> Result<ExitStatus> {
             NoTestsMode::Pass => return Ok(ExitStatus::Success),
             NoTestsMode::Auto if has_filters => return Ok(ExitStatus::Success),
             NoTestsMode::Warn => {
-                let mut stdout = printer.stream_for_requested_summary().lock();
+                let mut stdout = printer.stream_for_message().lock();
                 writeln!(stdout, "warning: no tests to run")?;
                 return Ok(ExitStatus::Success);
             }
             NoTestsMode::Auto | NoTestsMode::Fail => {
-                let mut stdout = printer.stream_for_failure_summary().lock();
+                let mut stdout = printer.stream_for_message().lock();
                 writeln!(stdout, "error: no tests to run")?;
                 writeln!(stdout, "(hint: use `--no-tests` to customize)")?;
                 return Ok(ExitStatus::Failure);
@@ -145,7 +148,7 @@ pub fn print_test_output(
         writeln!(stdout)?;
     }
 
-    let mut result_stdout = printer.stream_for_failure_summary().lock();
+    let mut result_stdout = printer.stream_for_summary(result.stats.is_success()).lock();
     write!(result_stdout, "{}", result.stats.display(start_time))?;
 
     Ok(())

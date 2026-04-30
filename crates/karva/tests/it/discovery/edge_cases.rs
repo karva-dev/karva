@@ -52,10 +52,11 @@ def test_at_root(): pass
         ),
     ]);
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("-q"), @"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--status-level=none"), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -115,10 +116,11 @@ def test_kept(): pass
         ),
     ]);
 
-    assert_cmd_snapshot!(context.command_no_parallel().args(["--no-ignore", "-q"]), @"
+    assert_cmd_snapshot!(context.command_no_parallel().args(["--no-ignore", "--status-level=none"]), @"
     success: true
     exit_code: 0
     ----- stdout -----
+
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 

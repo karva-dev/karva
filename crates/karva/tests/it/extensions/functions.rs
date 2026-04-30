@@ -227,9 +227,6 @@ def test_conditional_skip():
         exit_code: 0
         ----- stdout -----
             Starting 3 tests across 1 worker
-                SKIP [TIME] test::test_skip_with_reason: This test is skipped at runtime
-                SKIP [TIME] test::test_skip_without_reason
-                SKIP [TIME] test::test_conditional_skip: Condition was true
 
         ────────────
              Summary [TIME] 3 tests run: 0 passed, 3 skipped
@@ -264,7 +261,6 @@ def test_another_pass():
     ----- stdout -----
         Starting 3 tests across 1 worker
             PASS [TIME] test::test_pass
-            SKIP [TIME] test::test_skip: Skipped test
             PASS [TIME] test::test_another_pass
 
     ────────────
@@ -292,7 +288,6 @@ def test_raise_skip_error():
     exit_code: 0
     ----- stdout -----
         Starting 1 test across 1 worker
-            SKIP [TIME] test::test_raise_skip_error: Manually raised SkipError
 
     ────────────
          Summary [TIME] 1 test run: 0 passed, 1 skipped

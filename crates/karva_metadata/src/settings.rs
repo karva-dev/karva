@@ -1,4 +1,5 @@
 use karva_combine::Combine;
+use karva_logging::{FinalStatusLevel, StatusLevel};
 use serde::{Deserialize, Serialize};
 
 use crate::filter::FiltersetSet;
@@ -70,6 +71,8 @@ impl ProjectSettings {
 pub struct TerminalSettings {
     pub output_format: OutputFormat,
     pub show_python_output: bool,
+    pub status_level: StatusLevel,
+    pub final_status_level: FinalStatusLevel,
 }
 
 #[derive(Default, Debug, Clone)]

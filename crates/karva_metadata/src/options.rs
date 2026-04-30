@@ -1,5 +1,6 @@
 use camino::Utf8PathBuf;
 use karva_combine::Combine;
+use karva_logging::{FinalStatusLevel, StatusLevel};
 use karva_macros::{Combine, OptionsMetadata};
 use ruff_db::diagnostic::DiagnosticFormat;
 use serde::{Deserialize, Serialize};
@@ -128,6 +129,40 @@ pub struct TerminalOptions {
         "#
     )]
     pub show_python_output: Option<bool>,
+
+    /// Test result statuses to display during the run.
+    ///
+    /// Modeled after `cargo-nextest`'s `--status-level`. Levels are
+    /// cumulative: `pass` shows passing and failed tests, `skip` adds
+    /// skipped tests on top, and so on. `retry` and `slow` are accepted
+    /// for forward-compatibility but currently behave like `fail`.
+    ///
+    /// Defaults to `pass`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[option(
+        default = r#"pass"#,
+        value_type = "none | fail | retry | slow | pass | skip | all",
+        example = r#"
+            status-level = "fail"
+        "#
+    )]
+    pub status_level: Option<StatusLevel>,
+
+    /// Test summary information to display at the end of the run.
+    ///
+    /// Modeled after `cargo-nextest`'s `--final-status-level`. Levels are
+    /// cumulative in the same way as [`status_level`](#terminal_status-level).
+    ///
+    /// Defaults to `pass`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[option(
+        default = r#"pass"#,
+        value_type = "none | fail | retry | slow | pass | skip | all",
+        example = r#"
+            final-status-level = "fail"
+        "#
+    )]
+    pub final_status_level: Option<FinalStatusLevel>,
 }
 
 impl TerminalOptions {
@@ -135,6 +170,8 @@ impl TerminalOptions {
         TerminalSettings {
             output_format: self.output_format.unwrap_or_default(),
             show_python_output: self.show_python_output.unwrap_or_default(),
+            status_level: self.status_level.unwrap_or_default(),
+            final_status_level: self.final_status_level.unwrap_or_default(),
         }
     }
 }

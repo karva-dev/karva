@@ -43,7 +43,6 @@ def test_1():
         exit_code: 0
         ----- stdout -----
             Starting 1 test across 1 worker
-                SKIP [TIME] test::test_1: This test is skipped with decorator
 
         ────────────
              Summary [TIME] 1 test run: 0 passed, 1 skipped
@@ -75,7 +74,6 @@ def test_1():
         exit_code: 0
         ----- stdout -----
             Starting 1 test across 1 worker
-                SKIP [TIME] test::test_1: This test is skipped with decorator
 
         ────────────
              Summary [TIME] 1 test run: 0 passed, 1 skipped
@@ -107,7 +105,6 @@ def test_1():
         exit_code: 0
         ----- stdout -----
             Starting 1 test across 1 worker
-                SKIP [TIME] test::test_1
 
         ────────────
              Summary [TIME] 1 test run: 0 passed, 1 skipped
@@ -139,7 +136,6 @@ def test_1():
         exit_code: 0
         ----- stdout -----
             Starting 1 test across 1 worker
-                SKIP [TIME] test::test_1
 
         ────────────
              Summary [TIME] 1 test run: 0 passed, 1 skipped
@@ -172,7 +168,6 @@ def test_1():
         exit_code: 0
         ----- stdout -----
             Starting 1 test across 1 worker
-                SKIP [TIME] test::test_1: Condition is true
 
         ────────────
              Summary [TIME] 1 test run: 0 passed, 1 skipped
@@ -237,7 +232,6 @@ def test_1():
         exit_code: 0
         ----- stdout -----
             Starting 1 test across 1 worker
-                SKIP [TIME] test::test_1: Python 3 or higher
 
         ────────────
              Summary [TIME] 1 test run: 0 passed, 1 skipped
@@ -269,7 +263,6 @@ def test_1():
         exit_code: 0
         ----- stdout -----
             Starting 1 test across 1 worker
-                SKIP [TIME] test::test_1: Multiple conditions with one true
 
         ────────────
              Summary [TIME] 1 test run: 0 passed, 1 skipped
@@ -301,7 +294,6 @@ def test_1():
         exit_code: 0
         ----- stdout -----
             Starting 1 test across 1 worker
-                SKIP [TIME] test::test_1
 
         ────────────
              Summary [TIME] 1 test run: 0 passed, 1 skipped
@@ -340,7 +332,6 @@ def test_normal():
         exit_code: 0
         ----- stdout -----
             Starting 3 tests across 1 worker
-                SKIP [TIME] test::test_skip_this: Should skip
                 PASS [TIME] test::test_run_this
                 PASS [TIME] test::test_normal
 
@@ -402,7 +393,6 @@ def test_1():
     exit_code: 0
     ----- stdout -----
         Starting 1 test across 1 worker
-            SKIP [TIME] test::test_1
 
     ────────────
          Summary [TIME] 1 test run: 0 passed, 1 skipped
@@ -429,7 +419,6 @@ def test_1():
     exit_code: 0
     ----- stdout -----
         Starting 1 test across 1 worker
-            SKIP [TIME] test::test_1: This is the skip reason
 
     ────────────
          Summary [TIME] 1 test run: 0 passed, 1 skipped
@@ -520,7 +509,6 @@ def test_skip_with_true():
         exit_code: 0
         ----- stdout -----
             Starting 1 test across 1 worker
-                SKIP [TIME] test::test_skip_with_true
 
         ────────────
              Summary [TIME] 1 test run: 0 passed, 1 skipped

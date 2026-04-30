@@ -44,7 +44,7 @@ fn run_and_print(
 }
 
 fn print_watching_message(printer: Printer) -> Result<()> {
-    let mut stdout = printer.stream_for_requested_summary().lock();
+    let mut stdout = printer.stream_for_message().lock();
     writeln!(stdout)?;
     writeln!(
         stdout,
@@ -113,7 +113,7 @@ pub fn run_watch_loop(
                 }
 
                 {
-                    let mut stdout = printer.stream_for_requested_summary().lock();
+                    let mut stdout = printer.stream_for_message().lock();
                     writeln!(stdout, "{}", "File changes detected:".bold())?;
                     let cwd = project.cwd().as_std_path();
                     for path in &all_paths {

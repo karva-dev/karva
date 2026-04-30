@@ -373,7 +373,6 @@ def test_square(input, expected):
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_square(expected=4, input=2)
-            SKIP [TIME] test::test_square
             PASS [TIME] test::test_square(expected=26, input=5)
 
     ────────────
@@ -579,9 +578,7 @@ def test_square(input, expected):
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_square(expected=4, input=2)
-            SKIP [TIME] test::test_square
             PASS [TIME] test::test_square(expected=26, input=5)
-            SKIP [TIME] test::test_square
             PASS [TIME] test::test_square(expected=50, input=7)
 
     ────────────
@@ -614,7 +611,6 @@ def test_marks_list(x):
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_marks_list(x=1)
-            SKIP [TIME] test::test_marks_list
             PASS [TIME] test::test_marks_list(x=3)
 
     ────────────
@@ -646,7 +642,6 @@ def test_with_skip_reason(x):
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_with_skip_reason(x=1)
-            SKIP [TIME] test::test_with_skip_reason: not ready
 
     ────────────
          Summary [TIME] 2 tests run: 1 passed, 1 skipped

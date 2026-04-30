@@ -10,9 +10,12 @@ authors.workspace = true
 license.workspace = true
 
 [dependencies]
+karva_combine = { workspace = true }
+
 chrono = { workspace = true }
 clap = { workspace = true }
 colored = { workspace = true }
+serde = { workspace = true }
 tracing = { workspace = true, features = ["release_max_level_debug"] }
 tracing-flame = { workspace = true }
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
