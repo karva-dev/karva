@@ -11,7 +11,8 @@ mod settings;
 
 pub use max_fail::MaxFail;
 pub use options::{
-    Options, OutputFormat, ProjectOptionsOverrides, SrcOptions, TerminalOptions, TestOptions,
+    DEFAULT_PROFILE, Options, OutputFormat, ProfileOptions, ProjectOptionsOverrides, SrcOptions,
+    TerminalOptions, TestOptions, UnknownProfile,
 };
 pub use pyproject::{PyProject, PyProjectError};
 pub use settings::{NoTestsMode, ProjectSettings, RunIgnoredMode};
@@ -186,8 +187,12 @@ impl ProjectMetadata {
         self
     }
 
-    pub fn apply_overrides(&mut self, overrides: &ProjectOptionsOverrides) {
-        self.options = overrides.apply_to(std::mem::take(&mut self.options));
+    pub fn apply_overrides(
+        &mut self,
+        overrides: &ProjectOptionsOverrides,
+    ) -> Result<(), UnknownProfile> {
+        self.options = overrides.apply_to(std::mem::take(&mut self.options))?;
+        Ok(())
     }
 
     /// Combine the project options with the CLI options where the CLI options take precedence.

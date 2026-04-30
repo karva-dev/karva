@@ -87,7 +87,10 @@ karva test [OPTIONS] [PATH]...
 <ul>
 <li><code>full</code>:  Print diagnostics verbosely, with context and helpful hints (default)</li>
 <li><code>concise</code>:  Print diagnostics concisely, one per line</li>
-</ul></dd><dt id="karva-test--retry"><a href="#karva-test--retry"><code>--retry</code></a> <i>retry</i></dt><dd><p>When set, the test will retry failed tests up to this number of times</p>
+</ul></dd><dt id="karva-test--profile"><a href="#karva-test--profile"><code>--profile</code></a>, <code>-P</code> <i>name</i></dt><dd><p>Configuration profile to use.</p>
+<p>Profiles are defined as <code>[profile.&lt;name&gt;]</code> sections in <code>karva.toml</code> (or <code>[tool.karva.profile.&lt;name&gt;]</code> in <code>pyproject.toml</code>) and may override any of the <code>[src]</code>, <code>[terminal]</code>, and <code>[test]</code> settings. The selected profile is layered on top of any <code>[profile.default]</code> overrides, which themselves layer on top of the top-level options.</p>
+<p>Defaults to <code>default</code>.</p>
+<p>May also be set with the <code>KARVA_PROFILE</code> environment variable.</p></dd><dt id="karva-test--retry"><a href="#karva-test--retry"><code>--retry</code></a> <i>retry</i></dt><dd><p>When set, the test will retry failed tests up to this number of times</p>
 </dd><dt id="karva-test--run-ignored"><a href="#karva-test--run-ignored"><code>--run-ignored</code></a> <i>run-ignored</i></dt><dd><p>Run ignored tests</p>
 <p>Possible values:</p>
 <ul>

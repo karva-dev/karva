@@ -303,6 +303,24 @@ pub struct TestCommand {
         help_heading = "Config options"
     )]
     pub config_file: Option<Utf8PathBuf>,
+
+    /// Configuration profile to use.
+    ///
+    /// Profiles are defined as `[profile.<name>]` sections in `karva.toml`
+    /// (or `[tool.karva.profile.<name>]` in `pyproject.toml`) and may
+    /// override any of the `[src]`, `[terminal]`, and `[test]` settings.
+    /// The selected profile is layered on top of any `[profile.default]`
+    /// overrides, which themselves layer on top of the top-level options.
+    ///
+    /// Defaults to `default`.
+    #[arg(
+        short = 'P',
+        long,
+        env = "KARVA_PROFILE",
+        value_name = "NAME",
+        help_heading = "Config options"
+    )]
+    pub profile: Option<String>,
 }
 
 impl TestCommand {
@@ -379,6 +397,7 @@ impl SubTestCommand {
                 retry: self.retry,
                 no_tests: self.no_tests.map(Into::into),
             }),
+            profile: None,
         }
     }
 }

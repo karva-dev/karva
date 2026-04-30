@@ -54,8 +54,12 @@ pub fn test(args: TestCommand) -> Result<ExitStatus> {
             .unwrap_or_else(|| karva_static::max_parallelism().get())
     };
 
-    let project_options_overrides = ProjectOptionsOverrides::new(config_file, args.into_options());
-    project_metadata.apply_overrides(&project_options_overrides);
+    let profile = args.profile.clone();
+    let project_options_overrides =
+        ProjectOptionsOverrides::new(config_file, args.into_options()).with_profile(profile);
+    project_metadata
+        .apply_overrides(&project_options_overrides)
+        .map_err(|err| anyhow::anyhow!("{err}"))?;
 
     let project = Project::from_metadata(project_metadata);
 

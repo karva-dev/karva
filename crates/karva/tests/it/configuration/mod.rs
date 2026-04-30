@@ -1,3 +1,5 @@
+mod profile;
+
 use insta_cmd::assert_cmd_snapshot;
 
 use crate::common::TestContext;
