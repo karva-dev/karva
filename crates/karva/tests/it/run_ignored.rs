@@ -27,7 +27,6 @@ fn runignored_runs_only_skipped_tests() {
         Starting 3 tests across 1 worker
             FAIL [TIME] test::test_skipped
             FAIL [TIME] test::test_skipped_with_reason
-            SKIP [TIME] test::test_normal
 
     diagnostics:
 
@@ -152,8 +151,6 @@ def test_beta():
     exit_code: 0
     ----- stdout -----
         Starting 2 tests across 1 worker
-            SKIP [TIME] test::test_alpha
-            SKIP [TIME] test::test_beta
 
     ────────────
          Summary [TIME] 2 tests run: 0 passed, 2 skipped
@@ -182,8 +179,6 @@ def test_normal():
     exit_code: 0
     ----- stdout -----
         Starting 2 tests across 1 worker
-            SKIP [TIME] test::test_conditional
-            SKIP [TIME] test::test_normal
 
     ────────────
          Summary [TIME] 2 tests run: 0 passed, 2 skipped

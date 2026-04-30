@@ -46,6 +46,28 @@ respect-ignore-files = false
 
 ## `terminal`
 
+### `final-status-level`
+
+Test summary information to display at the end of the run.
+
+Modeled after `cargo-nextest`'s `--final-status-level`. Levels are
+cumulative in the same way as [`status_level`](#terminal_status-level).
+
+Defaults to `pass`.
+
+**Default value**: `pass`
+
+**Type**: `none | fail | retry | slow | pass | skip | all`
+
+**Example usage** (`pyproject.toml`):
+
+```toml
+[tool.karva.terminal]
+final-status-level = "fail"
+```
+
+---
+
 ### `output-format`
 
 The format to use for printing diagnostic messages.
@@ -80,6 +102,30 @@ This is the output the `print` goes to etc.
 ```toml
 [tool.karva.terminal]
 show-python-output = false
+```
+
+---
+
+### `status-level`
+
+Test result statuses to display during the run.
+
+Modeled after `cargo-nextest`'s `--status-level`. Levels are
+cumulative: `pass` shows passing and failed tests, `skip` adds
+skipped tests on top, and so on. `retry` and `slow` are accepted
+for forward-compatibility but currently behave like `fail`.
+
+Defaults to `pass`.
+
+**Default value**: `pass`
+
+**Type**: `none | fail | retry | slow | pass | skip | all`
+
+**Example usage** (`pyproject.toml`):
+
+```toml
+[tool.karva.terminal]
+status-level = "fail"
 ```
 
 ---

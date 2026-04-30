@@ -39,10 +39,17 @@ impl Printer {
     pub fn stream_for_summary(self, success: bool) -> Stdout {
         match self.final_status_level {
             FinalStatusLevel::None => Stdout::disabled(),
-            FinalStatusLevel::Fail if success => Stdout::disabled(),
-            FinalStatusLevel::Fail | FinalStatusLevel::Pass | FinalStatusLevel::All => {
-                Stdout::enabled()
+            FinalStatusLevel::Fail | FinalStatusLevel::Retry | FinalStatusLevel::Slow
+                if success =>
+            {
+                Stdout::disabled()
             }
+            FinalStatusLevel::Fail
+            | FinalStatusLevel::Retry
+            | FinalStatusLevel::Slow
+            | FinalStatusLevel::Pass
+            | FinalStatusLevel::Skip
+            | FinalStatusLevel::All => Stdout::enabled(),
         }
     }
 
@@ -50,9 +57,12 @@ impl Printer {
     pub fn stream_for_details(self) -> Stdout {
         match self.final_status_level {
             FinalStatusLevel::None => Stdout::disabled(),
-            FinalStatusLevel::Fail | FinalStatusLevel::Pass | FinalStatusLevel::All => {
-                Stdout::enabled()
-            }
+            FinalStatusLevel::Fail
+            | FinalStatusLevel::Retry
+            | FinalStatusLevel::Slow
+            | FinalStatusLevel::Pass
+            | FinalStatusLevel::Skip
+            | FinalStatusLevel::All => Stdout::enabled(),
         }
     }
 

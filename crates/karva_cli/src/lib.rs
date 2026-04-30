@@ -368,6 +368,8 @@ impl SubTestCommand {
             terminal: Some(TerminalOptions {
                 output_format: self.output_format.map(Into::into),
                 show_python_output: self.show_output,
+                status_level: self.status_level,
+                final_status_level: self.final_status_level,
             }),
             test: Some(TestOptions {
                 test_function_prefix: self.test_prefix,

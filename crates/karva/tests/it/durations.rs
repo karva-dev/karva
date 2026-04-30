@@ -120,7 +120,6 @@ def test_skipped():
     ----- stdout -----
         Starting 2 tests across 1 worker
             PASS [TIME] test_durations::test_pass
-            SKIP [TIME] test_durations::test_skipped
 
     2 slowest tests:
       test_durations::test_pass ([TIME])

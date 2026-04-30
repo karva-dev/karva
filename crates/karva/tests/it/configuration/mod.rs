@@ -298,6 +298,82 @@ def test_with_print():
 }
 
 #[test]
+fn test_terminal_status_level_from_config() {
+    let context = TestContext::with_files([
+        (
+            "karva.toml",
+            r#"
+[terminal]
+status-level = "none"
+"#,
+        ),
+        ("test.py", "def test_pass(): pass\n"),
+    ]);
+
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_terminal_final_status_level_from_config() {
+    let context = TestContext::with_files([
+        (
+            "karva.toml",
+            r#"
+[terminal]
+final-status-level = "none"
+"#,
+        ),
+        ("test.py", "def test_pass(): pass\n"),
+    ]);
+
+    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_pass
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_cli_status_level_overrides_config() {
+    let context = TestContext::with_files([
+        (
+            "karva.toml",
+            r#"
+[terminal]
+status-level = "none"
+"#,
+        ),
+        ("test.py", "def test_pass(): pass\n"),
+    ]);
+
+    assert_cmd_snapshot!(context.command_no_parallel().args(["--status-level=pass"]), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_pass
+
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
 fn test_test_function_prefix_custom() {
     let context = TestContext::with_files([
         (

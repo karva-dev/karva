@@ -20,14 +20,19 @@ pub trait Reporter: Send + Sync {
 }
 
 fn show_for_status_level(level: StatusLevel, kind: &IndividualTestResultKind) -> bool {
+    // Levels are cumulative, like nextest: each level shows itself plus all
+    // earlier levels. Karva does not yet emit per-attempt retry lines or a
+    // slow-test threshold, so `Retry` and `Slow` currently behave like `Fail`.
     match level {
         StatusLevel::None => false,
-        StatusLevel::Fail => matches!(kind, IndividualTestResultKind::Failed),
-        StatusLevel::Skip => matches!(
+        StatusLevel::Fail | StatusLevel::Retry | StatusLevel::Slow => {
+            matches!(kind, IndividualTestResultKind::Failed)
+        }
+        StatusLevel::Pass => matches!(
             kind,
-            IndividualTestResultKind::Failed | IndividualTestResultKind::Skipped { .. }
+            IndividualTestResultKind::Failed | IndividualTestResultKind::Passed
         ),
-        StatusLevel::Pass | StatusLevel::All => true,
+        StatusLevel::Skip | StatusLevel::All => true,
     }
 }
 

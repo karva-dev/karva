@@ -230,7 +230,6 @@ def test_fail_b(): assert False
     ----- stdout -----
         Starting 3 tests across 1 worker
             FAIL [TIME] test_a::test_fail_a
-            SKIP [TIME] test_a::test_fail_b
 
     diagnostics:
 

@@ -577,7 +577,6 @@ def test_1():
     exit_code: 0
     ----- stdout -----
         Starting 1 test across 1 worker
-            SKIP [TIME] test::test_1: Skipping this test
 
     ────────────
          Summary [TIME] 1 test run: 0 passed, 1 skipped

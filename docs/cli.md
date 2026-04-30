@@ -60,8 +60,11 @@ karva test [OPTIONS] [PATH]...
 <ul>
 <li><code>none</code>:  Don't display the summary line or any diagnostic blocks</li>
 <li><code>fail</code>:  Only display the summary line and diagnostics on failure</li>
-<li><code>pass</code>:  Always display the summary line; diagnostics shown when failures exist (default)</li>
-<li><code>all</code>:  Always display the summary line and diagnostics</li>
+<li><code>retry</code>:  Same as <code>fail</code> until per-attempt retry summaries are emitted</li>
+<li><code>slow</code>:  Same as <code>fail</code> until a slow-test threshold is implemented</li>
+<li><code>pass</code>:  Always display the summary line and diagnostics (default)</li>
+<li><code>skip</code>:  Same as <code>pass</code> until skip-specific summary lines are emitted</li>
+<li><code>all</code>:  Always display every summary status</li>
 </ul></dd><dt id="karva-test--help"><a href="#karva-test--help"><code>--help</code></a>, <code>-h</code></dt><dd><p>Print help (see a summary with '-h')</p>
 </dd><dt id="karva-test--last-failed"><a href="#karva-test--last-failed"><code>--last-failed</code></a>, <code>--lf</code></dt><dd><p>Re-run only the tests that failed in the previous run</p>
 </dd><dt id="karva-test--max-fail"><a href="#karva-test--max-fail"><code>--max-fail</code></a> <i>n</i></dt><dd><p>Stop scheduling new tests after this many failures.</p>
@@ -98,9 +101,11 @@ karva test [OPTIONS] [PATH]...
 <ul>
 <li><code>none</code>:  Don't display any test result lines (or the &quot;Starting&quot; header)</li>
 <li><code>fail</code>:  Only display failed test results</li>
-<li><code>skip</code>:  Display failed and skipped test results</li>
-<li><code>pass</code>:  Display all test results (default)</li>
-<li><code>all</code>:  Display all test results</li>
+<li><code>retry</code>:  Display failed and retried test results. Karva does not yet emit per-attempt retry lines, so this currently behaves like <code>fail</code></li>
+<li><code>slow</code>:  Display failed, retried, and slow test results. Karva does not yet have a slow-test threshold, so this currently behaves like <code>fail</code></li>
+<li><code>pass</code>:  Display failed, retried, slow, and passing test results (default)</li>
+<li><code>skip</code>:  Additionally display skipped test results</li>
+<li><code>all</code>:  Display all test result statuses</li>
 </ul></dd><dt id="karva-test--test-prefix"><a href="#karva-test--test-prefix"><code>--test-prefix</code></a> <i>test-prefix</i></dt><dd><p>The prefix of the test functions</p>
 </dd><dt id="karva-test--try-import-fixtures"><a href="#karva-test--try-import-fixtures"><code>--try-import-fixtures</code></a></dt><dd><p>When set, we will try to import functions in each test file as well as parsing the ast to find them.</p>
 <p>This is often slower, so it is not recommended for most projects.</p>

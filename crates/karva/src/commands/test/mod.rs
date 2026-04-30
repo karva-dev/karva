@@ -22,11 +22,6 @@ pub fn test(args: TestCommand) -> Result<ExitStatus> {
 
     set_colored_override(args.sub_command.color);
 
-    let printer = Printer::new(
-        args.sub_command.status_level.unwrap_or_default(),
-        args.sub_command.final_status_level.unwrap_or_default(),
-    );
-
     let _guard = setup_tracing(verbosity);
 
     let cwd = cwd().map_err(|_| {
@@ -63,6 +58,11 @@ pub fn test(args: TestCommand) -> Result<ExitStatus> {
     project_metadata.apply_overrides(&project_options_overrides);
 
     let project = Project::from_metadata(project_metadata);
+
+    let printer = Printer::new(
+        project.settings().terminal().status_level,
+        project.settings().terminal().final_status_level,
+    );
 
     FiltersetSet::new(&sub_command.filter_expressions).context("invalid `--filter` expression")?;
 
