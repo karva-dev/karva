@@ -3,13 +3,15 @@
 Karva organizes configuration into named **profiles**, modeled after
 [`cargo nextest`](https://nexte.st/docs/configuration/). A profile is a named
 group of settings that tailors a test run for a particular context — fast local
-iteration, CI, a soak run, and so on. At runtime you select the profile you
-want with `--profile` (or `-P`) and Karva resolves it into the effective
-settings for that run.
+iteration, CI, a soak run, and so on.
 
-## Defining a profile
+Configuration lives in `karva.toml` (or the `[tool.karva]` table in
+`pyproject.toml`); the path can be overridden with `--config-file`.
 
-Profiles are declared as `[profile.<name>]` sections in `karva.toml`:
+## Profiles
+
+To use multiple sets of configuration, define `[profile.<name>]` sections in
+`karva.toml`:
 
 ```toml
 [profile.default.test]
@@ -25,41 +27,21 @@ output-format = "concise"
 ```
 
 The same configuration in `pyproject.toml` lives under
-`[tool.karva.profile.<name>]`:
+`[tool.karva.profile.<name>]`.
 
-```toml
-[tool.karva.profile.default.test]
-test-function-prefix = "test"
-retry = 1
-
-[tool.karva.profile.ci.test]
-retry = 5
-no-tests = "fail"
-```
+A profile is selected at runtime with `--profile <name>` (or `-P <name>`), or
+by setting the `KARVA_PROFILE` environment variable. If neither is set, the
+implicit `default` profile is used.
 
 Every option group documented in [Configuration](configuration.md) — `src`,
-`terminal`, `test` — may appear inside a profile. Top-level `[src]`, `[test]`,
-or `[terminal]` tables (without `profile.<name>`) are not accepted.
+`terminal`, `test` — may appear inside a profile. Top-level `[src]`,
+`[terminal]`, or `[test]` tables (without `profile.<name>`) are not accepted.
 
-## The default profile
+> **Warning:** Avoid custom profile names that begin with `default-`. The
+> `default-` prefix is reserved for built-in profiles that Karva may add in
+> the future.
 
-The profile named `default` is always implicitly available. It is used when
-no `--profile` is specified, and its settings form the base that every other
-profile inherits from. You do not have to declare `[profile.default]` — an
-empty configuration is equivalent to a `[profile.default]` with no overrides.
-
-## Selecting a profile
-
-A profile can be selected in three ways, in order of precedence:
-
-1. The `--profile` (or `-P`) CLI flag: `karva test --profile ci`.
-2. The `KARVA_PROFILE` environment variable: `KARVA_PROFILE=ci karva test`.
-3. The implicit `default` profile when neither is set.
-
-Selecting a profile that is not defined in the configuration produces an
-error that lists the profiles that are available.
-
-## Inheritance
+### Profile inheritance
 
 A non-default profile is layered on top of `[profile.default]`: any field the
 named profile does not set falls back to the value from `default`, which in
@@ -74,48 +56,24 @@ retry = 1
 retry = 5
 ```
 
-`karva test --profile ci` runs with `test-function-prefix = "test"` (inherited)
-and `retry = 5` (overridden).
+`karva test --profile ci` runs with `test-function-prefix = "test"`
+(inherited from `default`) and `retry = 5` (overridden by `ci`).
 
-## Overriding a profile from the CLI
+## Hierarchical configuration
 
-CLI flags always win over the resolved profile. This means a profile can
-encode the common case while flags handle one-off tweaks:
+When resolving a setting for a run, Karva checks the following sources from
+highest to lowest priority. The first source that defines the field wins.
 
-```bash
-# `[profile.ci]` says retry = 5, but this run uses retry = 0.
-karva test --profile ci --retry 0
-```
+1. **Command-line arguments** (e.g. `--retry 3`, `--no-fail-fast`).
+1. **Environment variables** (e.g. `KARVA_PROFILE`, `KARVA_NO_TESTS`).
+1. **The selected profile**, when not `default` (`[profile.<name>]`).
+1. **The default profile** (`[profile.default]`).
+1. **Built-in defaults** compiled into Karva.
 
-## Profile name rules
+Selecting a profile that is not defined in the configuration produces an
+error that lists the profiles that are available.
 
-Profile names may contain ASCII letters, digits, `-`, and `_`. The
-`default-` prefix is reserved for built-in profiles that may be added in the
-future, so user-defined profiles must use a different prefix.
+## See also
 
-## Examples
-
-### Fast local runs
-
-```toml
-[profile.default.test]
-fail-fast = true
-
-[profile.default.terminal]
-status-level = "fail"
-final-status-level = "fail"
-```
-
-### Stricter CI runs
-
-```toml
-[profile.ci.test]
-retry = 3
-no-tests = "fail"
-
-[profile.ci.terminal]
-output-format = "concise"
-```
-
-Trigger with `karva test --profile ci` (or set `KARVA_PROFILE=ci` in the CI
-environment).
+- [Configuration](configuration.md) — reference for every supported field.
+- [CLI](cli.md) — every flag, including `--profile` and `--config-file`.
