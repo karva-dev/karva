@@ -14,7 +14,7 @@ use std::path::{Path, PathBuf};
 use camino::{Utf8Path, Utf8PathBuf};
 use pyo3::prelude::*;
 use ruff_python_ast::Stmt;
-use ruff_python_ast::visitor::source_order::{self, SourceOrderVisitor};
+use ruff_python_ast::helpers::is_docstring_stmt;
 use ruff_python_parser::{Mode, ParseOptions, parse_unchecked};
 use ruff_source_file::LineIndex;
 use ruff_text_size::Ranged;
@@ -48,7 +48,7 @@ struct CoverageTracer {
     /// Cached `sys.monitoring.DISABLE` sentinel. Populated when the
     /// `sys.monitoring` backend is installed; never accessed for the
     /// `sys.settrace` backend. Caching avoids importing `sys` inside the
-    /// hot callback, which can re-enter the import system while CPython
+    /// hot callback, which can re-enter the import system while `CPython`
     /// is mid-import and surface as `KeyError('__import__')`.
     monitoring_disable: RefCell<Option<Py<PyAny>>>,
 }
@@ -72,10 +72,16 @@ impl CoverageTracer {
                 .entry(path)
                 .or_default()
                 .insert(lineno);
-            Ok(None)
-        } else {
-            Ok(self.monitoring_disable.borrow().as_ref().map(|d| d.clone_ref(py)))
         }
+        // Always disable this location after the first hit. For tracked
+        // files we already recorded the line; for untracked files we have
+        // nothing to do. Either way a single callback per (code, line) is
+        // sufficient for coverage.
+        Ok(self
+            .monitoring_disable
+            .borrow()
+            .as_ref()
+            .map(|d| d.clone_ref(py)))
     }
 
     /// `sys.settrace` global trace function. Returns the per-frame
@@ -326,28 +332,58 @@ fn executable_lines(path: &Path) -> HashSet<u32> {
         return HashSet::new();
     };
     let line_index = LineIndex::from_source_text(&source);
-    let mut visitor = StmtLineVisitor {
-        line_index: &line_index,
-        lines: HashSet::new(),
-    };
+    let mut lines = HashSet::new();
     let module = parsed.into_syntax();
-    for stmt in &module.body {
-        visitor.visit_stmt(stmt);
-    }
-    visitor.lines
+    collect_executable_lines(&module.body, &line_index, &mut lines);
+    lines
 }
 
-struct StmtLineVisitor<'a> {
-    line_index: &'a LineIndex,
-    lines: HashSet<u32>,
-}
-
-impl SourceOrderVisitor<'_> for StmtLineVisitor<'_> {
-    fn visit_stmt(&mut self, stmt: &Stmt) {
-        let line = self.line_index.line_index(stmt.range().start()).get();
-        if let Ok(line) = u32::try_from(line) {
-            self.lines.insert(line);
+/// Walk a statement body and record the line of every executable statement.
+///
+/// Skips the leading docstring of the body (the first statement, if it's a
+/// bare string literal expression) to match coverage.py's `Stmts` count —
+/// docstrings are stored as bytecode constants, not executable statements.
+fn collect_executable_lines(stmts: &[Stmt], line_index: &LineIndex, lines: &mut HashSet<u32>) {
+    for (i, stmt) in stmts.iter().enumerate() {
+        if i == 0 && is_docstring_stmt(stmt) {
+            continue;
         }
-        source_order::walk_stmt(self, stmt);
+        if let Ok(line) = u32::try_from(line_index.line_index(stmt.range().start()).get()) {
+            lines.insert(line);
+        }
+        match stmt {
+            Stmt::FunctionDef(s) => collect_executable_lines(&s.body, line_index, lines),
+            Stmt::ClassDef(s) => collect_executable_lines(&s.body, line_index, lines),
+            Stmt::If(s) => {
+                collect_executable_lines(&s.body, line_index, lines);
+                for clause in &s.elif_else_clauses {
+                    collect_executable_lines(&clause.body, line_index, lines);
+                }
+            }
+            Stmt::While(s) => {
+                collect_executable_lines(&s.body, line_index, lines);
+                collect_executable_lines(&s.orelse, line_index, lines);
+            }
+            Stmt::For(s) => {
+                collect_executable_lines(&s.body, line_index, lines);
+                collect_executable_lines(&s.orelse, line_index, lines);
+            }
+            Stmt::With(s) => collect_executable_lines(&s.body, line_index, lines),
+            Stmt::Try(s) => {
+                collect_executable_lines(&s.body, line_index, lines);
+                for handler in &s.handlers {
+                    let ruff_python_ast::ExceptHandler::ExceptHandler(h) = handler;
+                    collect_executable_lines(&h.body, line_index, lines);
+                }
+                collect_executable_lines(&s.orelse, line_index, lines);
+                collect_executable_lines(&s.finalbody, line_index, lines);
+            }
+            Stmt::Match(s) => {
+                for case in &s.cases {
+                    collect_executable_lines(&case.body, line_index, lines);
+                }
+            }
+            _ => {}
+        }
     }
 }

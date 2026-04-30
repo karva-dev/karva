@@ -30,7 +30,7 @@ def test_add():
     assert_cmd_snapshot!(
         context.command_no_parallel()
             .arg("--cov")
-            .arg("--no-progress")
+            .arg("--status-level=none")
             .arg("test_covered.py"),
         @"
     success: true
@@ -78,7 +78,7 @@ def test_add():
     assert_cmd_snapshot!(
         context.command_no_parallel()
             .arg("--cov=src")
-            .arg("--no-progress")
+            .arg("--status-level=none")
             .arg("test_mymod.py"),
         @"
     success: true
