@@ -1,16 +1,6 @@
-use insta::Settings;
 use insta_cmd::assert_cmd_snapshot;
 
 use crate::common::TestContext;
-
-/// Bind an insta filter that collapses the numeric columns of
-/// `coverage report` output (`Stmts`, `Miss`, `Cover%`) so the snapshot
-/// remains stable across coverage.py versions.
-fn coverage_filters() -> insta::internals::SettingsBindDropGuard {
-    let mut settings = Settings::clone_current();
-    settings.add_filter(r"\s{2,}\d+\s+\d+\s+\d+%", "  [N]  [N]  [N]%");
-    settings.bind_to_scope()
-}
 
 #[test]
 fn test_cov_basic() {
@@ -24,8 +14,6 @@ def test_add():
     assert add(1, 2) == 3
 ",
     );
-
-    let _filters = coverage_filters();
 
     assert_cmd_snapshot!(
         context.command_no_parallel()
@@ -42,9 +30,9 @@ def test_add():
 
     Name              Stmts   Miss   Cover
     [LONG-LINE]
-    test_covered.py  [N]  [N]  [N]%
+    test_covered.py       4      0    100%
     [LONG-LINE]
-    TOTAL  [N]  [N]  [N]%
+    TOTAL                 4      0    100%
 
     ----- stderr -----
     "
@@ -74,8 +62,6 @@ def test_add():
         ),
     ]);
 
-    let _filters = coverage_filters();
-
     assert_cmd_snapshot!(
         context.command_no_parallel()
             .arg("--cov=src")
@@ -91,9 +77,9 @@ def test_add():
 
     Name           Stmts   Miss   Cover
     [LONG-LINE]
-    src/mymod.py  [N]  [N]  [N]%
+    src/mymod.py       2      0    100%
     [LONG-LINE]
-    TOTAL  [N]  [N]  [N]%
+    TOTAL              2      0    100%
 
     ----- stderr -----
     "
