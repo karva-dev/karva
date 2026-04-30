@@ -45,6 +45,12 @@ struct CoverageTracer {
     roots: Vec<PathBuf>,
     state: RefCell<TracerState>,
     monitoring_tool_id: Cell<Option<u8>>,
+    /// Cached `sys.monitoring.DISABLE` sentinel. Populated when the
+    /// `sys.monitoring` backend is installed; never accessed for the
+    /// `sys.settrace` backend. Caching avoids importing `sys` inside the
+    /// hot callback, which can re-enter the import system while CPython
+    /// is mid-import and surface as `KeyError('__import__')`.
+    monitoring_disable: RefCell<Option<Py<PyAny>>>,
 }
 
 #[pymethods]
@@ -68,8 +74,7 @@ impl CoverageTracer {
                 .insert(lineno);
             Ok(None)
         } else {
-            let mon = py.import("sys")?.getattr("monitoring")?;
-            Ok(Some(mon.getattr("DISABLE")?.unbind()))
+            Ok(self.monitoring_disable.borrow().as_ref().map(|d| d.clone_ref(py)))
         }
     }
 
@@ -189,6 +194,7 @@ impl CoverageSession {
                 roots,
                 state: RefCell::new(TracerState::default()),
                 monitoring_tool_id: Cell::new(None),
+                monitoring_disable: RefCell::new(None),
             },
         )?;
 
@@ -239,6 +245,7 @@ fn py_version_at_least(py: Python<'_>, major: u8, minor: u8) -> PyResult<bool> {
 fn install_monitoring(py: Python<'_>, tracer: &Py<CoverageTracer>) -> PyResult<()> {
     let mon = py.import("sys")?.getattr("monitoring")?;
     let line_event = mon.getattr("events")?.getattr("LINE")?;
+    let disable = mon.getattr("DISABLE")?.unbind();
 
     let tool_id = (0u8..6u8)
         .find(|id| mon.call_method1("use_tool_id", (*id, "karva")).is_ok())
@@ -251,11 +258,11 @@ fn install_monitoring(py: Python<'_>, tracer: &Py<CoverageTracer>) -> PyResult<(
     let callback = tracer.bind(py).getattr("line_cb")?;
     mon.call_method1("register_callback", (tool_id, &line_event, callback))?;
     mon.call_method1("set_events", (tool_id, line_event))?;
-    tracer
-        .bind(py)
-        .borrow()
-        .monitoring_tool_id
-        .set(Some(tool_id));
+    {
+        let bound = tracer.bind(py).borrow();
+        bound.monitoring_tool_id.set(Some(tool_id));
+        *bound.monitoring_disable.borrow_mut() = Some(disable);
+    }
     Ok(())
 }
 
