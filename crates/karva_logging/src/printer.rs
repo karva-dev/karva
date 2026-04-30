@@ -36,12 +36,15 @@ impl Printer {
     }
 
     /// Stream for the end-of-run summary line.
-    pub fn stream_for_summary(self, success: bool) -> Stdout {
+    ///
+    /// `success` is true when no tests failed. `had_retries` is true when at
+    /// least one test was retried; it elevates `final-status-level=retry` (or
+    /// higher) to show the summary even when all tests eventually passed.
+    pub fn stream_for_summary(self, success: bool, had_retries: bool) -> Stdout {
         match self.final_status_level {
             FinalStatusLevel::None => Stdout::disabled(),
-            FinalStatusLevel::Fail | FinalStatusLevel::Retry | FinalStatusLevel::Slow
-                if success =>
-            {
+            FinalStatusLevel::Fail if success => Stdout::disabled(),
+            FinalStatusLevel::Retry | FinalStatusLevel::Slow if success && !had_retries => {
                 Stdout::disabled()
             }
             FinalStatusLevel::Fail

@@ -93,6 +93,23 @@ impl<'a> Context<'a> {
         result
     }
 
+    /// Forward a failed retry attempt to the reporter. Does not touch
+    /// summary stats; the test's final outcome is registered separately.
+    pub fn report_retry_attempt(
+        &self,
+        test_case_name: &QualifiedTestName,
+        attempt: u32,
+        duration: std::time::Duration,
+    ) {
+        self.result()
+            .report_retry_attempt(test_case_name, attempt, duration, Some(self.reporter));
+    }
+
+    /// Mark that the most recently registered test was retried at least once.
+    pub fn mark_retried(&self) {
+        self.result().mark_retried();
+    }
+
     pub(crate) fn report_diagnostic<'ctx>(
         &'ctx self,
         rule: &'static DiagnosticType,

@@ -17,12 +17,26 @@ pub trait Reporter: Send + Sync {
         result_kind: IndividualTestResultKind,
         duration: Duration,
     );
+
+    /// Report a failed attempt that will be retried.
+    ///
+    /// `attempt` is 1-indexed (the first attempt is `1`). `duration` is the
+    /// time spent on this single attempt. Default no-op for reporters that
+    /// don't surface attempt-level detail.
+    fn report_retry_attempt(
+        &self,
+        test_name: &QualifiedTestName,
+        attempt: u32,
+        duration: Duration,
+    ) {
+        let _ = (test_name, attempt, duration);
+    }
 }
 
 fn show_for_status_level(level: StatusLevel, kind: &IndividualTestResultKind) -> bool {
     // Levels are cumulative, like nextest: each level shows itself plus all
-    // earlier levels. Karva does not yet emit per-attempt retry lines or a
-    // slow-test threshold, so `Retry` and `Slow` currently behave like `Fail`.
+    // earlier levels. Karva does not yet implement a slow-test threshold, so
+    // `Slow` currently behaves like `Retry`.
     match level {
         StatusLevel::None => false,
         StatusLevel::Fail | StatusLevel::Retry | StatusLevel::Slow => {
@@ -102,6 +116,38 @@ impl Reporter for TestCaseReporter {
         writeln!(
             stdout,
             "{padding}{colored_label} {duration_str} {module}::{fn_name}{params}{suffix}"
+        )
+        .ok();
+    }
+
+    fn report_retry_attempt(
+        &self,
+        test_name: &QualifiedTestName,
+        attempt: u32,
+        duration: Duration,
+    ) {
+        if self.printer.status_level() < StatusLevel::Retry {
+            return;
+        }
+
+        let mut stdout = self.printer.stream_for_test_result().lock();
+
+        let label = format!("TRY {attempt} FAIL");
+        let colored_label = label.yellow().bold().to_string();
+
+        let padding = " ".repeat(12usize.saturating_sub(label.len()));
+        let duration_str = format_duration_bracketed(duration);
+
+        let module = test_name.function_name().module_path().module_name().cyan();
+        let fn_name = test_name.function_name().function_name().blue().bold();
+        let params = test_name
+            .params()
+            .map(|p| p.blue().bold().to_string())
+            .unwrap_or_default();
+
+        writeln!(
+            stdout,
+            "{padding}{colored_label} {duration_str} {module}::{fn_name}{params}"
         )
         .ok();
     }

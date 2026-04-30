@@ -24,11 +24,11 @@ pub enum StatusLevel {
     None,
     /// Only display failed test results.
     Fail,
-    /// Display failed and retried test results. Karva does not yet emit
-    /// per-attempt retry lines, so this currently behaves like `fail`.
+    /// Display failed test results plus a `TRY N FAIL` line for each failed
+    /// attempt that was retried.
     Retry,
     /// Display failed, retried, and slow test results. Karva does not yet
-    /// have a slow-test threshold, so this currently behaves like `fail`.
+    /// have a slow-test threshold, so this currently behaves like `retry`.
     Slow,
     /// Display failed, retried, slow, and passing test results (default).
     #[default]
@@ -86,9 +86,11 @@ pub enum FinalStatusLevel {
     None,
     /// Only display the summary line and diagnostics on failure.
     Fail,
-    /// Same as `fail` until per-attempt retry summaries are emitted.
+    /// Display the summary line plus diagnostics on failure or when any
+    /// test was retried. The summary line gains a `N retried` count whenever
+    /// a retry happened.
     Retry,
-    /// Same as `fail` until a slow-test threshold is implemented.
+    /// Same as `retry` until a slow-test threshold is implemented.
     Slow,
     /// Always display the summary line and diagnostics (default).
     #[default]

@@ -77,6 +77,26 @@ impl TestRunResult {
             .or_insert(duration);
     }
 
+    /// Record that a test had to be retried. Called once per test that needed
+    /// at least one retry, in addition to its final pass/fail registration.
+    pub fn mark_retried(&mut self) {
+        self.stats.add(TestResultKind::Retried);
+    }
+
+    /// Forward a per-attempt failure notification to the reporter without
+    /// touching summary stats. Stats are only updated for the final outcome.
+    pub fn report_retry_attempt(
+        &self,
+        test_case_name: &QualifiedTestName,
+        attempt: u32,
+        duration: std::time::Duration,
+        reporter: Option<&dyn Reporter>,
+    ) {
+        if let Some(reporter) = reporter {
+            reporter.report_retry_attempt(test_case_name, attempt, duration);
+        }
+    }
+
     #[must_use]
     pub fn into_sorted(mut self) -> Self {
         self.diagnostics.sort_by(Diagnostic::ruff_start_ordering);
@@ -114,6 +134,10 @@ pub enum TestResultKind {
     Passed,
     Failed,
     Skipped,
+    /// A test that was retried at least once. Tracked alongside (not instead
+    /// of) the test's final `Passed`/`Failed` outcome so the summary can
+    /// report how many tests needed retries to succeed.
+    Retried,
 }
 
 impl TestResultKind {
@@ -122,6 +146,7 @@ impl TestResultKind {
             Self::Passed => "passed",
             Self::Failed => "failed",
             Self::Skipped => "skipped",
+            Self::Retried => "retried",
         }
     }
 
@@ -130,6 +155,7 @@ impl TestResultKind {
             "passed" => Ok(Self::Passed),
             "failed" => Ok(Self::Failed),
             "skipped" => Ok(Self::Skipped),
+            "retried" => Ok(Self::Retried),
             _ => Err("invalid TestResultKind"),
         }
     }
@@ -141,8 +167,10 @@ pub struct TestResultStats {
 }
 
 impl TestResultStats {
+    /// Total number of tests run. `Retried` is a marker on a test's final
+    /// outcome (Passed/Failed) and is not counted as a separate test.
     pub fn total(&self) -> usize {
-        self.inner.values().sum()
+        self.passed() + self.failed() + self.skipped()
     }
 
     pub fn is_success(&self) -> bool {
@@ -172,6 +200,10 @@ impl TestResultStats {
 
     pub fn skipped(&self) -> usize {
         self.get(TestResultKind::Skipped)
+    }
+
+    pub fn retried(&self) -> usize {
+        self.get(TestResultKind::Retried)
     }
 
     pub fn add(&mut self, kind: TestResultKind) {
@@ -220,7 +252,7 @@ impl<'de> Deserialize<'de> for TestResultStats {
 
                 while let Some((key, value)) = access.next_entry::<String, usize>()? {
                     let kind = TestResultKind::from_str(&key).map_err(|_| {
-                        de::Error::unknown_field(&key, &["passed", "failed", "skipped"])
+                        de::Error::unknown_field(&key, &["passed", "failed", "skipped", "retried"])
                     })?;
                     inner.insert(kind, value);
                 }
@@ -278,6 +310,14 @@ impl std::fmt::Display for DisplayTestResultStats<'_> {
                 .bold()
                 .to_string(),
         );
+        if self.stats.retried() > 0 {
+            parts.push(
+                format!("{} retried", self.stats.retried())
+                    .yellow()
+                    .bold()
+                    .to_string(),
+            );
+        }
 
         writeln!(
             f,

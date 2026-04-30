@@ -60,8 +60,8 @@ karva test [OPTIONS] [PATH]...
 <ul>
 <li><code>none</code>:  Don't display the summary line or any diagnostic blocks</li>
 <li><code>fail</code>:  Only display the summary line and diagnostics on failure</li>
-<li><code>retry</code>:  Same as <code>fail</code> until per-attempt retry summaries are emitted</li>
-<li><code>slow</code>:  Same as <code>fail</code> until a slow-test threshold is implemented</li>
+<li><code>retry</code>:  Display the summary line plus diagnostics on failure or when any test was retried. The summary line gains a <code>N retried</code> count whenever a retry happened</li>
+<li><code>slow</code>:  Same as <code>retry</code> until a slow-test threshold is implemented</li>
 <li><code>pass</code>:  Always display the summary line and diagnostics (default)</li>
 <li><code>skip</code>:  Same as <code>pass</code> until skip-specific summary lines are emitted</li>
 <li><code>all</code>:  Always display every summary status</li>
@@ -104,8 +104,8 @@ karva test [OPTIONS] [PATH]...
 <ul>
 <li><code>none</code>:  Don't display any test result lines (or the &quot;Starting&quot; header)</li>
 <li><code>fail</code>:  Only display failed test results</li>
-<li><code>retry</code>:  Display failed and retried test results. Karva does not yet emit per-attempt retry lines, so this currently behaves like <code>fail</code></li>
-<li><code>slow</code>:  Display failed, retried, and slow test results. Karva does not yet have a slow-test threshold, so this currently behaves like <code>fail</code></li>
+<li><code>retry</code>:  Display failed test results plus a <code>TRY N FAIL</code> line for each failed attempt that was retried</li>
+<li><code>slow</code>:  Display failed, retried, and slow test results. Karva does not yet have a slow-test threshold, so this currently behaves like <code>retry</code></li>
 <li><code>pass</code>:  Display failed, retried, slow, and passing test results (default)</li>
 <li><code>skip</code>:  Additionally display skipped test results</li>
 <li><code>all</code>:  Display all test result statuses</li>

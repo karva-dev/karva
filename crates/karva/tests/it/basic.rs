@@ -1251,10 +1251,13 @@ def test_1():
     exit_code: 0
     ----- stdout -----
         Starting 1 test across 1 worker
+      TRY 1 FAIL [TIME] test::test_1
+      TRY 2 FAIL [TIME] test::test_1
+      TRY 3 FAIL [TIME] test::test_1
             PASS [TIME] test::test_1
 
     ────────────
-         Summary [TIME] 1 test run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped, 1 retried
 
     ----- stderr -----
     ");
@@ -1643,10 +1646,11 @@ def test_flaky():
     exit_code: 0
     ----- stdout -----
         Starting 1 test across 1 worker
+      TRY 1 FAIL [TIME] test::test_flaky
             PASS [TIME] test::test_flaky
 
     ────────────
-         Summary [TIME] 1 test run: 1 passed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped, 1 retried
 
     ----- stderr -----
     ");
@@ -1972,6 +1976,8 @@ def test_always_fails(): assert False
     exit_code: 1
     ----- stdout -----
         Starting 1 test across 1 worker
+      TRY 1 FAIL [TIME] test::test_always_fails
+      TRY 2 FAIL [TIME] test::test_always_fails
             FAIL [TIME] test::test_always_fails
 
     diagnostics:
@@ -1990,10 +1996,112 @@ def test_always_fails(): assert False
       |
 
     ────────────
-         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped, 1 retried
 
     ----- stderr -----
     ");
+}
+
+/// `--status-level=fail` suppresses per-attempt `TRY N FAIL` lines because
+/// retry attempts only show at level `retry` or higher.
+#[test]
+fn test_retry_attempts_hidden_below_retry_status_level() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+counter = 0
+
+def test_flaky():
+    global counter
+    counter += 1
+    assert counter >= 2
+        ",
+    );
+
+    assert_cmd_snapshot!(
+        context
+            .command_no_parallel()
+            .args(["--retry=2", "--status-level=fail"]),
+        @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+        Starting 1 test across 1 worker
+
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped, 1 retried
+
+    ----- stderr -----
+    "
+    );
+}
+
+/// `--final-status-level=retry` elevates the summary so it shows when any
+/// test was retried, even if everything ultimately passed.
+#[test]
+fn test_final_status_level_retry_shows_summary_on_retried_success() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+counter = 0
+
+def test_flaky():
+    global counter
+    counter += 1
+    assert counter >= 2
+        ",
+    );
+
+    assert_cmd_snapshot!(
+        context.command_no_parallel().args([
+            "--retry=2",
+            "--status-level=none",
+            "--final-status-level=retry",
+        ]),
+        @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped, 1 retried
+
+    ----- stderr -----
+    "
+    );
+}
+
+/// `--final-status-level=fail` does not show the summary on a successful
+/// retried run — the elevation is specific to `retry` and above.
+#[test]
+fn test_final_status_level_fail_hides_summary_on_retried_success() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+counter = 0
+
+def test_flaky():
+    global counter
+    counter += 1
+    assert counter >= 2
+        ",
+    );
+
+    assert_cmd_snapshot!(
+        context.command_no_parallel().args([
+            "--retry=2",
+            "--status-level=none",
+            "--final-status-level=fail",
+        ]),
+        @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+
+
+    ----- stderr -----
+    "
+    );
 }
 
 /// `--max-fail` must reject zero because the underlying type is `NonZeroU32`.

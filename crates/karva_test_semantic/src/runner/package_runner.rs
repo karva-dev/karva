@@ -447,17 +447,31 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
             }
         };
 
+        let mut attempt: u32 = 1;
+        let mut attempt_start = std::time::Instant::now();
         let mut test_result = run_test();
 
         let mut retry_count = self.context.settings().test().retry;
+        let mut was_retried = false;
 
         while retry_count > 0 {
             if test_result.is_ok() {
                 break;
             }
+            let attempt_duration = attempt_start.elapsed();
+            self.context
+                .report_retry_attempt(&qualified_test_name, attempt, attempt_duration);
+            was_retried = true;
+
             tracing::debug!("Retrying test `{}`", qualified_test_name);
             retry_count -= 1;
+            attempt += 1;
+            attempt_start = std::time::Instant::now();
             test_result = run_test();
+        }
+
+        if was_retried {
+            self.context.mark_retried();
         }
 
         let report_ctx = VariantReportCtx {

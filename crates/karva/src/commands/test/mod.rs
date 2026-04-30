@@ -152,7 +152,9 @@ pub fn print_test_output(
         writeln!(stdout)?;
     }
 
-    let mut result_stdout = printer.stream_for_summary(result.stats.is_success()).lock();
+    let mut result_stdout = printer
+        .stream_for_summary(result.stats.is_success(), result.stats.retried() > 0)
+        .lock();
     write!(result_stdout, "{}", result.stats.display(start_time))?;
 
     Ok(())
