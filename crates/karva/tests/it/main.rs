@@ -4,6 +4,7 @@ mod r#async;
 mod basic;
 mod cache;
 mod configuration;
+mod coverage;
 mod discovery;
 mod durations;
 mod extensions;

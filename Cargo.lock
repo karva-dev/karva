@@ -1287,6 +1287,8 @@ dependencies = [
  "karva_metadata",
  "karva_project",
  "karva_static",
+ "serde",
+ "serde_json",
  "tracing",
  "which",
 ]

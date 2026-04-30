@@ -26,6 +26,8 @@ crossbeam-channel = { workspace = true }
 ctrlc = { workspace = true }
 fastrand = { workspace = true }
 ignore = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
 tracing = { workspace = true }
 which = { workspace = true }
 
