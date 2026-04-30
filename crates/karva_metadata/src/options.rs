@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use camino::Utf8PathBuf;
 use karva_combine::Combine;
 use karva_logging::{FinalStatusLevel, StatusLevel};
@@ -11,6 +13,125 @@ use crate::max_fail::MaxFail;
 use crate::settings::{
     NoTestsMode, ProjectSettings, RunIgnoredMode, SrcSettings, TerminalSettings, TestSettings,
 };
+
+/// The implicit name of the default profile.
+pub const DEFAULT_PROFILE: &str = "default";
+
+/// File-level configuration: a collection of named profiles.
+///
+/// Mirrors nextest: every option group lives inside `[profile.<name>]`. The
+/// implicit `default` profile is always available; other profiles inherit
+/// from it (and can override individual fields).
+#[derive(Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case", deny_unknown_fields)]
+pub struct Config {
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub profile: BTreeMap<String, Options>,
+}
+
+impl Config {
+    pub fn from_toml_str(content: &str) -> Result<Self, KarvaTomlError> {
+        let config: Self = toml::from_str(content)?;
+        validate_profile_names(&config.profile)?;
+        Ok(config)
+    }
+
+    pub(crate) fn from_karva_configuration_file(
+        path: &Utf8PathBuf,
+    ) -> Result<Self, KarvaTomlError> {
+        let karva_toml_str =
+            std::fs::read_to_string(path).map_err(|source| KarvaTomlError::FileReadError {
+                source,
+                path: path.clone(),
+            })?;
+
+        Self::from_toml_str(&karva_toml_str)
+    }
+
+    /// Returns true if `name` is defined as a profile in this configuration.
+    /// The implicit `default` profile always exists.
+    pub fn has_profile(&self, name: &str) -> bool {
+        if name == DEFAULT_PROFILE {
+            return true;
+        }
+        self.profile.contains_key(name)
+    }
+
+    /// Resolve a profile by collapsing the `profile` map into a single
+    /// [`Options`] value.
+    ///
+    /// The selected profile is layered on top of any `[profile.default]`
+    /// overrides, which form the base. CLI options can then be combined with
+    /// the result via the usual `Combine` precedence.
+    ///
+    /// Returns [`UnknownProfile`] when `name` refers to a profile that is
+    /// not defined.
+    pub fn resolve_profile(mut self, name: Option<&str>) -> Result<Options, UnknownProfile> {
+        let requested = name.unwrap_or(DEFAULT_PROFILE);
+
+        let default_overrides = self.profile.remove(DEFAULT_PROFILE);
+        let named_overrides = if requested == DEFAULT_PROFILE {
+            None
+        } else if let Some(p) = self.profile.remove(requested) {
+            Some(p)
+        } else {
+            let mut available: Vec<String> = self.profile.into_keys().collect();
+            available.push(DEFAULT_PROFILE.to_string());
+            available.sort();
+            available.dedup();
+            return Err(UnknownProfile {
+                name: requested.to_string(),
+                available,
+            });
+        };
+
+        let mut effective = Options::default();
+        if let Some(default_p) = default_overrides {
+            effective = default_p.combine(effective);
+        }
+        if let Some(named_p) = named_overrides {
+            effective = named_p.combine(effective);
+        }
+        Ok(effective)
+    }
+}
+
+fn validate_profile_names(profiles: &BTreeMap<String, Options>) -> Result<(), KarvaTomlError> {
+    for name in profiles.keys() {
+        if name.is_empty() {
+            return Err(KarvaTomlError::InvalidProfileName {
+                name: name.clone(),
+                reason: "profile name cannot be empty",
+            });
+        }
+        if name != DEFAULT_PROFILE && name.starts_with("default-") {
+            return Err(KarvaTomlError::InvalidProfileName {
+                name: name.clone(),
+                reason: "the `default-` prefix is reserved for built-in profiles",
+            });
+        }
+        if !name
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+        {
+            return Err(KarvaTomlError::InvalidProfileName {
+                name: name.clone(),
+                reason: "profile names may only contain ASCII letters, digits, `-`, and `_`",
+            });
+        }
+    }
+    Ok(())
+}
+
+#[derive(Debug, Error)]
+#[error(
+    "profile `{name}` is not defined in configuration (available: {})",
+    available.join(", ")
+)]
+pub struct UnknownProfile {
+    pub name: String,
+    pub available: Vec<String>,
+}
 
 #[derive(
     Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize, OptionsMetadata, Combine,
@@ -29,29 +150,12 @@ pub struct Options {
 }
 
 impl Options {
-    pub fn from_toml_str(content: &str) -> Result<Self, KarvaTomlError> {
-        let options = toml::from_str(content)?;
-        Ok(options)
-    }
-
     pub fn to_settings(&self) -> ProjectSettings {
         ProjectSettings {
             terminal: self.terminal.clone().unwrap_or_default().to_settings(),
             src: self.src.clone().unwrap_or_default().to_settings(),
             test: self.test.clone().unwrap_or_default().to_settings(),
         }
-    }
-
-    pub(crate) fn from_karva_configuration_file(
-        path: &Utf8PathBuf,
-    ) -> Result<Self, KarvaTomlError> {
-        let karva_toml_str =
-            std::fs::read_to_string(path).map_err(|source| KarvaTomlError::FileReadError {
-                source,
-                path: path.clone(),
-            })?;
-
-        Self::from_toml_str(&karva_toml_str)
     }
 }
 
@@ -301,6 +405,8 @@ pub enum KarvaTomlError {
         source: std::io::Error,
         path: Utf8PathBuf,
     },
+    #[error("invalid profile name `{name}`: {reason}")]
+    InvalidProfileName { name: String, reason: &'static str },
 }
 
 /// The diagnostic output format.
@@ -406,12 +512,12 @@ mod tests {
     #[test]
     fn from_toml_str_rejects_unknown_key() {
         let toml = r"
-[test]
+[profile.default.test]
 fail-fast = true
 nonsense = 42
 ";
         assert_snapshot!(
-            Options::from_toml_str(toml).expect_err("unknown field"),
+            Config::from_toml_str(toml).expect_err("unknown field"),
             @"
         TOML parse error at line 4, column 1
           |
@@ -429,24 +535,40 @@ nonsense = 42
 foo = 1
 ";
         assert_snapshot!(
-            Options::from_toml_str(toml).expect_err("unknown section"),
+            Config::from_toml_str(toml).expect_err("unknown section"),
             @"
         TOML parse error at line 2, column 2
           |
         2 | [bogus]
           |  ^^^^^
-        unknown field `bogus`, expected one of `src`, `terminal`, `test`
+        unknown field `bogus`, expected `profile`
+        "
+        );
+    }
+
+    #[test]
+    fn from_toml_str_rejects_top_level_option_groups() {
+        let toml = r#"
+[test]
+test-function-prefix = "test"
+"#;
+        assert_snapshot!(
+            Config::from_toml_str(toml).expect_err("top-level rejected"),
+            @"
+        TOML parse error at line 2, column 2
+          |
+        2 | [test]
+          |  ^^^^
+        unknown field `test`, expected `profile`
         "
         );
     }
 
     #[test]
     fn from_toml_str_empty_is_default() {
-        assert_debug_snapshot!(Options::from_toml_str("").expect("parse"), @"
-        Options {
-            src: None,
-            terminal: None,
-            test: None,
+        assert_debug_snapshot!(Config::from_toml_str("").expect("parse"), @"
+        Config {
+            profile: {},
         }
         ");
     }
@@ -456,11 +578,11 @@ foo = 1
     #[test]
     fn from_toml_str_rejects_max_fail_zero() {
         let toml = r"
-[test]
+[profile.default.test]
 max-fail = 0
 ";
         assert_snapshot!(
-            Options::from_toml_str(toml).expect_err("zero rejected"),
+            Config::from_toml_str(toml).expect_err("zero rejected"),
             @"
         TOML parse error at line 3, column 12
           |
@@ -565,16 +687,14 @@ max-fail = 0
             }),
             ..Options::default()
         };
-        let file_options = Options {
-            test: Some(TestOptions {
-                test_function_prefix: Some("file".to_string()),
-                retry: Some(2),
-                ..TestOptions::default()
-            }),
-            ..Options::default()
-        };
+        let toml = r#"
+[profile.default.test]
+test-function-prefix = "file"
+retry = 2
+"#;
+        let config = Config::from_toml_str(toml).expect("parse");
         let overrides = ProjectOptionsOverrides::new(None, cli_options);
-        assert_debug_snapshot!(overrides.apply_to(file_options).test, @r#"
+        assert_debug_snapshot!(overrides.apply_to(config).expect("resolves").test, @r#"
         Some(
             TestOptions {
                 test_function_prefix: Some(
@@ -591,11 +711,163 @@ max-fail = 0
         )
         "#);
     }
+
+    #[test]
+    fn parse_profile_section() {
+        let toml = r#"
+[profile.default.test]
+test-function-prefix = "test"
+
+[profile.ci.test]
+retry = 5
+no-tests = "fail"
+
+[profile.ci.terminal]
+output-format = "concise"
+"#;
+        let config = Config::from_toml_str(toml).expect("parse");
+        assert_debug_snapshot!(config.has_profile("ci"), @"true");
+        assert_debug_snapshot!(config.has_profile("default"), @"true");
+        assert_debug_snapshot!(config.has_profile("missing"), @"false");
+    }
+
+    #[test]
+    fn resolve_profile_layers_named_over_default() {
+        let toml = r#"
+[profile.default.test]
+test-function-prefix = "base"
+retry = 2
+fail-fast = true
+
+[profile.ci.test]
+retry = 5
+"#;
+        let resolved = Config::from_toml_str(toml)
+            .expect("parse")
+            .resolve_profile(Some("ci"))
+            .expect("resolves");
+        assert_debug_snapshot!(resolved.test, @r#"
+        Some(
+            TestOptions {
+                test_function_prefix: Some(
+                    "base",
+                ),
+                fail_fast: Some(
+                    true,
+                ),
+                max_fail: None,
+                try_import_fixtures: None,
+                retry: Some(
+                    5,
+                ),
+                no_tests: None,
+            },
+        )
+        "#);
+    }
+
+    #[test]
+    fn resolve_default_profile_applies_default_overrides() {
+        let toml = r"
+[profile.default.test]
+retry = 9
+";
+        let resolved = Config::from_toml_str(toml)
+            .expect("parse")
+            .resolve_profile(None)
+            .expect("resolves");
+        assert_debug_snapshot!(resolved.test.unwrap().retry, @r"
+        Some(
+            9,
+        )
+        ");
+    }
+
+    #[test]
+    fn resolve_profile_missing_profile_errors() {
+        let toml = r"
+[profile.ci.test]
+retry = 5
+";
+        let err = Config::from_toml_str(toml)
+            .expect("parse")
+            .resolve_profile(Some("nope"))
+            .expect_err("unknown");
+        assert_snapshot!(
+            err,
+            @"profile `nope` is not defined in configuration (available: ci, default)"
+        );
+    }
+
+    #[test]
+    fn resolve_default_profile_when_empty_config_is_ok() {
+        let config = Config::default();
+        assert!(config.resolve_profile(None).is_ok());
+    }
+
+    #[test]
+    fn resolve_non_default_profile_when_empty_config_errors() {
+        let config = Config::default();
+        let err = config.resolve_profile(Some("ci")).expect_err("unknown");
+        assert_snapshot!(
+            err,
+            @"profile `ci` is not defined in configuration (available: default)"
+        );
+    }
+
+    #[test]
+    fn from_toml_str_rejects_reserved_default_prefix() {
+        let toml = r"
+[profile.default-ci.test]
+retry = 1
+";
+        assert_snapshot!(
+            Config::from_toml_str(toml).expect_err("reserved"),
+            @"invalid profile name `default-ci`: the `default-` prefix is reserved for built-in profiles"
+        );
+    }
+
+    #[test]
+    fn from_toml_str_rejects_invalid_profile_name_chars() {
+        let toml = r#"
+[profile."ci/fast".test]
+retry = 1
+"#;
+        assert_snapshot!(
+            Config::from_toml_str(toml).expect_err("invalid"),
+            @"invalid profile name `ci/fast`: profile names may only contain ASCII letters, digits, `-`, and `_`"
+        );
+    }
+
+    #[test]
+    fn cli_overrides_win_over_resolved_profile() {
+        let cli_options = Options {
+            test: Some(TestOptions {
+                retry: Some(99),
+                ..TestOptions::default()
+            }),
+            ..Options::default()
+        };
+        let toml = r"
+[profile.ci.test]
+retry = 5
+";
+        let config = Config::from_toml_str(toml).expect("parse");
+        let overrides =
+            ProjectOptionsOverrides::new(None, cli_options).with_profile(Some("ci".to_string()));
+        let resolved = overrides.apply_to(config).expect("resolves");
+        assert_debug_snapshot!(resolved.test.unwrap().retry, @r"
+        Some(
+            99,
+        )
+        ");
+    }
 }
 
 #[derive(Debug, Default, PartialEq, Eq, Clone)]
 pub struct ProjectOptionsOverrides {
     pub config_file_override: Option<Utf8PathBuf>,
+    pub profile: Option<String>,
     pub options: Options,
 }
 
@@ -603,11 +875,21 @@ impl ProjectOptionsOverrides {
     pub fn new(config_file_override: Option<Utf8PathBuf>, options: Options) -> Self {
         Self {
             config_file_override,
+            profile: None,
             options,
         }
     }
 
-    pub fn apply_to(&self, options: Options) -> Options {
-        self.options.clone().combine(options)
+    #[must_use]
+    pub fn with_profile(mut self, profile: Option<String>) -> Self {
+        self.profile = profile;
+        self
+    }
+
+    /// Resolve the requested profile from `config` and combine the CLI
+    /// overrides on top.
+    pub fn apply_to(&self, config: Config) -> Result<Options, UnknownProfile> {
+        let resolved = config.resolve_profile(self.profile.as_deref())?;
+        Ok(self.options.clone().combine(resolved))
     }
 }

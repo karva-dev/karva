@@ -24,7 +24,7 @@ fn test_discovery_stops_at_git_boundary() {
 [project]
 name = "outer-project"
 
-[tool.karva.test]
+[tool.karva.profile.default.test]
 test-function-prefix = "outer_"
 "#,
         ),
@@ -82,7 +82,7 @@ fn test_discovery_finds_pyproject_within_git_repo() {
 [project]
 name = "my-project"
 
-[tool.karva.test]
+[tool.karva.profile.default.test]
 test-function-prefix = "spec"
 "#,
         ),

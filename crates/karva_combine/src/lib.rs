@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::hash::BuildHasher;
 
 use ruff_python_ast::PythonVersion;
@@ -62,6 +62,16 @@ where
     fn combine_with(&mut self, mut other: Self) {
         // `self` takes precedence over `other` but `extend` overrides existing values.
         // Swap the hash maps so that `self` is the one that gets extended.
+        std::mem::swap(self, &mut other);
+        self.extend(other);
+    }
+}
+
+impl<K, V> Combine for BTreeMap<K, V>
+where
+    K: Ord,
+{
+    fn combine_with(&mut self, mut other: Self) {
         std::mem::swap(self, &mut other);
         self.extend(other);
     }

@@ -11,28 +11,37 @@ mod settings;
 
 pub use max_fail::MaxFail;
 pub use options::{
-    Options, OutputFormat, ProjectOptionsOverrides, SrcOptions, TerminalOptions, TestOptions,
+    Config, DEFAULT_PROFILE, Options, OutputFormat, ProjectOptionsOverrides, SrcOptions,
+    TerminalOptions, TestOptions, UnknownProfile,
 };
 pub use pyproject::{PyProject, PyProjectError};
 pub use settings::{NoTestsMode, ProjectSettings, RunIgnoredMode};
 
 use crate::options::KarvaTomlError;
 
+/// File-level configuration paired with the resolved per-profile [`Options`].
+///
+/// `config` always reflects the file as parsed. `options` is empty until
+/// [`ProjectMetadata::apply_overrides`] selects a profile and combines CLI
+/// overrides on top of it.
 #[derive(Default, Debug, Clone)]
 pub struct ProjectMetadata {
     pub root: Utf8PathBuf,
 
     pub python_version: PythonVersion,
 
+    pub config: Config,
+
     pub options: Options,
 }
 
 impl ProjectMetadata {
-    /// Creates a project with the given name and root that uses the default options.
+    /// Creates a project with the given root and an empty configuration.
     pub fn new(root: Utf8PathBuf, python_version: PythonVersion) -> Self {
         Self {
             root,
             python_version,
+            config: Config::default(),
             options: Options::default(),
         }
     }
@@ -44,7 +53,7 @@ impl ProjectMetadata {
     ) -> Result<Self, ProjectMetadataError> {
         tracing::debug!("Using overridden configuration file at '{path}'");
 
-        let options = Options::from_karva_configuration_file(&path).map_err(|error| {
+        let config = Config::from_karva_configuration_file(&path).map_err(|error| {
             ProjectMetadataError::InvalidKarvaToml {
                 source: Box::new(error),
                 path,
@@ -54,7 +63,8 @@ impl ProjectMetadata {
         Ok(Self {
             root: cwd.to_path_buf(),
             python_version,
-            options,
+            config,
+            options: Options::default(),
         })
     }
 
@@ -64,7 +74,7 @@ impl ProjectMetadata {
         root: Utf8PathBuf,
         python_version: PythonVersion,
     ) -> Self {
-        Self::from_options(
+        Self::from_config(
             pyproject
                 .tool
                 .and_then(|tool| tool.karva)
@@ -74,16 +84,13 @@ impl ProjectMetadata {
         )
     }
 
-    /// Loads a project from a set of options with an optional pyproject-project table.
-    pub fn from_options(
-        options: Options,
-        root: Utf8PathBuf,
-        python_version: PythonVersion,
-    ) -> Self {
+    /// Loads a project from a parsed [`Config`].
+    pub fn from_config(config: Config, root: Utf8PathBuf, python_version: PythonVersion) -> Self {
         Self {
             root,
             python_version,
-            options,
+            config,
+            options: Options::default(),
         }
     }
 
@@ -115,7 +122,7 @@ impl ProjectMetadata {
         for project_root in path.ancestors() {
             let pyproject = try_load_pyproject(project_root)?;
 
-            if let Some(options) = try_load_karva_toml(project_root)? {
+            if let Some(config) = try_load_karva_toml(project_root)? {
                 if has_karva_section(pyproject.as_ref()) {
                     let pyproject_path = project_root.join("pyproject.toml");
                     let karva_toml_path = project_root.join("karva.toml");
@@ -125,8 +132,8 @@ impl ProjectMetadata {
                 }
 
                 tracing::debug!("Found project at '{}'", project_root);
-                return Ok(Self::from_options(
-                    options,
+                return Ok(Self::from_config(
+                    config,
                     project_root.to_path_buf(),
                     python_version,
                 ));
@@ -186,8 +193,15 @@ impl ProjectMetadata {
         self
     }
 
-    pub fn apply_overrides(&mut self, overrides: &ProjectOptionsOverrides) {
-        self.options = overrides.apply_to(std::mem::take(&mut self.options));
+    /// Resolve the requested profile from the parsed [`Config`] and combine
+    /// CLI overrides on top, populating `self.options`.
+    pub fn apply_overrides(
+        &mut self,
+        overrides: &ProjectOptionsOverrides,
+    ) -> Result<(), UnknownProfile> {
+        let config = std::mem::take(&mut self.config);
+        self.options = overrides.apply_to(config)?;
+        Ok(())
     }
 
     /// Combine the project options with the CLI options where the CLI options take precedence.
@@ -197,21 +211,21 @@ impl ProjectMetadata {
 }
 
 /// Checks for a `karva.toml` in `dir` and parses it if present.
-fn try_load_karva_toml(dir: &Utf8Path) -> Result<Option<Options>, ProjectMetadataError> {
+fn try_load_karva_toml(dir: &Utf8Path) -> Result<Option<Config>, ProjectMetadataError> {
     let path = dir.join("karva.toml");
 
     let Ok(content) = std::fs::read_to_string(&path) else {
         return Ok(None);
     };
 
-    let options = Options::from_toml_str(&content).map_err(|error| {
+    let config = Config::from_toml_str(&content).map_err(|error| {
         ProjectMetadataError::InvalidKarvaToml {
             source: Box::new(error),
             path,
         }
     })?;
 
-    Ok(Some(options))
+    Ok(Some(config))
 }
 
 /// Checks for a `pyproject.toml` in `dir` and parses it if present.
