@@ -134,9 +134,12 @@ def test_skipped():
 
 #[test]
 fn durations_with_failing_tests() {
+    // `test_fail` sleeps so it is reliably the slower of the two tests; without
+    // a sleep both tests run in microseconds and the slowest-tests ordering is
+    // non-deterministic across machines (especially noticeable in CI).
     let context = TestContext::with_file(
         "test_durations.py",
-        "def test_pass():\n    pass\n\ndef test_fail():\n    assert False\n",
+        "import time\n\ndef test_pass():\n    pass\n\ndef test_fail():\n    time.sleep(0.05)\n    assert False\n",
     );
 
     assert_cmd_snapshot!(context.command_no_parallel().args(["--durations", "5"]), @"
@@ -150,19 +153,21 @@ fn durations_with_failing_tests() {
     diagnostics:
 
     error[test-failure]: Test `test_fail` failed
-     --> test_durations.py:4:5
+     --> test_durations.py:6:5
       |
-    2 |     pass
-    3 |
-    4 | def test_fail():
+    4 |     pass
+    5 |
+    6 | def test_fail():
       |     ^^^^^^^^^
-    5 |     assert False
+    7 |     time.sleep(0.05)
+    8 |     assert False
       |
     info: Test failed here
-     --> test_durations.py:5:5
+     --> test_durations.py:8:5
       |
-    4 | def test_fail():
-    5 |     assert False
+    6 | def test_fail():
+    7 |     time.sleep(0.05)
+    8 |     assert False
       |     ^^^^^^^^^^^^
       |
 
