@@ -10,7 +10,7 @@ fn test_src_respect_ignore_files_false() {
         (
             "karva.toml",
             r"
-[src]
+[profile.default.src]
 respect-ignore-files = false
 ",
         ),
@@ -48,7 +48,7 @@ fn test_src_respect_ignore_files_true() {
         (
             "karva.toml",
             r"
-[src]
+[profile.default.src]
 respect-ignore-files = true
 ",
         ),
@@ -88,7 +88,7 @@ fn test_src_include_paths() {
         (
             "karva.toml",
             r#"
-[src]
+[profile.default.src]
 include = ["src", "tests"]
 "#,
         ),
@@ -131,7 +131,7 @@ fn test_src_include_single_file() {
         (
             "karva.toml",
             r#"
-[src]
+[profile.default.src]
 include = ["test_specific.py"]
 "#,
         ),
@@ -170,7 +170,7 @@ fn test_terminal_output_format_concise() {
         (
             "karva.toml",
             r#"
-[terminal]
+[profile.default.terminal]
 output-format = "concise"
 "#,
         ),
@@ -202,7 +202,7 @@ fn test_terminal_output_format_full() {
         (
             "karva.toml",
             r#"
-[terminal]
+[profile.default.terminal]
 output-format = "full"
 "#,
         ),
@@ -234,7 +234,7 @@ fn test_terminal_show_python_output_false() {
         (
             "karva.toml",
             r"
-[terminal]
+[profile.default.terminal]
 show-python-output = false
 ",
         ),
@@ -269,7 +269,7 @@ fn test_terminal_show_python_output_true() {
         (
             "karva.toml",
             r"
-[terminal]
+[profile.default.terminal]
 show-python-output = true
 ",
         ),
@@ -305,7 +305,7 @@ fn test_terminal_status_level_from_config() {
         (
             "karva.toml",
             r#"
-[terminal]
+[profile.default.terminal]
 status-level = "none"
 "#,
         ),
@@ -330,7 +330,7 @@ fn test_terminal_final_status_level_from_config() {
         (
             "karva.toml",
             r#"
-[terminal]
+[profile.default.terminal]
 final-status-level = "none"
 "#,
         ),
@@ -354,7 +354,7 @@ fn test_cli_status_level_overrides_config() {
         (
             "karva.toml",
             r#"
-[terminal]
+[profile.default.terminal]
 status-level = "none"
 "#,
         ),
@@ -381,7 +381,7 @@ fn test_test_function_prefix_custom() {
         (
             "karva.toml",
             r#"
-[test]
+[profile.default.test]
 test-function-prefix = "check"
 "#,
         ),
@@ -415,7 +415,7 @@ fn test_test_function_prefix_default() {
         (
             "karva.toml",
             r#"
-[test]
+[profile.default.test]
 test-function-prefix = "test"
 "#,
         ),
@@ -450,7 +450,7 @@ fn test_max_fail_from_config() {
         (
             "karva.toml",
             r"
-[test]
+[profile.default.test]
 max-fail = 2
 ",
         ),
@@ -528,7 +528,7 @@ fn test_fail_fast_true() {
         (
             "karva.toml",
             r"
-[test]
+[profile.default.test]
 fail-fast = true
 ",
         ),
@@ -584,7 +584,7 @@ fn test_fail_fast_false() {
         (
             "karva.toml",
             r"
-[test]
+[profile.default.test]
 fail-fast = false
 ",
         ),
@@ -662,15 +662,15 @@ fn test_combined_all_options() {
         (
             "karva.toml",
             r#"
-[src]
+[profile.default.src]
 respect-ignore-files = false
 include = ["tests"]
 
-[terminal]
+[profile.default.terminal]
 output-format = "concise"
 show-python-output = false
 
-[test]
+[profile.default.test]
 test-function-prefix = "check"
 fail-fast = true
 "#,
@@ -712,10 +712,10 @@ fn test_combined_src_and_test_options() {
         (
             "karva.toml",
             r#"
-[src]
+[profile.default.src]
 include = ["src"]
 
-[test]
+[profile.default.test]
 test-function-prefix = "verify"
 "#,
         ),
@@ -758,7 +758,7 @@ fn test_pyproject_src_options() {
 [project]
 name = "test-project"
 
-[tool.karva.src]
+[tool.karva.profile.default.src]
 respect-ignore-files = false
 include = ["src"]
 "#,
@@ -806,7 +806,7 @@ fn test_pyproject_terminal_options() {
 [project]
 name = "test-project"
 
-[tool.karva.terminal]
+[tool.karva.profile.default.terminal]
 output-format = "concise"
 show-python-output = false
 "#,
@@ -844,7 +844,7 @@ fn test_pyproject_test_options() {
 [project]
 name = "test-project"
 
-[tool.karva.test]
+[tool.karva.profile.default.test]
 test-function-prefix = "spec"
 fail-fast = true
 "#,
@@ -881,15 +881,15 @@ fn test_pyproject_all_options() {
 [project]
 name = "test-project"
 
-[tool.karva.src]
+[tool.karva.profile.default.src]
 respect-ignore-files = false
 include = ["tests"]
 
-[tool.karva.terminal]
+[tool.karva.profile.default.terminal]
 output-format = "full"
 show-python-output = true
 
-[tool.karva.test]
+[tool.karva.profile.default.test]
 test-function-prefix = "it"
 fail-fast = false
 "#,
@@ -935,7 +935,7 @@ fn test_karva_toml_takes_precedence_over_pyproject() {
         (
             "karva.toml",
             r#"
-[test]
+[profile.default.test]
 test-function-prefix = "karva"
 "#,
         ),
@@ -945,7 +945,7 @@ test-function-prefix = "karva"
 [project]
 name = "test-project"
 
-[tool.karva.test]
+[tool.karva.profile.default.test]
 test-function-prefix = "pyproject"
 "#,
         ),
@@ -1007,7 +1007,7 @@ fn test_partial_config() {
         (
             "karva.toml",
             r#"
-[test]
+[profile.default.test]
 test-function-prefix = "custom"
 "#,
         ),
@@ -1040,7 +1040,7 @@ fn test_cli_test_prefix_overrides_config() {
         (
             "karva.toml",
             r#"
-[test]
+[profile.default.test]
 test-function-prefix = "config"
 "#,
         ),
@@ -1074,7 +1074,7 @@ fn test_cli_output_format_overrides_config() {
         (
             "karva.toml",
             r#"
-[terminal]
+[profile.default.terminal]
 output-format = "full"
 "#,
         ),
@@ -1107,7 +1107,7 @@ fn test_cli_show_output_overrides_config() {
         (
             "karva.toml",
             r"
-[terminal]
+[profile.default.terminal]
 show-python-output = false
 ",
         ),
@@ -1143,7 +1143,7 @@ fn test_cli_no_ignore_overrides_config() {
         (
             "karva.toml",
             r"
-[src]
+[profile.default.src]
 respect-ignore-files = true
 ",
         ),
@@ -1181,7 +1181,7 @@ fn test_cli_fail_fast_overrides_config() {
         (
             "karva.toml",
             r"
-[test]
+[profile.default.test]
 fail-fast = false
 ",
         ),
@@ -1237,7 +1237,7 @@ fn test_cli_paths_override_config_include() {
         (
             "karva.toml",
             r#"
-[src]
+[profile.default.src]
 include = ["config_dir"]
 "#,
         ),
@@ -1274,15 +1274,15 @@ fn test_cli_multiple_arguments_override_config() {
         (
             "karva.toml",
             r#"
-[src]
+[profile.default.src]
 respect-ignore-files = true
 include = ["config_dir"]
 
-[terminal]
+[profile.default.terminal]
 output-format = "full"
 show-python-output = false
 
-[test]
+[profile.default.test]
 test-function-prefix = "config"
 fail-fast = false
 "#,
@@ -1340,11 +1340,11 @@ fn test_cli_overrides_pyproject_toml() {
 [project]
 name = "test-project"
 
-[tool.karva.test]
+[tool.karva.profile.default.test]
 test-function-prefix = "pyproject"
 fail-fast = true
 
-[tool.karva.terminal]
+[tool.karva.profile.default.terminal]
 show-python-output = false
 "#,
         ),
@@ -1389,7 +1389,7 @@ fn test_cli_overrides_both_config_files() {
         (
             "karva.toml",
             r#"
-[test]
+[profile.default.test]
 test-function-prefix = "karva"
 "#,
         ),
@@ -1399,7 +1399,7 @@ test-function-prefix = "karva"
 [project]
 name = "test-project"
 
-[tool.karva.test]
+[tool.karva.profile.default.test]
 test-function-prefix = "pyproject"
 "#,
         ),
@@ -1435,7 +1435,7 @@ fn test_config_file_flag() {
         (
             "custom-config.toml",
             r#"
-[test]
+[profile.default.test]
 test-function-prefix = "check"
 "#,
         ),
@@ -1470,7 +1470,7 @@ fn test_config_file_env_var() {
         (
             "custom.toml",
             r#"
-[test]
+[profile.default.test]
 test-function-prefix = "spec"
 "#,
         ),
@@ -1508,14 +1508,14 @@ fn test_cli_config_file_overrides_env() {
         (
             "env.toml",
             r#"
-[test]
+[profile.default.test]
 test-function-prefix = "env"
 "#,
         ),
         (
             "cli.toml",
             r#"
-[test]
+[profile.default.test]
 test-function-prefix = "cli"
 "#,
         ),
@@ -1556,7 +1556,7 @@ fn test_karva_toml_discovered_from_subdirectory() {
         (
             "karva.toml",
             r#"
-[test]
+[profile.default.test]
 test-function-prefix = "check"
 "#,
         ),

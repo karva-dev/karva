@@ -17,47 +17,23 @@ use crate::settings::{
 /// The implicit name of the default profile.
 pub const DEFAULT_PROFILE: &str = "default";
 
-#[derive(
-    Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize, OptionsMetadata, Combine,
-)]
+/// File-level configuration: a collection of named profiles.
+///
+/// Mirrors nextest: every option group lives inside `[profile.<name>]`. The
+/// implicit `default` profile is always available; other profiles inherit
+/// from it (and can override individual fields).
+#[derive(Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case", deny_unknown_fields)]
-pub struct Options {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[option_group]
-    pub src: Option<SrcOptions>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[option_group]
-    pub terminal: Option<TerminalOptions>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[option_group]
-    pub test: Option<TestOptions>,
-
-    /// Named configuration profiles, selected with `--profile <name>` or the
-    /// `KARVA_PROFILE` environment variable.
-    ///
-    /// Each profile may override `[src]`, `[terminal]`, and `[test]` settings.
-    /// Selecting a non-default profile layers its overrides on top of the
-    /// `[profile.default]` overrides (if any), which themselves layer on top
-    /// of the top-level options.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub profile: Option<BTreeMap<String, ProfileOptions>>,
+pub struct Config {
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub profile: BTreeMap<String, Options>,
 }
 
-impl Options {
+impl Config {
     pub fn from_toml_str(content: &str) -> Result<Self, KarvaTomlError> {
-        let options: Self = toml::from_str(content)?;
-        if let Some(profiles) = &options.profile {
-            validate_profile_names(profiles)?;
-        }
-        Ok(options)
-    }
-
-    pub fn to_settings(&self) -> ProjectSettings {
-        ProjectSettings {
-            terminal: self.terminal.clone().unwrap_or_default().to_settings(),
-            src: self.src.clone().unwrap_or_default().to_settings(),
-            test: self.test.clone().unwrap_or_default().to_settings(),
-        }
+        let config: Self = toml::from_str(content)?;
+        validate_profile_names(&config.profile)?;
+        Ok(config)
     }
 
     pub(crate) fn from_karva_configuration_file(
@@ -78,42 +54,28 @@ impl Options {
         if name == DEFAULT_PROFILE {
             return true;
         }
-        self.profile
-            .as_ref()
-            .is_some_and(|profiles| profiles.contains_key(name))
+        self.profile.contains_key(name)
     }
 
-    /// Resolve a profile by collapsing the `profile` map into the top-level
-    /// option groups.
+    /// Resolve a profile by collapsing the `profile` map into a single
+    /// [`Options`] value.
     ///
-    /// The returned `Options` has its `profile` field cleared. The selected
-    /// profile is layered on top of any `[profile.default]` overrides, which
-    /// themselves layer on top of the top-level options. CLI options can then
-    /// be combined with the result via the usual `Combine` precedence.
+    /// The selected profile is layered on top of any `[profile.default]`
+    /// overrides, which form the base. CLI options can then be combined with
+    /// the result via the usual `Combine` precedence.
     ///
-    /// Returns [`UnknownProfile`] when `name` is set to a profile that is
+    /// Returns [`UnknownProfile`] when `name` refers to a profile that is
     /// not defined.
-    pub fn resolve_profile(mut self, name: Option<&str>) -> Result<Self, UnknownProfile> {
+    pub fn resolve_profile(mut self, name: Option<&str>) -> Result<Options, UnknownProfile> {
         let requested = name.unwrap_or(DEFAULT_PROFILE);
-        let profiles = self.profile.take();
 
-        let Some(mut profiles) = profiles else {
-            if requested != DEFAULT_PROFILE {
-                return Err(UnknownProfile {
-                    name: requested.to_string(),
-                    available: vec![DEFAULT_PROFILE.to_string()],
-                });
-            }
-            return Ok(self);
-        };
-
-        let default_overrides = profiles.remove(DEFAULT_PROFILE);
+        let default_overrides = self.profile.remove(DEFAULT_PROFILE);
         let named_overrides = if requested == DEFAULT_PROFILE {
             None
-        } else if let Some(p) = profiles.remove(requested) {
+        } else if let Some(p) = self.profile.remove(requested) {
             Some(p)
         } else {
-            let mut available: Vec<String> = profiles.into_keys().collect();
+            let mut available: Vec<String> = self.profile.into_keys().collect();
             available.push(DEFAULT_PROFILE.to_string());
             available.sort();
             available.dedup();
@@ -123,49 +85,18 @@ impl Options {
             });
         };
 
+        let mut effective = Options::default();
         if let Some(default_p) = default_overrides {
-            self = default_p.into_options().combine(self);
+            effective = default_p.combine(effective);
         }
         if let Some(named_p) = named_overrides {
-            self = named_p.into_options().combine(self);
+            effective = named_p.combine(effective);
         }
-        Ok(self)
+        Ok(effective)
     }
 }
 
-/// The portion of [`Options`] that can appear inside a `[profile.<name>]` block.
-///
-/// Mirrors the top-level option groups but disallows nested `profile` tables.
-#[derive(
-    Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize, OptionsMetadata, Combine,
-)]
-#[serde(rename_all = "kebab-case", deny_unknown_fields)]
-pub struct ProfileOptions {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[option_group]
-    pub src: Option<SrcOptions>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[option_group]
-    pub terminal: Option<TerminalOptions>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[option_group]
-    pub test: Option<TestOptions>,
-}
-
-impl ProfileOptions {
-    fn into_options(self) -> Options {
-        Options {
-            src: self.src,
-            terminal: self.terminal,
-            test: self.test,
-            profile: None,
-        }
-    }
-}
-
-fn validate_profile_names(
-    profiles: &BTreeMap<String, ProfileOptions>,
-) -> Result<(), KarvaTomlError> {
+fn validate_profile_names(profiles: &BTreeMap<String, Options>) -> Result<(), KarvaTomlError> {
     for name in profiles.keys() {
         if name.is_empty() {
             return Err(KarvaTomlError::InvalidProfileName {
@@ -200,6 +131,32 @@ fn validate_profile_names(
 pub struct UnknownProfile {
     pub name: String,
     pub available: Vec<String>,
+}
+
+#[derive(
+    Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize, OptionsMetadata, Combine,
+)]
+#[serde(rename_all = "kebab-case", deny_unknown_fields)]
+pub struct Options {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[option_group]
+    pub src: Option<SrcOptions>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[option_group]
+    pub terminal: Option<TerminalOptions>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[option_group]
+    pub test: Option<TestOptions>,
+}
+
+impl Options {
+    pub fn to_settings(&self) -> ProjectSettings {
+        ProjectSettings {
+            terminal: self.terminal.clone().unwrap_or_default().to_settings(),
+            src: self.src.clone().unwrap_or_default().to_settings(),
+            test: self.test.clone().unwrap_or_default().to_settings(),
+        }
+    }
 }
 
 #[derive(
@@ -555,12 +512,12 @@ mod tests {
     #[test]
     fn from_toml_str_rejects_unknown_key() {
         let toml = r"
-[test]
+[profile.default.test]
 fail-fast = true
 nonsense = 42
 ";
         assert_snapshot!(
-            Options::from_toml_str(toml).expect_err("unknown field"),
+            Config::from_toml_str(toml).expect_err("unknown field"),
             @"
         TOML parse error at line 4, column 1
           |
@@ -578,25 +535,40 @@ nonsense = 42
 foo = 1
 ";
         assert_snapshot!(
-            Options::from_toml_str(toml).expect_err("unknown section"),
+            Config::from_toml_str(toml).expect_err("unknown section"),
             @"
         TOML parse error at line 2, column 2
           |
         2 | [bogus]
           |  ^^^^^
-        unknown field `bogus`, expected one of `src`, `terminal`, `test`, `profile`
+        unknown field `bogus`, expected `profile`
+        "
+        );
+    }
+
+    #[test]
+    fn from_toml_str_rejects_top_level_option_groups() {
+        let toml = r#"
+[test]
+test-function-prefix = "test"
+"#;
+        assert_snapshot!(
+            Config::from_toml_str(toml).expect_err("top-level rejected"),
+            @"
+        TOML parse error at line 2, column 2
+          |
+        2 | [test]
+          |  ^^^^
+        unknown field `test`, expected `profile`
         "
         );
     }
 
     #[test]
     fn from_toml_str_empty_is_default() {
-        assert_debug_snapshot!(Options::from_toml_str("").expect("parse"), @"
-        Options {
-            src: None,
-            terminal: None,
-            test: None,
-            profile: None,
+        assert_debug_snapshot!(Config::from_toml_str("").expect("parse"), @"
+        Config {
+            profile: {},
         }
         ");
     }
@@ -606,11 +578,11 @@ foo = 1
     #[test]
     fn from_toml_str_rejects_max_fail_zero() {
         let toml = r"
-[test]
+[profile.default.test]
 max-fail = 0
 ";
         assert_snapshot!(
-            Options::from_toml_str(toml).expect_err("zero rejected"),
+            Config::from_toml_str(toml).expect_err("zero rejected"),
             @"
         TOML parse error at line 3, column 12
           |
@@ -715,16 +687,14 @@ max-fail = 0
             }),
             ..Options::default()
         };
-        let file_options = Options {
-            test: Some(TestOptions {
-                test_function_prefix: Some("file".to_string()),
-                retry: Some(2),
-                ..TestOptions::default()
-            }),
-            ..Options::default()
-        };
+        let toml = r#"
+[profile.default.test]
+test-function-prefix = "file"
+retry = 2
+"#;
+        let config = Config::from_toml_str(toml).expect("parse");
         let overrides = ProjectOptionsOverrides::new(None, cli_options);
-        assert_debug_snapshot!(overrides.apply_to(file_options).expect("resolves").test, @r#"
+        assert_debug_snapshot!(overrides.apply_to(config).expect("resolves").test, @r#"
         Some(
             TestOptions {
                 test_function_prefix: Some(
@@ -745,7 +715,7 @@ max-fail = 0
     #[test]
     fn parse_profile_section() {
         let toml = r#"
-[test]
+[profile.default.test]
 test-function-prefix = "test"
 
 [profile.ci.test]
@@ -755,27 +725,24 @@ no-tests = "fail"
 [profile.ci.terminal]
 output-format = "concise"
 "#;
-        let options = Options::from_toml_str(toml).expect("parse");
-        assert_debug_snapshot!(options.has_profile("ci"), @"true");
-        assert_debug_snapshot!(options.has_profile("default"), @"true");
-        assert_debug_snapshot!(options.has_profile("missing"), @"false");
+        let config = Config::from_toml_str(toml).expect("parse");
+        assert_debug_snapshot!(config.has_profile("ci"), @"true");
+        assert_debug_snapshot!(config.has_profile("default"), @"true");
+        assert_debug_snapshot!(config.has_profile("missing"), @"false");
     }
 
     #[test]
-    fn resolve_profile_layers_named_over_default_over_base() {
+    fn resolve_profile_layers_named_over_default() {
         let toml = r#"
-[test]
-test-function-prefix = "base"
-retry = 1
-
 [profile.default.test]
+test-function-prefix = "base"
 retry = 2
 fail-fast = true
 
 [profile.ci.test]
 retry = 5
 "#;
-        let resolved = Options::from_toml_str(toml)
+        let resolved = Config::from_toml_str(toml)
             .expect("parse")
             .resolve_profile(Some("ci"))
             .expect("resolves");
@@ -797,19 +764,15 @@ retry = 5
             },
         )
         "#);
-        assert_debug_snapshot!(resolved.profile, @"None");
     }
 
     #[test]
-    fn resolve_profile_default_applies_default_overrides() {
+    fn resolve_default_profile_applies_default_overrides() {
         let toml = r"
-[test]
-retry = 1
-
 [profile.default.test]
 retry = 9
 ";
-        let resolved = Options::from_toml_str(toml)
+        let resolved = Config::from_toml_str(toml)
             .expect("parse")
             .resolve_profile(None)
             .expect("resolves");
@@ -826,7 +789,7 @@ retry = 9
 [profile.ci.test]
 retry = 5
 ";
-        let err = Options::from_toml_str(toml)
+        let err = Config::from_toml_str(toml)
             .expect("parse")
             .resolve_profile(Some("nope"))
             .expect_err("unknown");
@@ -837,15 +800,15 @@ retry = 5
     }
 
     #[test]
-    fn resolve_profile_default_when_no_profiles_defined_is_ok() {
-        let options = Options::default();
-        assert!(options.resolve_profile(None).is_ok());
+    fn resolve_default_profile_when_empty_config_is_ok() {
+        let config = Config::default();
+        assert!(config.resolve_profile(None).is_ok());
     }
 
     #[test]
-    fn resolve_profile_non_default_when_no_profiles_errors() {
-        let options = Options::default();
-        let err = options.resolve_profile(Some("ci")).expect_err("unknown");
+    fn resolve_non_default_profile_when_empty_config_errors() {
+        let config = Config::default();
+        let err = config.resolve_profile(Some("ci")).expect_err("unknown");
         assert_snapshot!(
             err,
             @"profile `ci` is not defined in configuration (available: default)"
@@ -859,7 +822,7 @@ retry = 5
 retry = 1
 ";
         assert_snapshot!(
-            Options::from_toml_str(toml).expect_err("reserved"),
+            Config::from_toml_str(toml).expect_err("reserved"),
             @"invalid profile name `default-ci`: the `default-` prefix is reserved for built-in profiles"
         );
     }
@@ -871,18 +834,9 @@ retry = 1
 retry = 1
 "#;
         assert_snapshot!(
-            Options::from_toml_str(toml).expect_err("invalid"),
+            Config::from_toml_str(toml).expect_err("invalid"),
             @"invalid profile name `ci/fast`: profile names may only contain ASCII letters, digits, `-`, and `_`"
         );
-    }
-
-    #[test]
-    fn from_toml_str_rejects_nested_profile_table() {
-        let toml = r"
-[profile.ci.profile.nested.test]
-retry = 1
-";
-        assert!(Options::from_toml_str(toml).is_err());
     }
 
     #[test]
@@ -898,10 +852,10 @@ retry = 1
 [profile.ci.test]
 retry = 5
 ";
-        let file_options = Options::from_toml_str(toml).expect("parse");
+        let config = Config::from_toml_str(toml).expect("parse");
         let overrides =
             ProjectOptionsOverrides::new(None, cli_options).with_profile(Some("ci".to_string()));
-        let resolved = overrides.apply_to(file_options).expect("resolves");
+        let resolved = overrides.apply_to(config).expect("resolves");
         assert_debug_snapshot!(resolved.test.unwrap().retry, @r"
         Some(
             99,
@@ -932,10 +886,10 @@ impl ProjectOptionsOverrides {
         self
     }
 
-    /// Combine the file options with the CLI options, after first resolving
-    /// the requested profile against the file options.
-    pub fn apply_to(&self, options: Options) -> Result<Options, UnknownProfile> {
-        let resolved = options.resolve_profile(self.profile.as_deref())?;
+    /// Resolve the requested profile from `config` and combine the CLI
+    /// overrides on top.
+    pub fn apply_to(&self, config: Config) -> Result<Options, UnknownProfile> {
+        let resolved = config.resolve_profile(self.profile.as_deref())?;
         Ok(self.options.clone().combine(resolved))
     }
 }

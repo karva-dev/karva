@@ -397,7 +397,6 @@ impl SubTestCommand {
                 retry: self.retry,
                 no_tests: self.no_tests.map(Into::into),
             }),
-            profile: None,
         }
     }
 }

@@ -19,7 +19,7 @@ are tested.
 **Example usage** (`pyproject.toml`):
 
 ```toml
-[tool.karva.src]
+[tool.karva.profile.default.src]
 include = ["tests"]
 ```
 
@@ -38,7 +38,7 @@ Enabled by default.
 **Example usage** (`pyproject.toml`):
 
 ```toml
-[tool.karva.src]
+[tool.karva.profile.default.src]
 respect-ignore-files = false
 ```
 
@@ -62,7 +62,7 @@ Defaults to `pass`.
 **Example usage** (`pyproject.toml`):
 
 ```toml
-[tool.karva.terminal]
+[tool.karva.profile.default.terminal]
 final-status-level = "fail"
 ```
 
@@ -81,7 +81,7 @@ Defaults to `full`.
 **Example usage** (`pyproject.toml`):
 
 ```toml
-[tool.karva.terminal]
+[tool.karva.profile.default.terminal]
 output-format = "concise"
 ```
 
@@ -100,7 +100,7 @@ This is the output the `print` goes to etc.
 **Example usage** (`pyproject.toml`):
 
 ```toml
-[tool.karva.terminal]
+[tool.karva.profile.default.terminal]
 show-python-output = false
 ```
 
@@ -124,7 +124,7 @@ Defaults to `pass`.
 **Example usage** (`pyproject.toml`):
 
 ```toml
-[tool.karva.terminal]
+[tool.karva.profile.default.terminal]
 status-level = "fail"
 ```
 
@@ -149,7 +149,7 @@ Defaults to `false`.
 **Example usage** (`pyproject.toml`):
 
 ```toml
-[tool.karva.test]
+[tool.karva.profile.default.test]
 fail-fast = true
 ```
 
@@ -173,7 +173,7 @@ When both [`fail_fast`](#test_fail-fast) and `max-fail` are set,
 **Example usage** (`pyproject.toml`):
 
 ```toml
-[tool.karva.test]
+[tool.karva.profile.default.test]
 max-fail = 3
 ```
 
@@ -194,7 +194,7 @@ passes silently when filters were given. Use `fail` to always fail,
 **Example usage** (`pyproject.toml`):
 
 ```toml
-[tool.karva.test]
+[tool.karva.profile.default.test]
 no-tests = "warn"
 ```
 
@@ -211,7 +211,7 @@ When set, we will retry failed tests up to this number of times.
 **Example usage** (`pyproject.toml`):
 
 ```toml
-[tool.karva.test]
+[tool.karva.profile.default.test]
 retry = 3
 ```
 
@@ -230,7 +230,7 @@ Defaults to `test`.
 **Example usage** (`pyproject.toml`):
 
 ```toml
-[tool.karva.test]
+[tool.karva.profile.default.test]
 test-function-prefix = "test"
 ```
 
@@ -249,7 +249,7 @@ This is often slower, so it is not recommended for most projects.
 **Example usage** (`pyproject.toml`):
 
 ```toml
-[tool.karva.test]
+[tool.karva.profile.default.test]
 try-import-fixtures = true
 ```
 

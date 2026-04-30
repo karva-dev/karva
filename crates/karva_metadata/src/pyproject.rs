@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::options::Options;
+use crate::options::Config;
 
 /// A `pyproject.toml` as specified in PEP 517.
 #[derive(Deserialize, Serialize, Debug, Default, Clone)]
@@ -12,7 +12,7 @@ pub struct PyProject {
 }
 
 impl PyProject {
-    pub(crate) fn karva(&self) -> Option<&Options> {
+    pub(crate) fn karva(&self) -> Option<&Config> {
         self.tool.as_ref().and_then(|tool| tool.karva.as_ref())
     }
 }
@@ -32,5 +32,5 @@ impl PyProject {
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq)]
 #[serde(rename_all = "kebab-case")]
 pub struct Tool {
-    pub karva: Option<Options>,
+    pub karva: Option<Config>,
 }

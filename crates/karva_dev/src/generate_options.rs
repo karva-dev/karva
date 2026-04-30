@@ -198,13 +198,14 @@ fn format_header(
     parents: &[Set],
     configuration: ConfigurationFile,
 ) -> String {
-    let tool_parent = match configuration {
-        ConfigurationFile::PyprojectToml => Some("tool.karva"),
-        ConfigurationFile::KarvaToml => None,
+    // All option groups live under `[profile.<name>]` (nextest-style). The
+    // generated examples target the implicit `default` profile.
+    let parent_path = match configuration {
+        ConfigurationFile::PyprojectToml => "tool.karva.profile.default",
+        ConfigurationFile::KarvaToml => "profile.default",
     };
 
-    let header = tool_parent
-        .into_iter()
+    let header = std::iter::once(parent_path)
         .chain(parents.iter().filter_map(|parent| parent.name()))
         .chain(scope)
         .join(".");

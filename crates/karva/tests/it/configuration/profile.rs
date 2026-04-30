@@ -3,12 +3,12 @@ use insta_cmd::assert_cmd_snapshot;
 use crate::common::TestContext;
 
 #[test]
-fn profile_named_overrides_top_level_options() {
+fn profile_named_overrides_default_profile() {
     let context = TestContext::with_files([
         (
             "karva.toml",
             r#"
-[test]
+[profile.default.test]
 test-function-prefix = "test"
 
 [profile.ci.test]
@@ -77,9 +77,6 @@ fn profile_default_overrides_apply_when_no_profile_selected() {
         (
             "karva.toml",
             r#"
-[test]
-test-function-prefix = "test"
-
 [profile.default.test]
 test-function-prefix = "check"
 "#,
@@ -113,9 +110,6 @@ fn profile_named_layers_on_top_of_default_overrides() {
         (
             "karva.toml",
             r#"
-[test]
-test-function-prefix = "test"
-
 [profile.default.test]
 retry = 1
 
@@ -317,6 +311,40 @@ def test_not_run(): pass
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
+    ");
+}
+
+#[test]
+fn top_level_option_groups_rejected() {
+    let context = TestContext::with_files([
+        (
+            "karva.toml",
+            r#"
+[test]
+test-function-prefix = "check"
+"#,
+        ),
+        ("test.py", "def test_a(): pass"),
+    ]);
+
+    assert_cmd_snapshot!(context.command(), @r"
+    success: false
+    exit_code: 2
+    ----- stdout -----
+
+    ----- stderr -----
+    Karva failed
+      Cause: <temp_dir>/karva.toml is not a valid `karva.toml`: TOML parse error at line 2, column 2
+      |
+    2 | [test]
+      |  ^^^^
+    unknown field `test`, expected `profile`
+
+      Cause: TOML parse error at line 2, column 2
+      |
+    2 | [test]
+      |  ^^^^
+    unknown field `test`, expected `profile`
     ");
 }
 
