@@ -10,7 +10,7 @@ use crate::result::IndividualTestResultKind;
 
 /// A reporter for test execution time logging to the user.
 pub trait Reporter: Send + Sync {
-    /// Report the completion of a given test.
+    /// Report the completion of a non-retried test.
     fn report_test_case_result(
         &self,
         test_name: &QualifiedTestName,
@@ -18,18 +18,20 @@ pub trait Reporter: Send + Sync {
         duration: Duration,
     );
 
-    /// Report a failed attempt that will be retried.
+    /// Report one attempt of a retried test as it completes.
     ///
-    /// `attempt` is 1-indexed (the first attempt is `1`). `duration` is the
-    /// time spent on this single attempt. Default no-op for reporters that
-    /// don't surface attempt-level detail.
-    fn report_retry_attempt(
+    /// `attempt` is 1-indexed (the first attempt is `1`). For a retried test
+    /// this is called once per attempt — including the final one — and the
+    /// runner does NOT additionally call [`Self::report_test_case_result`].
+    /// Default no-op for reporters that don't surface attempt-level detail.
+    fn report_test_attempt(
         &self,
         test_name: &QualifiedTestName,
         attempt: u32,
+        result_kind: IndividualTestResultKind,
         duration: Duration,
     ) {
-        let _ = (test_name, attempt, duration);
+        let _ = (test_name, attempt, result_kind, duration);
     }
 }
 
@@ -120,22 +122,29 @@ impl Reporter for TestCaseReporter {
         .ok();
     }
 
-    fn report_retry_attempt(
+    fn report_test_attempt(
         &self,
         test_name: &QualifiedTestName,
         attempt: u32,
+        result_kind: IndividualTestResultKind,
         duration: Duration,
     ) {
         if self.printer.status_level() < StatusLevel::Retry {
             return;
         }
 
-        let mut stdout = self.printer.stream_for_test_result().lock();
+        let (status_text, colored_status) = match &result_kind {
+            IndividualTestResultKind::Passed => ("PASS", "PASS".green().bold().to_string()),
+            IndividualTestResultKind::Failed => ("FAIL", "FAIL".red().bold().to_string()),
+            // Skips don't go through the retry loop; render them as a normal
+            // SKIP attempt for completeness so the trait remains total.
+            IndividualTestResultKind::Skipped { .. } => {
+                ("SKIP", "SKIP".yellow().bold().to_string())
+            }
+        };
 
-        let label = format!("TRY {attempt} FAIL");
-        let colored_label = label.yellow().bold().to_string();
-
-        let padding = " ".repeat(12usize.saturating_sub(label.len()));
+        let label_len = "TRY ".len() + count_digits(attempt) + 1 + status_text.len();
+        let padding = " ".repeat(12usize.saturating_sub(label_len));
         let duration_str = format_duration_bracketed(duration);
 
         let module = test_name.function_name().module_path().module_name().cyan();
@@ -145,10 +154,23 @@ impl Reporter for TestCaseReporter {
             .map(|p| p.blue().bold().to_string())
             .unwrap_or_default();
 
+        let mut stdout = self.printer.stream_for_test_result().lock();
         writeln!(
             stdout,
-            "{padding}{colored_label} {duration_str} {module}::{fn_name}{params}"
+            "{padding}TRY {attempt} {colored_status} {duration_str} {module}::{fn_name}{params}"
         )
         .ok();
     }
+}
+
+fn count_digits(mut n: u32) -> usize {
+    if n == 0 {
+        return 1;
+    }
+    let mut digits = 0;
+    while n > 0 {
+        digits += 1;
+        n /= 10;
+    }
+    digits
 }

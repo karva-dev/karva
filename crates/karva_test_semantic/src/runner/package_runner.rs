@@ -306,22 +306,19 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
         (function_arguments, fixture_call_errors, test_finalizers)
     }
 
-    /// Classify a test result, handling `expect_fail` logic and error reporting.
+    /// Classify a test result, handling `expect_fail` logic and error
+    /// reporting. The provided `register` closure is invoked exactly once
+    /// with the final [`IndividualTestResultKind`] so the caller can choose
+    /// between `register_test_case_result` (for non-retried tests) and
+    /// `register_retried_result` (for retried tests).
     fn classify_test_result(
         &self,
         py: Python<'_>,
         test_result: PyResult<Py<PyAny>>,
         fixture_call_errors: Vec<FixtureCallError>,
         ctx: &VariantReportCtx<'_>,
+        register: impl FnOnce(IndividualTestResultKind) -> bool,
     ) -> bool {
-        let register = |kind: IndividualTestResultKind| {
-            self.context.register_test_case_result(
-                ctx.qualified_test_name,
-                kind,
-                ctx.start_time.elapsed(),
-            )
-        };
-
         let expect_fail = ctx
             .expect_fail_tag
             .as_ref()
@@ -453,14 +450,19 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
 
         let mut retry_count = self.context.settings().test().retry;
         let mut was_retried = false;
+        let mut final_attempt_duration = attempt_start.elapsed();
 
         while retry_count > 0 {
             if test_result.is_ok() {
                 break;
             }
             let attempt_duration = attempt_start.elapsed();
-            self.context
-                .report_retry_attempt(&qualified_test_name, attempt, attempt_duration);
+            self.context.report_test_attempt(
+                &qualified_test_name,
+                attempt,
+                IndividualTestResultKind::Failed,
+                attempt_duration,
+            );
             was_retried = true;
 
             tracing::debug!("Retrying test `{}`", qualified_test_name);
@@ -468,22 +470,52 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
             attempt += 1;
             attempt_start = std::time::Instant::now();
             test_result = run_test();
-        }
-
-        if was_retried {
-            self.context.mark_retried();
+            final_attempt_duration = attempt_start.elapsed();
         }
 
         let report_ctx = VariantReportCtx {
             name: &name,
-            qualified_test_name: &qualified_test_name,
             test_module_path: &test_module_path,
             stmt_function_def: &stmt_function_def,
             function_arguments: &function_arguments,
             expect_fail_tag,
-            start_time,
         };
-        let passed = self.classify_test_result(py, test_result, fixture_call_errors, &report_ctx);
+
+        let passed = if was_retried {
+            let total_attempts = attempt;
+            // Emit the per-attempt line for the final attempt before
+            // classifying so output ordering matches nextest:
+            //   TRY 1 FAIL ...
+            //   TRY 2 PASS ...   (or TRY 2 FAIL for an exhausted retry)
+            // The diagnostic for the final attempt (if any) is collected by
+            // `classify_test_result` and shown in the end-of-run block.
+            let final_kind = match &test_result {
+                Ok(_) => IndividualTestResultKind::Passed,
+                Err(_) => IndividualTestResultKind::Failed,
+            };
+            self.context.report_test_attempt(
+                &qualified_test_name,
+                attempt,
+                final_kind,
+                final_attempt_duration,
+            );
+
+            let total_duration = start_time.elapsed();
+            self.classify_test_result(py, test_result, fixture_call_errors, &report_ctx, |kind| {
+                self.context.register_retried_result(
+                    &qualified_test_name,
+                    &kind,
+                    total_duration,
+                    total_attempts,
+                )
+            })
+        } else {
+            let total_duration = start_time.elapsed();
+            self.classify_test_result(py, test_result, fixture_call_errors, &report_ctx, |kind| {
+                self.context
+                    .register_test_case_result(&qualified_test_name, kind, total_duration)
+            })
+        };
 
         for finalizer in test_finalizers.into_iter().rev() {
             finalizer.run(self.context, py);
@@ -663,12 +695,10 @@ fn get_value_and_finalizer(
 /// Immutable per-variant state threaded into [`PackageRunner::classify_test_result`].
 struct VariantReportCtx<'a> {
     name: &'a QualifiedFunctionName,
-    qualified_test_name: &'a QualifiedTestName,
     test_module_path: &'a camino::Utf8Path,
     stmt_function_def: &'a StmtFunctionDef,
     function_arguments: &'a FixtureArguments,
     expect_fail_tag: Option<ExpectFailTag>,
-    start_time: std::time::Instant,
 }
 
 pub struct FixtureCallError {

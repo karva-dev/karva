@@ -4,13 +4,13 @@ use std::time::Duration;
 
 use anyhow::Result;
 use camino::{Utf8Path, Utf8PathBuf};
-use karva_diagnostic::{TestResultStats, TestRunResult};
+use karva_diagnostic::{FlakyTest, FlakyTestRecord, TestResultStats, TestRunResult};
 use ruff_db::diagnostic::{DisplayDiagnosticConfig, DisplayDiagnostics, FileResolver};
 use serde::de::DeserializeOwned;
 
 use crate::{
     DIAGNOSTICS_FILE, DISCOVER_DIAGNOSTICS_FILE, DURATIONS_FILE, FAIL_FAST_SIGNAL_FILE,
-    FAILED_TESTS_FILE, LAST_FAILED_FILE, RunHash, STATS_FILE, worker_folder,
+    FAILED_TESTS_FILE, FLAKY_TESTS_FILE, LAST_FAILED_FILE, RunHash, STATS_FILE, worker_folder,
 };
 
 /// Aggregated test results collected from all worker processes.
@@ -20,6 +20,7 @@ pub struct AggregatedResults {
     pub diagnostics: String,
     pub discovery_diagnostics: String,
     pub failed_tests: Vec<String>,
+    pub flaky_tests: Vec<FlakyTestRecord>,
     pub durations: HashMap<String, Duration>,
 }
 
@@ -93,6 +94,7 @@ impl Cache {
         write_stats(&worker_dir, result.stats())?;
         write_durations(&worker_dir, result.durations())?;
         write_failed_tests(&worker_dir, result.failed_tests())?;
+        write_flaky_tests(&worker_dir, result.flaky_tests())?;
 
         Ok(())
     }
@@ -148,6 +150,16 @@ fn write_failed_tests(worker_dir: &Utf8Path, failed_tests: &[impl ToString]) -> 
     Ok(())
 }
 
+/// Writes the list of flaky tests as JSON, skipping if empty.
+fn write_flaky_tests(worker_dir: &Utf8Path, flaky_tests: &[FlakyTest]) -> Result<()> {
+    if !flaky_tests.is_empty() {
+        let records: Vec<FlakyTestRecord> = flaky_tests.iter().map(FlakyTest::to_record).collect();
+        let json = serde_json::to_string_pretty(&records)?;
+        fs::write(worker_dir.join(FLAKY_TESTS_FILE), json)?;
+    }
+    Ok(())
+}
+
 /// Reads a JSON file from a directory and deserializes it, returning `None` if the file
 /// does not exist.
 fn read_and_parse<T: DeserializeOwned>(dir: &Utf8Path, filename: &str) -> Result<Option<T>> {
@@ -185,6 +197,10 @@ fn read_worker_results(worker_dir: &Utf8Path, results: &mut AggregatedResults) -
 
     if let Some(failed) = read_and_parse::<Vec<String>>(worker_dir, FAILED_TESTS_FILE)? {
         results.failed_tests.extend(failed);
+    }
+
+    if let Some(flaky) = read_and_parse::<Vec<FlakyTestRecord>>(worker_dir, FLAKY_TESTS_FILE)? {
+        results.flaky_tests.extend(flaky);
     }
 
     if let Some(durations) =

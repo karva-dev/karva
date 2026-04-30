@@ -93,21 +93,48 @@ impl<'a> Context<'a> {
         result
     }
 
-    /// Forward a failed retry attempt to the reporter. Does not touch
-    /// summary stats; the test's final outcome is registered separately.
-    pub fn report_retry_attempt(
+    /// Forward a per-attempt outcome to the reporter. Does not touch
+    /// summary stats; the test's final outcome is registered separately
+    /// via [`Self::register_retried_result`].
+    pub fn report_test_attempt(
         &self,
         test_case_name: &QualifiedTestName,
         attempt: u32,
+        result: IndividualTestResultKind,
         duration: std::time::Duration,
     ) {
-        self.result()
-            .report_retry_attempt(test_case_name, attempt, duration, Some(self.reporter));
+        self.result().report_test_attempt(
+            test_case_name,
+            attempt,
+            result,
+            duration,
+            Some(self.reporter),
+        );
     }
 
-    /// Mark that the most recently registered test was retried at least once.
-    pub fn mark_retried(&self) {
-        self.result().mark_retried();
+    /// Register the final outcome of a retried test. Updates summary stats
+    /// (counting the test as flaky if it ultimately passed) without
+    /// emitting a duplicate result line — the per-attempt `TRY N STATUS`
+    /// lines already showed every attempt.
+    pub fn register_retried_result(
+        &self,
+        test_case_name: &QualifiedTestName,
+        result: &IndividualTestResultKind,
+        duration: std::time::Duration,
+        total_attempts: u32,
+    ) -> bool {
+        let passed = matches!(
+            result,
+            IndividualTestResultKind::Passed | IndividualTestResultKind::Skipped { .. }
+        );
+        self.result().register_retried_result(
+            test_case_name,
+            result,
+            duration,
+            total_attempts,
+            Some(self.reporter),
+        );
+        passed
     }
 
     pub(crate) fn report_diagnostic<'ctx>(

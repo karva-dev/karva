@@ -5,7 +5,7 @@ use std::fmt::Write;
 use std::time::{Duration, Instant};
 
 use anyhow::{Context as _, Result};
-use karva_cache::AggregatedResults;
+use karva_cache::{AggregatedResults, FlakyTestRecord};
 use karva_cli::{OutputFormat, TestCommand};
 use karva_logging::{Printer, Stdout, set_colored_override, setup_tracing};
 use karva_metadata::filter::FiltersetSet;
@@ -153,10 +153,37 @@ pub fn print_test_output(
     }
 
     let mut result_stdout = printer
-        .stream_for_summary(result.stats.is_success(), result.stats.retried() > 0)
+        .stream_for_summary(result.stats.is_success(), result.stats.flaky() > 0)
         .lock();
     write!(result_stdout, "{}", result.stats.display(start_time))?;
+    print_flaky_section(&mut result_stdout, &result.flaky_tests)?;
 
+    Ok(())
+}
+
+/// Print one `FLAKY M/T [duration] module::name` line per flaky test.
+fn print_flaky_section(stdout: &mut Stdout, flaky_tests: &[FlakyTestRecord]) -> Result<()> {
+    use colored::Colorize;
+    use karva_logging::time::format_duration_bracketed;
+
+    for record in flaky_tests {
+        let label = format!("FLAKY {}/{}", record.passed_on, record.total_attempts);
+        let padding = " ".repeat(12usize.saturating_sub(label.len()));
+        let colored_label = label.yellow().bold();
+        let duration_str = format_duration_bracketed(record.duration);
+        let module = record.module_name.cyan();
+        let fn_name = record.function_name.blue().bold();
+        let params = record
+            .params
+            .as_deref()
+            .map(|p| p.blue().bold().to_string())
+            .unwrap_or_default();
+
+        writeln!(
+            stdout,
+            "{padding}{colored_label} {duration_str} {module}::{fn_name}{params}"
+        )?;
+    }
     Ok(())
 }
 

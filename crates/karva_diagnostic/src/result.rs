@@ -1,5 +1,5 @@
 use std::fmt::Debug;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 use std::{collections::HashMap, fmt};
 
 use colored::Colorize;
@@ -10,6 +10,46 @@ use serde::de::{self, MapAccess};
 use serde::{Deserialize, Deserializer, Serialize, Serializer, de::Visitor};
 
 use crate::reporter::Reporter;
+
+/// A test that passed only after one or more retries. Held in worker
+/// memory; serialized as [`FlakyTestRecord`] when persisted to the cache.
+#[derive(Debug, Clone)]
+pub struct FlakyTest {
+    pub test_name: QualifiedTestName,
+    pub passed_on: u32,
+    pub total_attempts: u32,
+    pub duration: Duration,
+}
+
+impl FlakyTest {
+    pub fn to_record(&self) -> FlakyTestRecord {
+        FlakyTestRecord {
+            module_name: self
+                .test_name
+                .function_name()
+                .module_path()
+                .module_name()
+                .to_string(),
+            function_name: self.test_name.function_name().function_name().to_string(),
+            params: self.test_name.params().map(str::to_string),
+            passed_on: self.passed_on,
+            total_attempts: self.total_attempts,
+            duration: self.duration,
+        }
+    }
+}
+
+/// Serializable form of [`FlakyTest`] used by the cache and aggregation.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FlakyTestRecord {
+    pub module_name: String,
+    pub function_name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub params: Option<String>,
+    pub passed_on: u32,
+    pub total_attempts: u32,
+    pub duration: Duration,
+}
 
 /// Represents the result of a test run.
 ///
@@ -29,6 +69,9 @@ pub struct TestRunResult {
 
     /// Names of tests that failed during this run.
     failed_tests: Vec<QualifiedFunctionName>,
+
+    /// Tests that passed only after at least one retry.
+    flaky_tests: Vec<FlakyTest>,
 }
 
 impl TestRunResult {
@@ -77,23 +120,57 @@ impl TestRunResult {
             .or_insert(duration);
     }
 
-    /// Record that a test had to be retried. Called once per test that needed
-    /// at least one retry, in addition to its final pass/fail registration.
-    pub fn mark_retried(&mut self) {
-        self.stats.add(TestResultKind::Retried);
+    /// Register the final outcome of a test that went through retries.
+    /// Updates summary stats and durations but does not emit a separate
+    /// `report_test_case_result` line — the per-attempt `TRY N STATUS`
+    /// lines are the user-visible output for a retried test.
+    ///
+    /// `total_attempts` is the total number of attempts that ran (including
+    /// the final one). When the final outcome is `Passed`, the test is
+    /// counted as flaky.
+    pub fn register_retried_result(
+        &mut self,
+        test_case_name: &QualifiedTestName,
+        result: &IndividualTestResultKind,
+        duration: std::time::Duration,
+        total_attempts: u32,
+        _reporter: Option<&dyn Reporter>,
+    ) {
+        self.stats.add(result.clone().into());
+
+        let function_name = test_case_name.function_name().clone();
+
+        if matches!(result, IndividualTestResultKind::Failed) {
+            self.failed_tests.push(function_name.clone());
+        } else if matches!(result, IndividualTestResultKind::Passed) {
+            self.stats.add(TestResultKind::Flaky);
+            self.flaky_tests.push(FlakyTest {
+                test_name: test_case_name.clone(),
+                passed_on: total_attempts,
+                total_attempts,
+                duration,
+            });
+        }
+
+        self.durations
+            .entry(function_name)
+            .and_modify(|existing_duration| *existing_duration += duration)
+            .or_insert(duration);
     }
 
-    /// Forward a per-attempt failure notification to the reporter without
-    /// touching summary stats. Stats are only updated for the final outcome.
-    pub fn report_retry_attempt(
+    /// Forward a per-attempt notification to the reporter without touching
+    /// summary stats. Called once per attempt of a retried test, including
+    /// the final attempt.
+    pub fn report_test_attempt(
         &self,
         test_case_name: &QualifiedTestName,
         attempt: u32,
+        result: IndividualTestResultKind,
         duration: std::time::Duration,
         reporter: Option<&dyn Reporter>,
     ) {
         if let Some(reporter) = reporter {
-            reporter.report_retry_attempt(test_case_name, attempt, duration);
+            reporter.report_test_attempt(test_case_name, attempt, result, duration);
         }
     }
 
@@ -109,6 +186,10 @@ impl TestRunResult {
 
     pub fn failed_tests(&self) -> &[QualifiedFunctionName] {
         &self.failed_tests
+    }
+
+    pub fn flaky_tests(&self) -> &[FlakyTest] {
+        &self.flaky_tests
     }
 }
 
@@ -134,10 +215,10 @@ pub enum TestResultKind {
     Passed,
     Failed,
     Skipped,
-    /// A test that was retried at least once. Tracked alongside (not instead
-    /// of) the test's final `Passed`/`Failed` outcome so the summary can
-    /// report how many tests needed retries to succeed.
-    Retried,
+    /// A test that passed only after at least one retry. Tracked alongside
+    /// (not instead of) `Passed` so the summary can show how many of the
+    /// passing tests are flaky.
+    Flaky,
 }
 
 impl TestResultKind {
@@ -146,7 +227,7 @@ impl TestResultKind {
             Self::Passed => "passed",
             Self::Failed => "failed",
             Self::Skipped => "skipped",
-            Self::Retried => "retried",
+            Self::Flaky => "flaky",
         }
     }
 
@@ -155,7 +236,7 @@ impl TestResultKind {
             "passed" => Ok(Self::Passed),
             "failed" => Ok(Self::Failed),
             "skipped" => Ok(Self::Skipped),
-            "retried" => Ok(Self::Retried),
+            "flaky" => Ok(Self::Flaky),
             _ => Err("invalid TestResultKind"),
         }
     }
@@ -167,8 +248,8 @@ pub struct TestResultStats {
 }
 
 impl TestResultStats {
-    /// Total number of tests run. `Retried` is a marker on a test's final
-    /// outcome (Passed/Failed) and is not counted as a separate test.
+    /// Total number of tests run. `Flaky` is a marker on a passing test and
+    /// is not counted as a separate test.
     pub fn total(&self) -> usize {
         self.passed() + self.failed() + self.skipped()
     }
@@ -202,8 +283,8 @@ impl TestResultStats {
         self.get(TestResultKind::Skipped)
     }
 
-    pub fn retried(&self) -> usize {
-        self.get(TestResultKind::Retried)
+    pub fn flaky(&self) -> usize {
+        self.get(TestResultKind::Flaky)
     }
 
     pub fn add(&mut self, kind: TestResultKind) {
@@ -252,7 +333,7 @@ impl<'de> Deserialize<'de> for TestResultStats {
 
                 while let Some((key, value)) = access.next_entry::<String, usize>()? {
                     let kind = TestResultKind::from_str(&key).map_err(|_| {
-                        de::Error::unknown_field(&key, &["passed", "failed", "skipped", "retried"])
+                        de::Error::unknown_field(&key, &["passed", "failed", "skipped", "flaky"])
                     })?;
                     inner.insert(kind, value);
                 }
@@ -290,12 +371,16 @@ impl std::fmt::Display for DisplayTestResultStats<'_> {
             write!(f, "{}", label.red().bold())?;
         }
 
-        let mut parts = vec![
+        let passed_text = if self.stats.flaky() > 0 {
+            format!(
+                "{} passed ({} flaky)",
+                self.stats.passed(),
+                self.stats.flaky()
+            )
+        } else {
             format!("{} passed", self.stats.passed())
-                .green()
-                .bold()
-                .to_string(),
-        ];
+        };
+        let mut parts = vec![passed_text.green().bold().to_string()];
         if self.stats.failed() > 0 {
             parts.push(
                 format!("{} failed", self.stats.failed())
@@ -310,14 +395,6 @@ impl std::fmt::Display for DisplayTestResultStats<'_> {
                 .bold()
                 .to_string(),
         );
-        if self.stats.retried() > 0 {
-            parts.push(
-                format!("{} retried", self.stats.retried())
-                    .yellow()
-                    .bold()
-                    .to_string(),
-            );
-        }
 
         writeln!(
             f,

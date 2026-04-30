@@ -1254,10 +1254,11 @@ def test_1():
       TRY 1 FAIL [TIME] test::test_1
       TRY 2 FAIL [TIME] test::test_1
       TRY 3 FAIL [TIME] test::test_1
-            PASS [TIME] test::test_1
+      TRY 4 PASS [TIME] test::test_1
 
     ────────────
-         Summary [TIME] 1 test run: 1 passed, 0 skipped, 1 retried
+         Summary [TIME] 1 test run: 1 passed (1 flaky), 0 skipped
+       FLAKY 4/4 [TIME] test::test_1
 
     ----- stderr -----
     ");
@@ -1647,10 +1648,11 @@ def test_flaky():
     ----- stdout -----
         Starting 1 test across 1 worker
       TRY 1 FAIL [TIME] test::test_flaky
-            PASS [TIME] test::test_flaky
+      TRY 2 PASS [TIME] test::test_flaky
 
     ────────────
-         Summary [TIME] 1 test run: 1 passed, 0 skipped, 1 retried
+         Summary [TIME] 1 test run: 1 passed (1 flaky), 0 skipped
+       FLAKY 2/2 [TIME] test::test_flaky
 
     ----- stderr -----
     ");
@@ -1978,7 +1980,7 @@ def test_always_fails(): assert False
         Starting 1 test across 1 worker
       TRY 1 FAIL [TIME] test::test_always_fails
       TRY 2 FAIL [TIME] test::test_always_fails
-            FAIL [TIME] test::test_always_fails
+      TRY 3 FAIL [TIME] test::test_always_fails
 
     diagnostics:
 
@@ -1996,7 +1998,7 @@ def test_always_fails(): assert False
       |
 
     ────────────
-         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped, 1 retried
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
     ");
@@ -2029,7 +2031,8 @@ def test_flaky():
         Starting 1 test across 1 worker
 
     ────────────
-         Summary [TIME] 1 test run: 1 passed, 0 skipped, 1 retried
+         Summary [TIME] 1 test run: 1 passed (1 flaky), 0 skipped
+       FLAKY 2/2 [TIME] test::test_flaky
 
     ----- stderr -----
     "
@@ -2064,7 +2067,8 @@ def test_flaky():
     ----- stdout -----
 
     ────────────
-         Summary [TIME] 1 test run: 1 passed, 0 skipped, 1 retried
+         Summary [TIME] 1 test run: 1 passed (1 flaky), 0 skipped
+       FLAKY 2/2 [TIME] test::test_flaky
 
     ----- stderr -----
     "
