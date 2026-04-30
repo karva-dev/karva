@@ -141,6 +141,7 @@ fn print_report(
     let rule_len = header.chars().count();
     let rule = "-".repeat(rule_len);
 
+    writeln!(out)?;
     writeln!(out, "{}", header.bold())?;
     writeln!(out, "{rule}")?;
 

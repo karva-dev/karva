@@ -39,6 +39,7 @@ def test_add():
 
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
+
     Name              Stmts   Miss   Cover
     [LONG-LINE]
     test_covered.py  [N]  [N]  [N]%
@@ -87,6 +88,7 @@ def test_add():
 
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
+
     Name           Stmts   Miss   Cover
     [LONG-LINE]
     src/mymod.py  [N]  [N]  [N]%
