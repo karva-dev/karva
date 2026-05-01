@@ -36,7 +36,7 @@ fn test_custom_tag_with_args() {
         r#"
 import karva
 
-@karva.tags.timeout(30, "seconds")
+@karva.tags.benchmark(30, "seconds")
 def test_1():
     assert True
         "#,

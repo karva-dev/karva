@@ -3,7 +3,7 @@ use std::fmt::Write;
 
 use camino::Utf8Path;
 use pyo3::prelude::*;
-use pyo3::types::PyAnyMethods;
+use pyo3::types::{PyAnyMethods, PyDict};
 use pyo3::{PyResult, Python};
 use ruff_source_file::{SourceFile, SourceFileBuilder};
 
@@ -20,6 +20,101 @@ pub(crate) fn source_file(path: &Utf8Path) -> SourceFile {
 pub(crate) fn run_coroutine(py: Python<'_>, coroutine: Py<PyAny>) -> PyResult<Py<PyAny>> {
     let asyncio = py.import("asyncio")?;
     Ok(asyncio.call_method1("run", (coroutine,))?.unbind())
+}
+
+/// Runs a Python test with a timeout, raising `TimeoutError` if it does not
+/// finish in time.
+///
+/// Sync tests are submitted to a single-worker `ThreadPoolExecutor`; if the
+/// future does not complete within `seconds`, the still-running thread is
+/// abandoned (Python has no safe way to interrupt arbitrary code) and the
+/// executor is shut down without waiting. Async tests are wrapped in
+/// `asyncio.wait_for`, which cancels the coroutine on timeout.
+pub(crate) fn run_test_with_timeout(
+    py: Python<'_>,
+    function: &Py<PyAny>,
+    kwargs: &HashMap<String, Py<PyAny>>,
+    is_async: bool,
+    seconds: f64,
+) -> PyResult<Py<PyAny>> {
+    let kwargs_dict = PyDict::new(py);
+    for (key, value) in kwargs {
+        kwargs_dict.set_item(key, value)?;
+    }
+
+    if is_async {
+        run_async_with_timeout(py, function, &kwargs_dict, seconds)
+    } else {
+        run_sync_with_timeout(py, function, &kwargs_dict, seconds)
+    }
+}
+
+fn run_sync_with_timeout(
+    py: Python<'_>,
+    function: &Py<PyAny>,
+    kwargs_dict: &Bound<'_, PyDict>,
+    seconds: f64,
+) -> PyResult<Py<PyAny>> {
+    let concurrent_futures = py.import("concurrent.futures")?;
+    let timeout_class = concurrent_futures.getattr("TimeoutError")?;
+    let executor = concurrent_futures
+        .getattr("ThreadPoolExecutor")?
+        .call1((1u32,))?;
+
+    let future = executor.call_method("submit", (function,), Some(kwargs_dict))?;
+    let result = future.call_method1("result", (seconds,));
+
+    let shutdown_kwargs = PyDict::new(py);
+    shutdown_kwargs.set_item("wait", false)?;
+    executor.call_method("shutdown", (), Some(&shutdown_kwargs))?;
+
+    rebrand_timeout_error(py, &timeout_class, result.map(pyo3::Bound::unbind), seconds)
+}
+
+fn run_async_with_timeout(
+    py: Python<'_>,
+    function: &Py<PyAny>,
+    kwargs_dict: &Bound<'_, PyDict>,
+    seconds: f64,
+) -> PyResult<Py<PyAny>> {
+    let asyncio = py.import("asyncio")?;
+    let timeout_class = asyncio.getattr("TimeoutError")?;
+    let coroutine = function.call(py, (), Some(kwargs_dict))?;
+    let wait_for = asyncio.call_method1("wait_for", (coroutine, seconds))?;
+    rebrand_timeout_error(
+        py,
+        &timeout_class,
+        asyncio
+            .call_method1("run", (wait_for,))
+            .map(pyo3::Bound::unbind),
+        seconds,
+    )
+}
+
+/// Replace a `TimeoutError` raised from inside `concurrent.futures` or
+/// `asyncio` with one that has no traceback, so the test failure diagnostic
+/// points at the test function instead of at framework internals.
+///
+/// `timeout_class` is the path-specific timeout exception class
+/// (`concurrent.futures.TimeoutError` for sync, `asyncio.TimeoutError` for
+/// async). On Python >= 3.11 both are aliases of the builtin `TimeoutError`,
+/// but on 3.10 they are distinct classes — checking the imported class is
+/// version-portable.
+fn rebrand_timeout_error(
+    py: Python<'_>,
+    timeout_class: &Bound<'_, PyAny>,
+    result: PyResult<Py<PyAny>>,
+    seconds: f64,
+) -> PyResult<Py<PyAny>> {
+    match result {
+        Ok(v) => Ok(v),
+        Err(err) if err.matches(py, timeout_class).unwrap_or(false) => {
+            Err(pyo3::exceptions::PyTimeoutError::new_err(format!(
+                "Test exceeded timeout of {seconds} seconds"
+            )))
+        }
+        Err(err) => Err(err),
+    }
 }
 
 /// Patches an async test function wrapped by a sync decorator (e.g. Hypothesis `@given`).
