@@ -3,6 +3,172 @@ use insta_cmd::assert_cmd_snapshot;
 use crate::common::TestContext;
 
 #[test]
+fn test_no_cov_no_coverage_table() {
+    let context = TestContext::with_file(
+        "test_simple.py",
+        r"
+def test_one():
+    assert 1 + 1 == 2
+",
+    );
+
+    assert_cmd_snapshot!(
+        context.command_no_parallel()
+            .arg("--status-level=none")
+            .arg("test_simple.py"),
+        @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    "
+    );
+}
+
+#[test]
+fn test_cov_control_flow() {
+    let context = TestContext::with_file(
+        "test_control.py",
+        r"
+def both_branches(x):
+    if x > 0:
+        return 'pos'
+    return 'neg'
+
+def with_loop(n):
+    total = 0
+    for i in range(n):
+        total += i
+    return total
+
+def with_try():
+    try:
+        return 'ok'
+    except Exception:
+        return 'err'
+
+def test_pos():
+    assert both_branches(1) == 'pos'
+    assert with_loop(2) == 1
+    assert with_try() == 'ok'
+",
+    );
+
+    assert_cmd_snapshot!(
+        context.command_no_parallel()
+            .arg("--cov")
+            .arg("--status-level=none")
+            .arg("test_control.py"),
+        @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    Name              Stmts   Miss   Cover
+    [LONG-LINE]
+    test_control.py      17      2     88%
+    [LONG-LINE]
+    TOTAL                17      2     88%
+
+    ----- stderr -----
+    "
+    );
+}
+
+#[test]
+fn test_cov_saves_on_test_failure() {
+    let context = TestContext::with_file(
+        "test_failing.py",
+        r"
+def helper():
+    return 1
+
+def test_pass():
+    assert helper() == 1
+
+def test_fail():
+    assert helper() == 999
+",
+    );
+
+    assert_cmd_snapshot!(
+        context.command_no_parallel()
+            .arg("--cov")
+            .arg("--status-level=none")
+            .arg("--final-status-level=none")
+            .arg("test_failing.py"),
+        @"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+
+    Name              Stmts   Miss   Cover
+    [LONG-LINE]
+    test_failing.py       6      0    100%
+    [LONG-LINE]
+    TOTAL                 6      0    100%
+
+    ----- stderr -----
+    "
+    );
+}
+
+#[test]
+fn test_cov_multiple_sources() {
+    let context = TestContext::with_files([
+        ("pkg_a/__init__.py", ""),
+        ("pkg_a/code.py", "def a():\n    return 1\n"),
+        ("pkg_b/__init__.py", ""),
+        ("pkg_b/code.py", "def b():\n    return 2\n"),
+        ("pkg_c/__init__.py", ""),
+        ("pkg_c/code.py", "def c():\n    return 3\n"),
+        (
+            "test_multi.py",
+            r"
+from pkg_a.code import a
+from pkg_b.code import b
+from pkg_c.code import c
+
+def test_all():
+    assert a() + b() + c() == 6
+",
+        ),
+    ]);
+
+    assert_cmd_snapshot!(
+        context.command_no_parallel()
+            .arg("--cov=pkg_a")
+            .arg("--cov=pkg_b")
+            .arg("--status-level=none")
+            .arg("test_multi.py"),
+        @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    Name            Stmts   Miss   Cover
+    [LONG-LINE]
+    pkg_a/code.py       2      0    100%
+    pkg_b/code.py       2      0    100%
+    [LONG-LINE]
+    TOTAL               4      0    100%
+
+    ----- stderr -----
+    "
+    );
+}
+
+#[test]
 fn test_cov_basic() {
     let context = TestContext::with_file(
         "test_covered.py",
