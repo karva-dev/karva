@@ -25,10 +25,11 @@ use crate::extensions::fixtures::{
 };
 use crate::extensions::tags::expect_fail::ExpectFailTag;
 use crate::extensions::tags::skip::{extract_skip_reason, is_skip_exception};
+use crate::extensions::tags::timeout::TimeoutTag;
 use crate::runner::fixture_resolver::RuntimeFixtureResolver;
 use crate::runner::test_iterator::{TestVariant, TestVariantIterator};
 use crate::runner::{FinalizerCache, FixtureCache};
-use crate::utils::{full_test_name, run_coroutine, source_file};
+use crate::utils::{full_test_name, run_coroutine, run_test_with_timeout, source_file};
 
 /// Executes discovered tests within a package hierarchy.
 ///
@@ -427,7 +428,17 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
 
         let is_async = stmt_function_def.is_async
             && !crate::utils::patch_async_test_function(py, &function).unwrap_or(false);
+        let timeout_seconds = tags.timeout_tag().map(TimeoutTag::seconds);
         let run_test = || {
+            if let Some(seconds) = timeout_seconds {
+                return run_test_with_timeout(
+                    py,
+                    &function,
+                    &function_arguments,
+                    is_async,
+                    seconds,
+                );
+            }
             let result = if function_arguments.is_empty() {
                 function.call0(py)
             } else {

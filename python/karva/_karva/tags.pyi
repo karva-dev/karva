@@ -30,3 +30,12 @@ def expect_fail(f: Callable[_P, _T]) -> TestFunction[_P, _T]: ...
 @overload
 def expect_fail(*conditions: bool, reason: str | None = ...) -> Tags:
     """Expect the current test to fail given the conditions."""
+
+def timeout(seconds: float) -> Tags:
+    """Fail the current test if it runs longer than ``seconds``.
+
+    The test is executed inside a daemon thread. If the thread is still alive
+    once the limit elapses, a ``TimeoutError`` is raised against the test and
+    the thread is left to finish on its own (Python cannot safely interrupt
+    arbitrary code).
+    """

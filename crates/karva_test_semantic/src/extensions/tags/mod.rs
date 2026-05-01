@@ -10,12 +10,14 @@ pub mod expect_fail;
 pub mod parametrize;
 pub mod python;
 pub mod skip;
+pub mod timeout;
 mod use_fixtures;
 
 use custom::CustomTag;
 use expect_fail::ExpectFailTag;
 use parametrize::{ParametrizationArgs, ParametrizeTag};
 use skip::SkipTag;
+use timeout::TimeoutTag;
 use use_fixtures::UseFixturesTag;
 
 /// Parsed conditions and reason extracted from a pytest mark's args and kwargs.
@@ -73,6 +75,7 @@ pub enum Tag {
     UseFixtures(UseFixturesTag),
     Skip(SkipTag),
     ExpectFail(ExpectFailTag),
+    Timeout(TimeoutTag),
     Custom(CustomTag),
 }
 
@@ -87,6 +90,7 @@ impl Tag {
             "usefixtures" => UseFixturesTag::try_from_pytest_mark(py_mark).map(Self::UseFixtures),
             "skip" | "skipif" => SkipTag::try_from_pytest_mark(py_mark).map(Self::Skip),
             "xfail" => ExpectFailTag::try_from_pytest_mark(py_mark).map(Self::ExpectFail),
+            "timeout" => TimeoutTag::try_from_pytest_mark(py_mark).map(Self::Timeout),
             // Any other marker is treated as a custom marker
             _ => CustomTag::try_from_pytest_mark(py_mark).map(Self::Custom),
         }
@@ -139,6 +143,7 @@ impl Tag {
             PyTag::ExpectFail { conditions, reason } => {
                 Self::ExpectFail(ExpectFailTag::new(conditions.clone(), reason.clone()))
             }
+            PyTag::Timeout { seconds } => Self::Timeout(TimeoutTag::new(*seconds)),
             PyTag::Custom {
                 tag_name,
                 tag_args,
@@ -296,5 +301,19 @@ impl Tags {
             }
         }
         None
+    }
+
+    /// Return the `TimeoutTag` if it exists.
+    ///
+    /// If multiple timeout tags are present, the last one wins so that
+    /// per-parametrize overrides take precedence over the function-level tag.
+    pub(crate) fn timeout_tag(&self) -> Option<TimeoutTag> {
+        let mut found = None;
+        for tag in &self.inner {
+            if let Tag::Timeout(timeout_tag) = tag {
+                found = Some(*timeout_tag);
+            }
+        }
+        found
     }
 }

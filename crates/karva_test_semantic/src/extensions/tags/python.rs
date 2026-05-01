@@ -29,6 +29,9 @@ pub enum PyTag {
         reason: Option<String>,
     },
 
+    #[pyo3(name = "timeout")]
+    Timeout { seconds: f64 },
+
     #[pyo3(name = "custom")]
     Custom {
         tag_name: String,
@@ -58,6 +61,7 @@ impl PyTag {
                 conditions: conditions.clone(),
                 reason: reason.clone(),
             },
+            Self::Timeout { seconds } => Self::Timeout { seconds: *seconds },
             Self::Custom {
                 tag_name,
                 tag_args,
@@ -240,6 +244,18 @@ pub mod tags {
     ) -> PyResult<Py<PyAny>> {
         parse_conditional_tag(py, conditions, reason, |conditions, reason| {
             PyTag::ExpectFail { conditions, reason }
+        })
+    }
+
+    #[pyfunction]
+    fn timeout(seconds: f64) -> PyResult<PyTags> {
+        if !(seconds.is_finite() && seconds > 0.0) {
+            return Err(PyErr::new::<PyTypeError, _>(
+                "timeout seconds must be a finite, positive number",
+            ));
+        }
+        Ok(PyTags {
+            inner: vec![PyTag::Timeout { seconds }],
         })
     }
 }
