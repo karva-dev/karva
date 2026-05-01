@@ -34,8 +34,15 @@ def expect_fail(*conditions: bool, reason: str | None = ...) -> Tags:
 def timeout(seconds: float) -> Tags:
     """Fail the current test if it runs longer than ``seconds``.
 
-    The test is executed inside a daemon thread. If the thread is still alive
-    once the limit elapses, a ``TimeoutError`` is raised against the test and
-    the thread is left to finish on its own (Python cannot safely interrupt
-    arbitrary code).
+    Sync tests are submitted to a single-worker ``concurrent.futures.ThreadPoolExecutor``;
+    if the test does not finish within the limit, a ``TimeoutError`` is raised
+    against the test and the worker thread is abandoned (Python has no safe
+    way to interrupt arbitrary code, so any side effects already started will
+    continue).
+
+    Async tests are wrapped in ``asyncio.wait_for``, which cancels the
+    coroutine via ``CancelledError`` when the limit elapses.
+
+    Fixture setup runs before the timeout starts, so slow fixtures do not
+    count toward the limit.
     """

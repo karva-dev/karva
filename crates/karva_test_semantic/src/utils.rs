@@ -39,7 +39,7 @@ pub(crate) fn run_test_with_timeout(
 ) -> PyResult<Py<PyAny>> {
     let kwargs_dict = PyDict::new(py);
     for (key, value) in kwargs {
-        kwargs_dict.set_item(key, value.as_ref())?;
+        kwargs_dict.set_item(key, value)?;
     }
 
     if is_async {
@@ -55,8 +55,9 @@ fn run_sync_with_timeout(
     kwargs_dict: &Bound<'_, PyDict>,
     seconds: f64,
 ) -> PyResult<Py<PyAny>> {
-    let executor = py
-        .import("concurrent.futures")?
+    let concurrent_futures = py.import("concurrent.futures")?;
+    let timeout_class = concurrent_futures.getattr("TimeoutError")?;
+    let executor = concurrent_futures
         .getattr("ThreadPoolExecutor")?
         .call1((1u32,))?;
 
@@ -67,7 +68,7 @@ fn run_sync_with_timeout(
     shutdown_kwargs.set_item("wait", false)?;
     executor.call_method("shutdown", (), Some(&shutdown_kwargs))?;
 
-    rebrand_timeout_error(py, result.map(pyo3::Bound::unbind), seconds)
+    rebrand_timeout_error(py, &timeout_class, result.map(pyo3::Bound::unbind), seconds)
 }
 
 fn run_async_with_timeout(
@@ -77,10 +78,12 @@ fn run_async_with_timeout(
     seconds: f64,
 ) -> PyResult<Py<PyAny>> {
     let asyncio = py.import("asyncio")?;
+    let timeout_class = asyncio.getattr("TimeoutError")?;
     let coroutine = function.call(py, (), Some(kwargs_dict))?;
     let wait_for = asyncio.call_method1("wait_for", (coroutine, seconds))?;
     rebrand_timeout_error(
         py,
+        &timeout_class,
         asyncio
             .call_method1("run", (wait_for,))
             .map(pyo3::Bound::unbind),
@@ -91,14 +94,21 @@ fn run_async_with_timeout(
 /// Replace a `TimeoutError` raised from inside `concurrent.futures` or
 /// `asyncio` with one that has no traceback, so the test failure diagnostic
 /// points at the test function instead of at framework internals.
+///
+/// `timeout_class` is the path-specific timeout exception class
+/// (`concurrent.futures.TimeoutError` for sync, `asyncio.TimeoutError` for
+/// async). On Python >= 3.11 both are aliases of the builtin `TimeoutError`,
+/// but on 3.10 they are distinct classes — checking the imported class is
+/// version-portable.
 fn rebrand_timeout_error(
     py: Python<'_>,
+    timeout_class: &Bound<'_, PyAny>,
     result: PyResult<Py<PyAny>>,
     seconds: f64,
 ) -> PyResult<Py<PyAny>> {
     match result {
         Ok(v) => Ok(v),
-        Err(err) if err.is_instance_of::<pyo3::exceptions::PyTimeoutError>(py) => {
+        Err(err) if err.matches(py, timeout_class).unwrap_or(false) => {
             Err(pyo3::exceptions::PyTimeoutError::new_err(format!(
                 "Test exceeded timeout of {seconds} seconds"
             )))
