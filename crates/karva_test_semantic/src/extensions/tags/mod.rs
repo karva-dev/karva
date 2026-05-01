@@ -304,16 +304,12 @@ impl Tags {
     }
 
     /// Return the `TimeoutTag` if it exists.
-    ///
-    /// If multiple timeout tags are present, the last one wins so that
-    /// per-parametrize overrides take precedence over the function-level tag.
     pub(crate) fn timeout_tag(&self) -> Option<TimeoutTag> {
-        let mut found = None;
         for tag in &self.inner {
             if let Tag::Timeout(timeout_tag) = tag {
-                found = Some(*timeout_tag);
+                return Some(*timeout_tag);
             }
         }
-        found
+        None
     }
 }
