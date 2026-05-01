@@ -1,17 +1,33 @@
+use std::borrow::Cow;
 use std::fmt::Write;
 use std::io;
 
 use colored::Colorize;
 use similar::{Algorithm, ChangeTag, TextDiff};
 
+/// Append a trailing newline if the input is non-empty and doesn't already end
+/// with one. `diff_lines` keeps each line's terminator as part of the line,
+/// so `}\n` and `}` are treated as different lines — normalizing both sides
+/// to end with `\n` keeps that comparison stable.
+fn ensure_trailing_newline(s: &str) -> Cow<'_, str> {
+    if s.is_empty() || s.ends_with('\n') {
+        Cow::Borrowed(s)
+    } else {
+        Cow::Owned(format!("{s}\n"))
+    }
+}
+
 /// Render a diff between `old` and `new` content into `output`.
 ///
 /// Uses `grouped_ops` for context-aware output with separators between groups,
 /// and `iter_inline_changes` for word-level emphasis on changed portions.
 fn render_diff(output: &mut String, old: &str, new: &str, width: usize) {
+    let old = ensure_trailing_newline(old);
+    let new = ensure_trailing_newline(new);
+
     let diff = TextDiff::configure()
         .algorithm(Algorithm::Patience)
-        .diff_lines(old, new);
+        .diff_lines(&old, &new);
     let ops = diff.grouped_ops(4);
 
     if ops.is_empty() {
@@ -257,6 +273,35 @@ mod tests {
                    100000 │ +CHANGED 100000
             ──────────────┴─────────────────────────
             ");
+        });
+    }
+
+    #[test]
+    fn trailing_newline_difference_is_ignored() {
+        let old = "{\n  \"a\": 1\n}\n";
+        let new = "{\n  \"a\": 1\n}";
+        assert!(
+            format_diff(old, new).is_empty(),
+            "trailing-newline-only difference should produce no diff",
+        );
+    }
+
+    #[test]
+    fn one_sided_trailing_newline_in_real_change() {
+        let old = "{\n  \"roles\": [\n    \"user\"\n  ]\n}\n";
+        let new = "{\n  \"roles\": [\n    \"user\",\n    \"hr\"\n  ]\n}";
+        settings().bind(|| {
+            insta::assert_snapshot!(format_diff(old, new), @r#"
+            ────────────┬───────────────────────────
+                1     1 │  {
+                2     2 │    "roles": [
+                3       │ -    "user"
+                      3 │ +    "user",
+                      4 │ +    "hr"
+                4     5 │    ]
+                5     6 │  }
+            ────────────┴───────────────────────────
+            "#);
         });
     }
 

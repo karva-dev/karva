@@ -230,6 +230,19 @@ fn apply_active_filters(input: &str) -> PyResult<String> {
     })
 }
 
+/// Format a snapshot path for display, relativized against the current
+/// working directory when possible so users see e.g. `snapshots/foo.snap`
+/// instead of an absolute path.
+fn display_relative(path: &Utf8Path) -> String {
+    if let Ok(cwd) = std::env::current_dir()
+        && let Ok(cwd) = Utf8PathBuf::try_from(cwd)
+        && let Ok(rel) = path.strip_prefix(&cwd)
+    {
+        return rel.to_string();
+    }
+    path.to_string()
+}
+
 /// Called by the test runner before each test to set snapshot context.
 pub fn set_snapshot_context(test_file: String, test_name: String) {
     SNAPSHOT_CONTEXT.with(|ctx| {
@@ -394,8 +407,9 @@ fn assert_snapshot_impl(
         })?;
 
         let diff = format_diff(&existing.content, serialized);
+        let display_path = display_relative(&snap_path);
         return Err(SnapshotMismatchError::new_err(format!(
-            "Snapshot mismatch for '{snapshot_name}'.\nSnapshot file: {snap_path}\n{diff}"
+            "Snapshot mismatch for '{snapshot_name}'.\nSnapshot file: {display_path}\n{diff}"
         )));
     }
 
@@ -410,8 +424,9 @@ fn assert_snapshot_impl(
         })?;
 
         let pending = Utf8PathBuf::from(format!("{snap_path}.new"));
+        let display_path = display_relative(&pending);
         return Err(SnapshotMismatchError::new_err(format!(
-            "New snapshot for '{snapshot_name}'.\nRun `karva snapshot accept` to accept, or re-run with `--snapshot-update`.\nPending file: {pending}"
+            "New snapshot for '{snapshot_name}'.\nRun `karva snapshot accept` to accept, or re-run with `--snapshot-update`.\nPending file: {display_path}"
         )));
     }
 
@@ -481,8 +496,9 @@ fn handle_inline_snapshot(
 
     if is_empty {
         let pending = Utf8PathBuf::from(format!("{snap_path}.new"));
+        let display_path = display_relative(&pending);
         return Err(SnapshotMismatchError::new_err(format!(
-            "New inline snapshot for '{test_name}'.\nRun `karva snapshot accept` to accept, or re-run with `--snapshot-update`.\nPending file: {pending}"
+            "New inline snapshot for '{test_name}'.\nRun `karva snapshot accept` to accept, or re-run with `--snapshot-update`.\nPending file: {display_path}"
         )));
     }
 

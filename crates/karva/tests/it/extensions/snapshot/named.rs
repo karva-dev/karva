@@ -120,7 +120,7 @@ def test_hello():
       |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
       |
     info: Snapshot mismatch for 'test_hello--greeting'.
-          Snapshot file: <temp_dir>/snapshots/test__test_hello--greeting.snap
+          Snapshot file: snapshots/test__test_hello--greeting.snap
           ────────────┬───────────────────────────
               1       │ -hello world
                     1 │ +goodbye world

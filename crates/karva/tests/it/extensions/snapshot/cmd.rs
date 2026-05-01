@@ -85,7 +85,7 @@ def test_echo():
       |
     info: New snapshot for 'test_echo'.
           Run `karva snapshot accept` to accept, or re-run with `--snapshot-update`.
-          Pending file: <temp_dir>/snapshots/test__test_echo.snap.new
+          Pending file: snapshots/test__test_echo.snap.new
 
     ────────────
          Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
@@ -617,7 +617,7 @@ def test_change():
       |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
       |
     info: Snapshot mismatch for 'test_change'.
-          Snapshot file: <temp_dir>/snapshots/test__test_change.snap
+          Snapshot file: snapshots/test__test_change.snap
           ────────────┬───────────────────────────
               1     1 │  success: true
               2     2 │  exit_code: 0
