@@ -188,7 +188,7 @@ fn spawn_workers(
         cmd.args(inner_cli_args(project.settings(), args));
 
         if !args.cov.is_empty() {
-            let data_file = crate::coverage::worker_data_file(&coverage_dir, worker_id);
+            let data_file = karva_coverage::worker_data_file(&coverage_dir, worker_id);
             cmd.arg("--cov-data-file").arg(data_file.as_str());
         }
 
@@ -321,7 +321,7 @@ pub fn run_parallel_tests(
 
     if !args.cov.is_empty() {
         let coverage_dir = coverage_data_dir(&cache_dir);
-        crate::coverage::prepare_data_dir(&coverage_dir)?;
+        karva_coverage::prepare_data_dir(&coverage_dir)?;
     }
 
     tracing::info!("Spawning {} workers", partitions.len());

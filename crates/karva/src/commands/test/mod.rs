@@ -97,7 +97,7 @@ pub fn test(args: TestCommand) -> Result<ExitStatus> {
     if !sub_command.cov.is_empty() {
         let cache_dir = project.cwd().join(karva_cache::CACHE_DIR);
         let coverage_dir = karva_runner::coverage_data_dir(&cache_dir);
-        if let Err(err) = karva_runner::coverage::combine_and_report(project.cwd(), &coverage_dir) {
+        if let Err(err) = karva_coverage::combine_and_report(project.cwd(), &coverage_dir) {
             tracing::error!("Coverage report failed: {err:#}");
         }
     }

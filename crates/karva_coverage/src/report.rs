@@ -1,45 +1,28 @@
-//! Coverage post-processing: combining per-worker JSON data files and
-//! producing a terminal report. Pure Rust — no Python subprocess needed.
+//! Combine per-worker JSON files and produce a terminal report.
 //!
-//! Input: one `karva-coverage.<worker_id>.json` file per worker, written by
-//! the in-tree tracer (see `karva_test_semantic::coverage`). Each file maps
-//! absolute filenames to the executable line set and the executed line set
-//! for that worker.
-//!
-//! Output: a `Name / Stmts / Miss / Cover` table to stdout, sorted by
-//! filename, with a `TOTAL` row.
+//! Pure Rust — runs in the main process, never touches Python. Reads the
+//! `karva-coverage.<worker_id>.json` files written by the [`tracer`](crate::tracer),
+//! unions the per-file line sets, and prints a `Name / Stmts / Miss / Cover`
+//! table sorted alphabetically with a `TOTAL` row.
 
-use std::collections::BTreeMap;
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::io::Write;
 
 use anyhow::{Context, Result};
-use camino::Utf8Path;
+use camino::{Utf8Path, Utf8PathBuf};
 use colored::Colorize;
-use serde::Deserialize;
 
-const WORKER_FILE_PREFIX: &str = "karva-coverage.";
-const WORKER_FILE_SUFFIX: &str = ".json";
+use crate::data::{WORKER_FILE_PREFIX, WORKER_FILE_SUFFIX, WorkerFile};
 
-#[derive(Debug, Deserialize)]
-struct WorkerFile {
-    files: BTreeMap<String, FileEntry>,
-}
-
-#[derive(Debug, Deserialize)]
-struct FileEntry {
-    executable: Vec<u32>,
-    executed: Vec<u32>,
-}
-
-/// The data file path for a given worker id.
-pub fn worker_data_file(data_dir: &Utf8Path, worker_id: usize) -> camino::Utf8PathBuf {
+/// The data file path a worker should write to.
+pub fn worker_data_file(data_dir: &Utf8Path, worker_id: usize) -> Utf8PathBuf {
     data_dir.join(format!(
         "{WORKER_FILE_PREFIX}{worker_id}{WORKER_FILE_SUFFIX}"
     ))
 }
 
-/// Prepare the coverage data directory by clearing any stale per-worker files.
+/// Prepare the coverage data directory by creating it (if missing) and
+/// removing any stale per-worker files left from a previous run.
 pub fn prepare_data_dir(data_dir: &Utf8Path) -> Result<()> {
     if data_dir.exists() {
         for entry in std::fs::read_dir(data_dir.as_std_path())
@@ -61,7 +44,8 @@ pub fn prepare_data_dir(data_dir: &Utf8Path) -> Result<()> {
     Ok(())
 }
 
-/// Combine per-worker data files and print a terminal report to stdout.
+/// Combine per-worker data files in `data_dir` and print a terminal report
+/// to stdout. No-ops if there is no data to report.
 pub fn combine_and_report(cwd: &Utf8Path, data_dir: &Utf8Path) -> Result<()> {
     let combined = combine(data_dir)?;
     if combined.is_empty() {

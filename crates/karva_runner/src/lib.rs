@@ -1,5 +1,4 @@
 mod collection;
-pub mod coverage;
 mod orchestration;
 mod partition;
 mod shutdown;

@@ -1,6 +1,5 @@
 pub(crate) mod collection;
 mod context;
-mod coverage;
 pub(crate) mod diagnostic;
 pub(crate) mod discovery;
 pub(crate) mod extensions;
@@ -10,16 +9,16 @@ mod runner;
 pub mod utils;
 
 pub(crate) use context::Context;
-pub use coverage::CoverageConfig;
+pub use karva_coverage::CoverageConfig;
 pub use python::init_module;
 
 use camino::Utf8Path;
+use karva_coverage::CoverageSession;
 use karva_diagnostic::{Reporter, TestRunResult};
 use karva_metadata::ProjectSettings;
 use karva_project::path::{TestPath, TestPathError};
 use ruff_python_ast::PythonVersion;
 
-use crate::coverage::CoverageSession;
 use crate::discovery::StandardDiscoverer;
 use crate::py_attach::attach_with_output;
 use crate::runner::PackageRunner;
