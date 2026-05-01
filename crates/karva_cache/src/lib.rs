@@ -6,7 +6,7 @@ pub use cache::{
     read_recent_durations, write_last_failed,
 };
 pub use hash::RunHash;
-pub use karva_diagnostic::FlakyTestRecord;
+pub use karva_diagnostic::{DisplayFlakyTestRecords, FlakyTestRecord};
 
 pub const CACHE_DIR: &str = ".karva_cache";
 pub(crate) const STATS_FILE: &str = "stats.json";

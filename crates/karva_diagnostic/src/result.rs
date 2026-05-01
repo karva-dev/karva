@@ -51,6 +51,58 @@ pub struct FlakyTestRecord {
     pub duration: Duration,
 }
 
+impl FlakyTestRecord {
+    /// Returns a value that formats this record as a single
+    /// `   FLAKY M/T [duration] module::name(params)` line.
+    pub fn display(&self) -> DisplayFlakyTestRecord<'_> {
+        DisplayFlakyTestRecord(self)
+    }
+}
+
+/// `Display` wrapper for one [`FlakyTestRecord`].
+pub struct DisplayFlakyTestRecord<'a>(&'a FlakyTestRecord);
+
+impl fmt::Display for DisplayFlakyTestRecord<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let record = self.0;
+        let label = format!("FLAKY {}/{}", record.passed_on, record.total_attempts);
+        let padding = " ".repeat(12usize.saturating_sub(label.len()));
+        let colored_label = label.yellow().bold();
+        let duration_str = format_duration_bracketed(record.duration);
+        let module = record.module_name.cyan();
+        let fn_name = record.function_name.blue().bold();
+        let params = record
+            .params
+            .as_deref()
+            .map(|p| p.blue().bold().to_string())
+            .unwrap_or_default();
+
+        writeln!(
+            f,
+            "{padding}{colored_label} {duration_str} {module}::{fn_name}{params}"
+        )
+    }
+}
+
+/// `Display` wrapper for a slice of [`FlakyTestRecord`]s. Renders each
+/// record on its own line; emits nothing for an empty slice.
+pub struct DisplayFlakyTestRecords<'a>(&'a [FlakyTestRecord]);
+
+impl<'a> DisplayFlakyTestRecords<'a> {
+    pub fn new(records: &'a [FlakyTestRecord]) -> Self {
+        Self(records)
+    }
+}
+
+impl fmt::Display for DisplayFlakyTestRecords<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for record in self.0 {
+            write!(f, "{}", record.display())?;
+        }
+        Ok(())
+    }
+}
+
 /// Represents the result of a test run.
 ///
 /// This is held in the test context and updated throughout the test run.

@@ -5,8 +5,8 @@ mod traceback;
 
 pub use reporter::{DummyReporter, Reporter, TestCaseReporter};
 pub use result::{
-    FlakyTest, FlakyTestRecord, IndividualTestResultKind, TestResultKind, TestResultStats,
-    TestRunResult,
+    DisplayFlakyTestRecord, DisplayFlakyTestRecords, FlakyTest, FlakyTestRecord,
+    IndividualTestResultKind, TestResultKind, TestResultStats, TestRunResult,
 };
 
 #[cfg(feature = "traceback")]
