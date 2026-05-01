@@ -272,7 +272,10 @@ fn install_settrace(py: Python<'_>, tracer: &Py<CoverageTracer>) -> PyResult<()>
     Ok(())
 }
 
-fn save_data(data_file: &Utf8Path, executed: HashMap<PathBuf, HashSet<u32>>) -> std::io::Result<()> {
+fn save_data(
+    data_file: &Utf8Path,
+    executed: HashMap<PathBuf, HashSet<u32>>,
+) -> std::io::Result<()> {
     let mut files = BTreeMap::new();
     for (path, hits) in executed {
         let executable = executable_lines(&path);

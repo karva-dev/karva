@@ -1164,6 +1164,7 @@ dependencies = [
  "anyhow",
  "camino",
  "colored 3.1.1",
+ "insta",
  "pyo3",
  "ruff_python_ast",
  "ruff_python_parser",

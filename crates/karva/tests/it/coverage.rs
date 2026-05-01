@@ -73,9 +73,9 @@ def test_pos():
 
     Name              Stmts   Miss   Cover
     [LONG-LINE]
-    test_control.py      17      2     88%
+    test_control.py      18      3     83%
     [LONG-LINE]
-    TOTAL                17      2     88%
+    TOTAL                18      3     83%
 
     ----- stderr -----
     "
