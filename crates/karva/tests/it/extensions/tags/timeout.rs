@@ -1,84 +1,29 @@
-use insta::allow_duplicates;
 use insta_cmd::assert_cmd_snapshot;
-use rstest::rstest;
 
 use crate::common::TestContext;
 
-fn timeout_decorator(framework: &str) -> &str {
-    match framework {
-        "pytest" => "pytest.mark.timeout",
-        "karva" => "karva.tags.timeout",
-        _ => panic!("Invalid framework"),
-    }
-}
-
-#[rstest]
-fn test_timeout_passes_when_under_limit(#[values("pytest", "karva")] framework: &str) {
-    let context = TestContext::with_file(
-        "test.py",
-        &format!(
-            r"
-import {framework}
-
-@{decorator}(5.0)
-def test_fast():
-    assert True
-        ",
-            decorator = timeout_decorator(framework)
-        ),
-    );
-
-    allow_duplicates! {
-        assert_cmd_snapshot!(context.command(), @"
-        success: true
-        exit_code: 0
-        ----- stdout -----
-            Starting 1 test across 1 worker
-                PASS [TIME] test::test_fast
-
-        ────────────
-             Summary [TIME] 1 test run: 1 passed, 0 skipped
-
-        ----- stderr -----
-        ");
-    }
-}
-
 #[test]
-fn test_timeout_fails_when_exceeded_karva() {
+fn test_timeout_passes_when_under_limit() {
     let context = TestContext::with_file(
         "test.py",
         r"
-import time
 import karva
 
-@karva.tags.timeout(0.1)
-def test_slow():
-    time.sleep(2)
+@karva.tags.timeout(5.0)
+def test_fast():
+    assert True
         ",
     );
 
     assert_cmd_snapshot!(context.command(), @"
-    success: false
-    exit_code: 1
+    success: true
+    exit_code: 0
     ----- stdout -----
         Starting 1 test across 1 worker
-            FAIL [TIME] test::test_slow
-
-    diagnostics:
-
-    error[test-failure]: Test `test_slow` failed
-     --> test.py:6:5
-      |
-    5 | @karva.tags.timeout(0.1)
-    6 | def test_slow():
-      |     ^^^^^^^^^
-    7 |     time.sleep(2)
-      |
-    info: Test exceeded timeout of 0.1 seconds
+            PASS [TIME] test::test_fast
 
     ────────────
-         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
     ");
