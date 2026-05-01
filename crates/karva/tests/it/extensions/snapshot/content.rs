@@ -245,7 +245,7 @@ def test_poem():
       |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
       |
     info: Snapshot mismatch for 'test_poem'.
-          Snapshot file: <temp_dir>/snapshots/test__test_poem.snap
+          Snapshot file: snapshots/test__test_poem.snap
           ────────────┬───────────────────────────
               1     1 │  roses are red
               2       │ -violets are blue

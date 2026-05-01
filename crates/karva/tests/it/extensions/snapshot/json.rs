@@ -399,13 +399,12 @@ def test_json():
       |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
       |
     info: Snapshot mismatch for 'test_json'.
-          Snapshot file: <temp_dir>/snapshots/test__test_json.snap
+          Snapshot file: snapshots/test__test_json.snap
           ────────────┬───────────────────────────
               1     1 │  {
               2       │ -  "key": "original"
-              3       │ -}
                     2 │ +  "key": "changed"
-                    3 │ +}
+              3     3 │  }
           ────────────┴───────────────────────────
 
     ────────────
