@@ -2102,7 +2102,6 @@ def test_flaky():
     exit_code: 0
     ----- stdout -----
 
-
     ----- stderr -----
     "
     );

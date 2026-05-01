@@ -9,7 +9,7 @@ use ruff_db::diagnostic::Diagnostic;
 
 use crate::reporter::Reporter;
 
-pub use flaky::{DisplayFlakyTestRecord, DisplayFlakyTestRecords, FlakyTest, FlakyTestRecord};
+pub use flaky::{DisplayFlakyTest, DisplayFlakyTests, FlakyTest};
 pub use kind::{IndividualTestResultKind, TestResultKind};
 pub use stats::TestResultStats;
 
@@ -110,12 +110,12 @@ impl TestRunResult {
             self.failed_tests.push(function_name.clone());
         } else if matches!(result, IndividualTestResultKind::Passed) {
             self.stats.add(TestResultKind::Flaky);
-            self.flaky_tests.push(FlakyTest {
-                test_name: test_case_name.clone(),
+            self.flaky_tests.push(FlakyTest::from_qualified_name(
+                test_case_name,
                 passed_on,
                 total_attempts,
                 duration,
-            });
+            ));
         }
 
         self.durations

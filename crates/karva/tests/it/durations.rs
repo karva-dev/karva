@@ -171,7 +171,6 @@ fn durations_with_failing_tests() {
       |     ^^^^^^^^^^^^
       |
 
-
     2 slowest tests:
       test_durations::test_fail ([TIME])
       test_durations::test_pass ([TIME])

@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use anyhow::Result;
 use camino::{Utf8Path, Utf8PathBuf};
-use karva_diagnostic::{FlakyTest, FlakyTestRecord, TestResultStats, TestRunResult};
+use karva_diagnostic::{FlakyTest, TestResultStats, TestRunResult};
 use ruff_db::diagnostic::{DisplayDiagnosticConfig, DisplayDiagnostics, FileResolver};
 use serde::de::DeserializeOwned;
 
@@ -20,7 +20,7 @@ pub struct AggregatedResults {
     pub diagnostics: String,
     pub discovery_diagnostics: String,
     pub failed_tests: Vec<String>,
-    pub flaky_tests: Vec<FlakyTestRecord>,
+    pub flaky_tests: Vec<FlakyTest>,
     pub durations: HashMap<String, Duration>,
 }
 
@@ -153,8 +153,7 @@ fn write_failed_tests(worker_dir: &Utf8Path, failed_tests: &[impl ToString]) -> 
 /// Writes the list of flaky tests as JSON, skipping if empty.
 fn write_flaky_tests(worker_dir: &Utf8Path, flaky_tests: &[FlakyTest]) -> Result<()> {
     if !flaky_tests.is_empty() {
-        let records: Vec<FlakyTestRecord> = flaky_tests.iter().map(FlakyTest::to_record).collect();
-        let json = serde_json::to_string_pretty(&records)?;
+        let json = serde_json::to_string_pretty(flaky_tests)?;
         fs::write(worker_dir.join(FLAKY_TESTS_FILE), json)?;
     }
     Ok(())
@@ -199,7 +198,7 @@ fn read_worker_results(worker_dir: &Utf8Path, results: &mut AggregatedResults) -
         results.failed_tests.extend(failed);
     }
 
-    if let Some(flaky) = read_and_parse::<Vec<FlakyTestRecord>>(worker_dir, FLAKY_TESTS_FILE)? {
+    if let Some(flaky) = read_and_parse::<Vec<FlakyTest>>(worker_dir, FLAKY_TESTS_FILE)? {
         results.flaky_tests.extend(flaky);
     }
 
