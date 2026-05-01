@@ -46,7 +46,9 @@ karva test [OPTIONS] [PATH]...
 <li><code>never</code>:  Never display colors</li>
 </ul></dd><dt id="karva-test--config-file"><a href="#karva-test--config-file"><code>--config-file</code></a> <i>path</i></dt><dd><p>The path to a <code>karva.toml</code> file to use for configuration.</p>
 <p>While karva configuration can be included in a <code>pyproject.toml</code> file, it is not allowed in this context.</p>
-<p>May also be set with the <code>KARVA_CONFIG_FILE</code> environment variable.</p></dd><dt id="karva-test--durations"><a href="#karva-test--durations"><code>--durations</code></a> <i>n</i></dt><dd><p>Show the N slowest tests after the run completes</p>
+<p>May also be set with the <code>KARVA_CONFIG_FILE</code> environment variable.</p></dd><dt id="karva-test--cov"><a href="#karva-test--cov"><code>--cov</code></a> <i>source</i></dt><dd><p>Measure code coverage for the given source path.</p>
+<p>May be passed multiple times to measure several sources. Pass without a value (<code>--cov</code>) to measure the current working directory.</p>
+</dd><dt id="karva-test--durations"><a href="#karva-test--durations"><code>--durations</code></a> <i>n</i></dt><dd><p>Show the N slowest tests after the run completes</p>
 </dd><dt id="karva-test--fail-fast"><a href="#karva-test--fail-fast"><code>--fail-fast</code></a></dt><dd><p>Stop scheduling new tests after the first failure.</p>
 <p>Equivalent to <code>--max-fail=1</code>. Use <code>--no-fail-fast</code> to keep running after failures.</p>
 </dd><dt id="karva-test--filter"><a href="#karva-test--filter"><code>--filter</code></a>, <code>-E</code> <i>filter-expressions</i></dt><dd><p>Filter tests using a filterset expression.</p>

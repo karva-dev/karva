@@ -1079,6 +1079,7 @@ dependencies = [
  "karva_cache",
  "karva_cli",
  "karva_collector",
+ "karva_coverage",
  "karva_logging",
  "karva_metadata",
  "karva_project",
@@ -1154,6 +1155,24 @@ name = "karva_combine"
 version = "0.0.0"
 dependencies = [
  "ruff_python_ast",
+]
+
+[[package]]
+name = "karva_coverage"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "camino",
+ "colored 3.1.1",
+ "insta",
+ "pyo3",
+ "ruff_python_ast",
+ "ruff_python_parser",
+ "ruff_source_file",
+ "ruff_text_size",
+ "serde",
+ "serde_json",
+ "tracing",
 ]
 
 [[package]]
@@ -1283,6 +1302,7 @@ dependencies = [
  "karva_cache",
  "karva_cli",
  "karva_collector",
+ "karva_coverage",
  "karva_logging",
  "karva_metadata",
  "karva_project",
@@ -1315,6 +1335,7 @@ version = "0.0.0"
 dependencies = [
  "camino",
  "karva_collector",
+ "karva_coverage",
  "karva_diagnostic",
  "karva_metadata",
  "karva_project",

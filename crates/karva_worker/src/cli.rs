@@ -146,6 +146,18 @@ fn run(f: impl FnOnce(Vec<OsString>) -> Vec<OsString>) -> anyhow::Result<ExitSta
         .run_ignored
         .map(RunIgnoredMode::from)
         .unwrap_or_default();
+
+    let coverage = match (
+        args.sub_command.cov.is_empty(),
+        args.sub_command.cov_data_file.clone(),
+    ) {
+        (false, Some(data_file)) => Some(karva_test_semantic::CoverageConfig {
+            sources: args.sub_command.cov.clone(),
+            data_file,
+        }),
+        _ => None,
+    };
+
     let mut settings = args.sub_command.into_options().to_settings();
     settings.set_filter(filter);
     settings.set_run_ignored(run_ignored);
@@ -166,6 +178,7 @@ fn run(f: impl FnOnce(Vec<OsString>) -> Vec<OsString>) -> anyhow::Result<ExitSta
         python_version,
         reporter.as_ref(),
         test_paths,
+        coverage.as_ref(),
     );
 
     let diagnostic_format = settings.terminal().output_format.into();

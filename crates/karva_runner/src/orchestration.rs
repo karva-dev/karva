@@ -162,6 +162,8 @@ fn spawn_workers(
     let core_binary = find_karva_worker_binary(project.cwd())?;
     let mut worker_manager = WorkerManager::default();
 
+    let coverage_dir = coverage_data_dir(cache_dir);
+
     for (worker_id, partition) in partitions.iter().enumerate() {
         if partition.tests().is_empty() {
             tracing::debug!("Skipping worker {} with no tests", worker_id);
@@ -184,6 +186,11 @@ fn spawn_workers(
         }
 
         cmd.args(inner_cli_args(project.settings(), args));
+
+        if !args.cov.is_empty() {
+            let data_file = karva_coverage::worker_data_file(&coverage_dir, worker_id);
+            cmd.arg("--cov-data-file").arg(data_file.as_str());
+        }
 
         let child = cmd
             .stdout(Stdio::inherit())
@@ -312,6 +319,11 @@ pub fn run_parallel_tests(
 
     let run_hash = RunHash::current_time();
 
+    if !args.cov.is_empty() {
+        let coverage_dir = coverage_data_dir(&cache_dir);
+        karva_coverage::prepare_data_dir(&coverage_dir)?;
+    }
+
     tracing::info!("Spawning {} workers", partitions.len());
 
     let mut worker_manager = spawn_workers(project, &partitions, &cache_dir, &run_hash, args)?;
@@ -439,5 +451,13 @@ fn inner_cli_args(settings: &ProjectSettings, args: &SubTestCommand) -> Vec<Stri
         cli_args.push(mode.as_str().to_string());
     }
 
+    for source in &args.cov {
+        cli_args.push(format!("--cov={source}"));
+    }
+
     cli_args
+}
+
+pub fn coverage_data_dir(cache_dir: &Utf8PathBuf) -> Utf8PathBuf {
+    cache_dir.join("coverage")
 }

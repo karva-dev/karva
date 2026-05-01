@@ -262,6 +262,27 @@ pub struct SubTestCommand {
         help_heading = "Reporter options"
     )]
     pub final_status_level: Option<FinalStatusLevel>,
+
+    /// Measure code coverage for the given source path.
+    ///
+    /// May be passed multiple times to measure several sources. Pass without
+    /// a value (`--cov`) to measure the current working directory.
+    #[clap(
+        long = "cov",
+        value_name = "SOURCE",
+        num_args = 0..=1,
+        default_missing_value = "",
+        action = clap::ArgAction::Append,
+        help_heading = "Coverage options"
+    )]
+    pub cov: Vec<String>,
+
+    /// Internal: per-worker coverage data file path.
+    ///
+    /// Set automatically by the runner when `--cov` is enabled. Not intended
+    /// for direct use.
+    #[clap(long, hide = true, value_name = "PATH")]
+    pub cov_data_file: Option<Utf8PathBuf>,
 }
 
 #[derive(Debug, Parser)]
