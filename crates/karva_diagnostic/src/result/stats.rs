@@ -1,139 +1,13 @@
-use std::fmt::Debug;
+use std::collections::HashMap;
+use std::fmt;
 use std::time::Instant;
-use std::{collections::HashMap, fmt};
 
 use colored::Colorize;
 use karva_logging::time::format_duration_bracketed;
-use karva_python_semantic::{QualifiedFunctionName, QualifiedTestName};
-use ruff_db::diagnostic::Diagnostic;
-use serde::de::{self, MapAccess};
-use serde::{Deserialize, Deserializer, Serialize, Serializer, de::Visitor};
+use serde::de::{self, MapAccess, Visitor};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-use crate::reporter::Reporter;
-
-/// Represents the result of a test run.
-///
-/// This is held in the test context and updated throughout the test run.
-#[derive(Debug, Clone, Default)]
-pub struct TestRunResult {
-    /// Diagnostics generated during test discovery.
-    discovery_diagnostics: Vec<Diagnostic>,
-
-    /// Diagnostics generated during test collection and  execution.
-    diagnostics: Vec<Diagnostic>,
-
-    /// Stats generated during test execution.
-    stats: TestResultStats,
-
-    durations: HashMap<QualifiedFunctionName, std::time::Duration>,
-
-    /// Names of tests that failed during this run.
-    failed_tests: Vec<QualifiedFunctionName>,
-}
-
-impl TestRunResult {
-    pub fn diagnostics(&self) -> &[Diagnostic] {
-        &self.diagnostics
-    }
-
-    pub fn discovery_diagnostics(&self) -> &[Diagnostic] {
-        &self.discovery_diagnostics
-    }
-
-    pub fn add_discovery_diagnostic(&mut self, diagnostic: Diagnostic) {
-        self.discovery_diagnostics.push(diagnostic);
-    }
-
-    pub fn add_diagnostic(&mut self, diagnostic: Diagnostic) {
-        self.diagnostics.push(diagnostic);
-    }
-
-    pub fn stats(&self) -> &TestResultStats {
-        &self.stats
-    }
-
-    pub fn register_test_case_result(
-        &mut self,
-        test_case_name: &QualifiedTestName,
-        result: IndividualTestResultKind,
-        duration: std::time::Duration,
-        reporter: Option<&dyn Reporter>,
-    ) {
-        self.stats.add(result.clone().into());
-
-        let function_name = test_case_name.function_name().clone();
-
-        if matches!(result, IndividualTestResultKind::Failed) {
-            self.failed_tests.push(function_name.clone());
-        }
-
-        if let Some(reporter) = reporter {
-            reporter.report_test_case_result(test_case_name, result, duration);
-        }
-
-        self.durations
-            .entry(function_name)
-            .and_modify(|existing_duration| *existing_duration += duration)
-            .or_insert(duration);
-    }
-
-    #[must_use]
-    pub fn into_sorted(mut self) -> Self {
-        self.diagnostics.sort_by(Diagnostic::ruff_start_ordering);
-        self
-    }
-
-    pub fn durations(&self) -> &HashMap<QualifiedFunctionName, std::time::Duration> {
-        &self.durations
-    }
-
-    pub fn failed_tests(&self) -> &[QualifiedFunctionName] {
-        &self.failed_tests
-    }
-}
-
-#[derive(Debug, Clone)]
-pub enum IndividualTestResultKind {
-    Passed,
-    Failed,
-    Skipped { reason: Option<String> },
-}
-
-impl From<IndividualTestResultKind> for TestResultKind {
-    fn from(val: IndividualTestResultKind) -> Self {
-        match val {
-            IndividualTestResultKind::Passed => Self::Passed,
-            IndividualTestResultKind::Failed => Self::Failed,
-            IndividualTestResultKind::Skipped { .. } => Self::Skipped,
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Copy)]
-pub enum TestResultKind {
-    Passed,
-    Failed,
-    Skipped,
-}
-
-impl TestResultKind {
-    fn as_str(self) -> &'static str {
-        match self {
-            Self::Passed => "passed",
-            Self::Failed => "failed",
-            Self::Skipped => "skipped",
-        }
-    }
-
-    fn from_str(s: &str) -> Result<Self, &'static str> {
-        match s {
-            "passed" => Ok(Self::Passed),
-            "failed" => Ok(Self::Failed),
-            "skipped" => Ok(Self::Skipped),
-            _ => Err("invalid TestResultKind"),
-        }
-    }
-}
+use super::kind::TestResultKind;
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct TestResultStats {
@@ -141,8 +15,10 @@ pub struct TestResultStats {
 }
 
 impl TestResultStats {
+    /// Total number of tests run. `Flaky` is a marker on a passing test and
+    /// is not counted as a separate test.
     pub fn total(&self) -> usize {
-        self.inner.values().sum()
+        self.passed() + self.failed() + self.skipped()
     }
 
     pub fn is_success(&self) -> bool {
@@ -172,6 +48,10 @@ impl TestResultStats {
 
     pub fn skipped(&self) -> usize {
         self.get(TestResultKind::Skipped)
+    }
+
+    pub fn flaky(&self) -> usize {
+        self.get(TestResultKind::Flaky)
     }
 
     pub fn add(&mut self, kind: TestResultKind) {
@@ -220,7 +100,7 @@ impl<'de> Deserialize<'de> for TestResultStats {
 
                 while let Some((key, value)) = access.next_entry::<String, usize>()? {
                     let kind = TestResultKind::from_str(&key).map_err(|_| {
-                        de::Error::unknown_field(&key, &["passed", "failed", "skipped"])
+                        de::Error::unknown_field(&key, &["passed", "failed", "skipped", "flaky"])
                     })?;
                     inner.insert(kind, value);
                 }
@@ -244,8 +124,8 @@ impl<'a> DisplayTestResultStats<'a> {
     }
 }
 
-impl std::fmt::Display for DisplayTestResultStats<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Display for DisplayTestResultStats<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let success = self.stats.is_success();
         let elapsed = self.start_time.elapsed();
 
@@ -258,12 +138,16 @@ impl std::fmt::Display for DisplayTestResultStats<'_> {
             write!(f, "{}", label.red().bold())?;
         }
 
-        let mut parts = vec![
+        let passed_text = if self.stats.flaky() > 0 {
+            format!(
+                "{} passed ({} flaky)",
+                self.stats.passed(),
+                self.stats.flaky()
+            )
+        } else {
             format!("{} passed", self.stats.passed())
-                .green()
-                .bold()
-                .to_string(),
-        ];
+        };
+        let mut parts = vec![passed_text.green().bold().to_string()];
         if self.stats.failed() > 0 {
             parts.push(
                 format!("{} failed", self.stats.failed())

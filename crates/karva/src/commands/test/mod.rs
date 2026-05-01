@@ -5,7 +5,7 @@ use std::fmt::Write;
 use std::time::{Duration, Instant};
 
 use anyhow::{Context as _, Result};
-use karva_cache::AggregatedResults;
+use karva_cache::{AggregatedResults, DisplayFlakyTests};
 use karva_cli::{OutputFormat, TestCommand};
 use karva_logging::{Printer, Stdout, set_colored_override, setup_tracing};
 use karva_metadata::filter::FiltersetSet;
@@ -134,76 +134,100 @@ pub fn print_test_output(
     output_format: Option<&OutputFormat>,
     durations: Option<usize>,
 ) -> Result<()> {
-    let mut stdout = printer.stream_for_details().lock();
+    let mut details = printer.stream_for_details().lock();
     let is_concise = matches!(output_format, Some(OutputFormat::Concise));
 
     let has_diagnostics =
         !result.diagnostics.is_empty() || !result.discovery_diagnostics.is_empty();
+    let has_durations = durations.is_some_and(|n| n > 0) && !result.durations.is_empty();
+    let has_preceding_test_lines = result.stats.total() > 0;
 
-    if has_diagnostics && result.stats.total() > 0 && stdout.is_enabled() {
-        writeln!(stdout)?;
+    write_diagnostics_block(
+        &mut details,
+        result,
+        is_concise,
+        /* needs_leading_blank = */ has_preceding_test_lines,
+    )?;
+
+    write_durations_block(
+        &mut details,
+        &result.durations,
+        durations,
+        // Both diagnostics blocks (concise and non-concise) end on a blank
+        // line, so we only need a leading blank when nothing came between
+        // the test result lines and us.
+        /* needs_leading_blank = */
+        has_preceding_test_lines && !has_diagnostics,
+    )?;
+
+    drop(details);
+
+    let mut summary = printer
+        .stream_for_summary(result.stats.is_success(), result.stats.flaky() > 0)
+        .lock();
+    // The summary only needs an explicit leading blank when nothing in the
+    // details stream provided one — i.e. there were test lines above but
+    // neither diagnostics nor durations.
+    if has_preceding_test_lines && !has_diagnostics && !has_durations && summary.is_enabled() {
+        writeln!(summary)?;
     }
-
-    print_diagnostics_section(&mut stdout, result, is_concise)?;
-
-    let durations_printed = print_durations_section(&mut stdout, &result.durations, durations)?;
-
-    if !has_diagnostics && !durations_printed && result.stats.total() > 0 && stdout.is_enabled() {
-        writeln!(stdout)?;
-    }
-
-    let mut result_stdout = printer.stream_for_summary(result.stats.is_success()).lock();
-    write!(result_stdout, "{}", result.stats.display(start_time))?;
+    write!(summary, "{}", result.stats.display(start_time))?;
+    write!(summary, "{}", DisplayFlakyTests::new(&result.flaky_tests))?;
 
     Ok(())
 }
 
-/// Print all diagnostics (collection errors and test failures), with concise-mode spacing.
-fn print_diagnostics_section(
+fn write_diagnostics_block(
     stdout: &mut Stdout,
     result: &AggregatedResults,
     is_concise: bool,
+    needs_leading_blank: bool,
 ) -> Result<()> {
-    let has_any = !result.discovery_diagnostics.is_empty() || !result.diagnostics.is_empty();
-
-    if has_any {
-        writeln!(stdout, "diagnostics:")?;
-        writeln!(stdout)?;
-
-        if !result.discovery_diagnostics.is_empty() {
-            write!(stdout, "{}", result.discovery_diagnostics)?;
-        }
-
-        if !result.diagnostics.is_empty() {
-            write!(stdout, "{}", result.diagnostics)?;
-        }
-
-        if is_concise {
-            writeln!(stdout)?;
-        }
+    if result.discovery_diagnostics.is_empty() && result.diagnostics.is_empty() {
+        return Ok(());
     }
 
+    if needs_leading_blank && stdout.is_enabled() {
+        writeln!(stdout)?;
+    }
+    writeln!(stdout, "diagnostics:")?;
+    writeln!(stdout)?;
+
+    if !result.discovery_diagnostics.is_empty() {
+        write!(stdout, "{}", result.discovery_diagnostics)?;
+    }
+    if !result.diagnostics.is_empty() {
+        write!(stdout, "{}", result.diagnostics)?;
+    }
+    // Non-concise diagnostic content ends with a trailing blank line of its
+    // own; concise mode needs an explicit one to match.
+    if is_concise {
+        writeln!(stdout)?;
+    }
     Ok(())
 }
 
-/// Print the N slowest test durations. Returns whether anything was printed.
-fn print_durations_section(
+fn write_durations_block(
     stdout: &mut Stdout,
     test_durations: &HashMap<String, Duration>,
     durations: Option<usize>,
-) -> Result<bool> {
+    needs_leading_blank: bool,
+) -> Result<()> {
     let Some(n) = durations else {
-        return Ok(false);
+        return Ok(());
     };
     if n == 0 || test_durations.is_empty() {
-        return Ok(false);
+        return Ok(());
+    }
+
+    if needs_leading_blank && stdout.is_enabled() {
+        writeln!(stdout)?;
     }
 
     let mut sorted: Vec<_> = test_durations.iter().collect();
     sorted.sort_by(|a, b| b.1.cmp(a.1));
     let count = n.min(sorted.len());
 
-    writeln!(stdout)?;
     writeln!(stdout, "{count} slowest tests:")?;
     for (name, duration) in sorted.into_iter().take(n) {
         writeln!(
@@ -213,7 +237,8 @@ fn print_durations_section(
             karva_logging::time::format_duration(*duration)
         )?;
     }
+    // Trailing blank so the summary divider doesn't bump up against the
+    // last duration line.
     writeln!(stdout)?;
-
-    Ok(true)
+    Ok(())
 }

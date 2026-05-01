@@ -10,19 +10,35 @@ use crate::result::IndividualTestResultKind;
 
 /// A reporter for test execution time logging to the user.
 pub trait Reporter: Send + Sync {
-    /// Report the completion of a given test.
+    /// Report the completion of a non-retried test.
     fn report_test_case_result(
         &self,
         test_name: &QualifiedTestName,
         result_kind: IndividualTestResultKind,
         duration: Duration,
     );
+
+    /// Report one attempt of a retried test as it completes.
+    ///
+    /// `attempt` is 1-indexed (the first attempt is `1`). For a retried test
+    /// this is called once per attempt — including the final one — and the
+    /// runner does NOT additionally call [`Self::report_test_case_result`].
+    /// Default no-op for reporters that don't surface attempt-level detail.
+    fn report_test_attempt(
+        &self,
+        test_name: &QualifiedTestName,
+        attempt: u32,
+        result_kind: IndividualTestResultKind,
+        duration: Duration,
+    ) {
+        let _ = (test_name, attempt, result_kind, duration);
+    }
 }
 
 fn show_for_status_level(level: StatusLevel, kind: &IndividualTestResultKind) -> bool {
     // Levels are cumulative, like nextest: each level shows itself plus all
-    // earlier levels. Karva does not yet emit per-attempt retry lines or a
-    // slow-test threshold, so `Retry` and `Slow` currently behave like `Fail`.
+    // earlier levels. Karva does not yet implement a slow-test threshold, so
+    // `Slow` currently behaves like `Retry`.
     match level {
         StatusLevel::None => false,
         StatusLevel::Fail | StatusLevel::Retry | StatusLevel::Slow => {
@@ -105,4 +121,56 @@ impl Reporter for TestCaseReporter {
         )
         .ok();
     }
+
+    fn report_test_attempt(
+        &self,
+        test_name: &QualifiedTestName,
+        attempt: u32,
+        result_kind: IndividualTestResultKind,
+        duration: Duration,
+    ) {
+        if self.printer.status_level() < StatusLevel::Retry {
+            return;
+        }
+
+        let (status_text, colored_status) = match &result_kind {
+            IndividualTestResultKind::Passed => ("PASS", "PASS".green().bold().to_string()),
+            IndividualTestResultKind::Failed => ("FAIL", "FAIL".red().bold().to_string()),
+            // Skips don't go through the retry loop; render them as a normal
+            // SKIP attempt for completeness so the trait remains total.
+            IndividualTestResultKind::Skipped { .. } => {
+                ("SKIP", "SKIP".yellow().bold().to_string())
+            }
+        };
+
+        let label_len = "TRY ".len() + count_digits(attempt) + 1 + status_text.len();
+        let padding = " ".repeat(12usize.saturating_sub(label_len));
+        let duration_str = format_duration_bracketed(duration);
+
+        let module = test_name.function_name().module_path().module_name().cyan();
+        let fn_name = test_name.function_name().function_name().blue().bold();
+        let params = test_name
+            .params()
+            .map(|p| p.blue().bold().to_string())
+            .unwrap_or_default();
+
+        let mut stdout = self.printer.stream_for_test_result().lock();
+        writeln!(
+            stdout,
+            "{padding}TRY {attempt} {colored_status} {duration_str} {module}::{fn_name}{params}"
+        )
+        .ok();
+    }
+}
+
+fn count_digits(mut n: u32) -> usize {
+    if n == 0 {
+        return 1;
+    }
+    let mut digits = 0;
+    while n > 0 {
+        digits += 1;
+        n /= 10;
+    }
+    digits
 }
