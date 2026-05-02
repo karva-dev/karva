@@ -67,8 +67,8 @@ fn generate() -> String {
     emit_section(
         &mut output,
         "Set by the worker on tests",
-        "Variables the Karva worker writes into the test process before each \
-         attempt, so running test code can introspect its own retry state.",
+        "Variables the Karva worker writes into the test process so running \
+         test code can introspect the run, the worker, and its own attempt.",
         WorkerEnvVars::METADATA,
     );
 

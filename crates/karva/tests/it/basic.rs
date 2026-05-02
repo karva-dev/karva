@@ -2339,6 +2339,78 @@ def test_always_fails(): assert False
     );
 }
 
+/// `KARVA`, `KARVA_WORKER_ID`, `KARVA_RUN_ID`, and `KARVA_WORKSPACE_ROOT` are
+/// exposed to the test process. The values come from the worker spawn (not
+/// from the test's own `os.environ` writes), so a single passing test is
+/// enough to exercise all four.
+#[test]
+fn test_karva_static_env_vars() {
+    let context = TestContext::with_file(
+        "test.py",
+        r#"
+import os
+import re
+
+def test_static_env():
+    assert os.environ["KARVA"] == "1"
+    assert os.environ["KARVA_WORKER_ID"] == "0"
+    assert re.fullmatch(
+        r"[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}",
+        os.environ["KARVA_RUN_ID"],
+    ), os.environ["KARVA_RUN_ID"]
+    assert os.environ["KARVA_WORKSPACE_ROOT"] == os.getcwd()
+        "#,
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_static_env
+
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+/// `KARVA_TEST_NAME` is set to the qualified test name before each attempt,
+/// including the parametrize-arg suffix.
+#[test]
+fn test_karva_test_name_env() {
+    let context = TestContext::with_file(
+        "test.py",
+        r#"
+import os
+import karva
+
+def test_plain():
+    assert os.environ["KARVA_TEST_NAME"] == "test::test_plain"
+
+@karva.tags.parametrize("value", [1, 2])
+def test_param(value):
+    assert os.environ["KARVA_TEST_NAME"] == f"test::test_param(value={value})"
+        "#,
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+        Starting 2 tests across 1 worker
+            PASS [TIME] test::test_plain
+            PASS [TIME] test::test_param(value=1)
+            PASS [TIME] test::test_param(value=2)
+
+    ────────────
+         Summary [TIME] 3 tests run: 3 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
 /// `KARVA_ATTEMPT` and `KARVA_TOTAL_ATTEMPTS` are exposed to the test process.
 /// Without `--retry`, both are `"1"`.
 #[test]

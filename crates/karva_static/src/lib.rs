@@ -67,6 +67,30 @@ env_vars! {
     /// Environment variables that the Karva worker sets on the test process so
     /// running tests can read them at runtime.
     pub struct WorkerEnvVars {
+        /// Always set to `"1"`. The cheapest signal that test code is running
+        /// under Karva, useful for fixtures and helpers that want to detect
+        /// the runner without heavier introspection.
+        pub const KARVA: &'static str = "KARVA";
+
+        /// 0-indexed worker number. The canonical way to partition shared
+        /// resources (database names, ports, scratch directories) across
+        /// parallel workers without coordination.
+        pub const KARVA_WORKER_ID: &'static str = "KARVA_WORKER_ID";
+
+        /// Unique identifier (UUID) for a single `karva test` invocation,
+        /// shared by every worker. Useful for correlating logs and external
+        /// artifacts produced across multiple worker processes.
+        pub const KARVA_RUN_ID: &'static str = "KARVA_RUN_ID";
+
+        /// Absolute path to the directory Karva resolved as the project root.
+        /// Saves tests from re-deriving the root via `__file__` walking or
+        /// `os.getcwd()` heuristics.
+        pub const KARVA_WORKSPACE_ROOT: &'static str = "KARVA_WORKSPACE_ROOT";
+
+        /// Qualified name of the currently running test, e.g.
+        /// `pkg.module::test_foo(value=1)`. Updated before each attempt.
+        pub const KARVA_TEST_NAME: &'static str = "KARVA_TEST_NAME";
+
         /// The 1-indexed attempt number for the currently running test. Always
         /// set; `"1"` when no retries are configured.
         pub const KARVA_ATTEMPT: &'static str = "KARVA_ATTEMPT";

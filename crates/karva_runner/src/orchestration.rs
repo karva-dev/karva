@@ -19,9 +19,37 @@ use karva_logging::Printer;
 use karva_logging::time::format_duration;
 use karva_metadata::ProjectSettings;
 use karva_project::Project;
+use karva_static::WorkerEnvVars;
 
 use crate::collection::ParallelCollector;
 use crate::partition::{Partition, partition_collected_tests};
+
+/// Generate a UUID v4 string identifying a single `karva test` invocation.
+fn generate_run_id() -> String {
+    let mut bytes = [0u8; 16];
+    fastrand::fill(&mut bytes);
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    format!(
+        "{:02x}{:02x}{:02x}{:02x}-{:02x}{:02x}-{:02x}{:02x}-{:02x}{:02x}-{:02x}{:02x}{:02x}{:02x}{:02x}{:02x}",
+        bytes[0],
+        bytes[1],
+        bytes[2],
+        bytes[3],
+        bytes[4],
+        bytes[5],
+        bytes[6],
+        bytes[7],
+        bytes[8],
+        bytes[9],
+        bytes[10],
+        bytes[11],
+        bytes[12],
+        bytes[13],
+        bytes[14],
+        bytes[15],
+    )
+}
 
 #[derive(Debug)]
 struct Worker {
@@ -163,6 +191,7 @@ fn spawn_workers(
     let mut worker_manager = WorkerManager::default();
 
     let coverage_dir = coverage_data_dir(cache_dir);
+    let run_id = generate_run_id();
 
     for (worker_id, partition) in partitions.iter().enumerate() {
         if partition.tests().is_empty() {
@@ -179,7 +208,11 @@ fn spawn_workers(
             .arg(worker_id.to_string())
             .current_dir(project.cwd())
             // Ensure python does not buffer output
-            .env("PYTHONUNBUFFERED", "1");
+            .env("PYTHONUNBUFFERED", "1")
+            .env(WorkerEnvVars::KARVA, "1")
+            .env(WorkerEnvVars::KARVA_WORKER_ID, worker_id.to_string())
+            .env(WorkerEnvVars::KARVA_RUN_ID, &run_id)
+            .env(WorkerEnvVars::KARVA_WORKSPACE_ROOT, project.cwd().as_str());
 
         for path in partition.tests() {
             cmd.arg(path);
