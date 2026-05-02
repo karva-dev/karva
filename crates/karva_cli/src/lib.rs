@@ -277,7 +277,7 @@ pub struct SubTestCommand {
     )]
     pub cov: Vec<String>,
 
-    /// Coverage report type. May be passed multiple times.
+    /// Coverage terminal report type.
     ///
     /// `term` (default) prints a compact terminal table.
     /// `term-missing` extends it with a `Missing` column listing the
@@ -286,10 +286,9 @@ pub struct SubTestCommand {
         long = "cov-report",
         value_name = "TYPE",
         value_enum,
-        action = clap::ArgAction::Append,
         help_heading = "Coverage options"
     )]
-    pub cov_report: Vec<CovReport>,
+    pub cov_report: Option<CovReport>,
 
     /// Internal: per-worker coverage data file path.
     ///

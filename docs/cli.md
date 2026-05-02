@@ -48,7 +48,7 @@ karva test [OPTIONS] [PATH]...
 <p>While karva configuration can be included in a <code>pyproject.toml</code> file, it is not allowed in this context.</p>
 <p>May also be set with the <code>KARVA_CONFIG_FILE</code> environment variable.</p></dd><dt id="karva-test--cov"><a href="#karva-test--cov"><code>--cov</code></a> <i>source</i></dt><dd><p>Measure code coverage for the given source path.</p>
 <p>May be passed multiple times to measure several sources. Pass without a value (<code>--cov</code>) to measure the current working directory.</p>
-</dd><dt id="karva-test--cov-report"><a href="#karva-test--cov-report"><code>--cov-report</code></a> <i>type</i></dt><dd><p>Coverage report type. May be passed multiple times.</p>
+</dd><dt id="karva-test--cov-report"><a href="#karva-test--cov-report"><code>--cov-report</code></a> <i>type</i></dt><dd><p>Coverage terminal report type.</p>
 <p><code>term</code> (default) prints a compact terminal table. <code>term-missing</code> extends it with a <code>Missing</code> column listing the uncovered line numbers per file.</p>
 <p>Possible values:</p>
 <ul>
