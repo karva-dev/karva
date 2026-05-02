@@ -1089,7 +1089,7 @@ fn filterset_unknown_predicate() {
     ----- stderr -----
     Karva failed
       Cause: invalid `--filter` expression
-      Cause: unknown predicate `package` in filter expression `package(foo)` (expected `test` or `tag`)
+      Cause: unknown predicate `package` in filter expression `package(foo)` (expected `test`, `tag`, or `group`)
     "
     );
 }
@@ -1126,6 +1126,69 @@ fn filterset_empty_matcher_body() {
     Karva failed
       Cause: invalid `--filter` expression
       Cause: expected a matcher body in filter expression `tag()`
+    "
+    );
+}
+
+/// `group(...)` matches the test's resolved test-group. Tests not assigned to
+/// any group never match, so without test-groups configured this filter skips
+/// every test. The inverse `not group(...)` matches everything.
+#[test]
+fn filterset_group_unassigned_tests_skipped() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+def test_x():
+    assert True
+
+def test_y():
+    assert True
+        ",
+    );
+
+    assert_cmd_snapshot!(
+        context.command_no_parallel().arg("-E").arg("group(database)"),
+        @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+        Starting 2 tests across 1 worker
+
+    ────────────
+         Summary [TIME] 2 tests run: 0 passed, 2 skipped
+
+    ----- stderr -----
+    "
+    );
+}
+
+#[test]
+fn filterset_not_group_matches_unassigned_tests() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+def test_x():
+    assert True
+
+def test_y():
+    assert True
+        ",
+    );
+
+    assert_cmd_snapshot!(
+        context.command_no_parallel().arg("-E").arg("not group(database)"),
+        @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+        Starting 2 tests across 1 worker
+            PASS [TIME] test::test_x
+            PASS [TIME] test::test_y
+
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped
+
+    ----- stderr -----
     "
     );
 }

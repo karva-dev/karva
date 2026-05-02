@@ -36,13 +36,19 @@ pub enum Predicate {
     Test(Matcher),
     /// Evaluated against each custom tag on the test; matches if any tag matches.
     Tag(Matcher),
+    /// Evaluated against the test's resolved test-group name; matches if the
+    /// test belongs to a group whose name matches.
+    Group(Matcher),
 }
 
 /// The value a [`Filterset`] is evaluated against.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct EvalContext<'a> {
     pub test_name: &'a str,
     pub tags: &'a [&'a str],
+    /// The name of the test-group this test was assigned to, if any.
+    /// `group(...)` predicates evaluate against this value.
+    pub group: Option<&'a str>,
 }
 
 #[derive(Debug, Clone)]
@@ -60,9 +66,23 @@ impl Expr {
             Self::Predicate(Predicate::Tag(matcher)) => {
                 ctx.tags.iter().any(|tag| matcher.matches(tag))
             }
+            Self::Predicate(Predicate::Group(matcher)) => {
+                ctx.group.is_some_and(|name| matcher.matches(name))
+            }
             Self::Not(inner) => !inner.matches(ctx),
             Self::And(lhs, rhs) => lhs.matches(ctx) && rhs.matches(ctx),
             Self::Or(lhs, rhs) => lhs.matches(ctx) || rhs.matches(ctx),
+        }
+    }
+
+    fn uses_group_predicate(&self) -> bool {
+        match self {
+            Self::Predicate(Predicate::Group(_)) => true,
+            Self::Predicate(_) => false,
+            Self::Not(inner) => inner.uses_group_predicate(),
+            Self::And(lhs, rhs) | Self::Or(lhs, rhs) => {
+                lhs.uses_group_predicate() || rhs.uses_group_predicate()
+            }
         }
     }
 }
@@ -89,6 +109,14 @@ impl Filterset {
 
     pub fn matches(&self, ctx: &EvalContext<'_>) -> bool {
         self.expr.matches(ctx)
+    }
+
+    /// Returns `true` if this expression contains a `group(...)` predicate
+    /// anywhere in its tree. Used to reject `group(...)` inside override
+    /// filters, where it would create a circular dependency: a test's group
+    /// would depend on a filter that depends on the test's group.
+    pub fn uses_group_predicate(&self) -> bool {
+        self.expr.uses_group_predicate()
     }
 }
 
@@ -146,7 +174,7 @@ pub enum FilterError {
         expression: String,
     },
     #[error(
-        "unknown predicate `{name}` in filter expression `{expression}` (expected `test` or `tag`)"
+        "unknown predicate `{name}` in filter expression `{expression}` (expected `test`, `tag`, or `group`)"
     )]
     UnknownPredicate { name: String, expression: String },
     #[error("expected `(` after predicate in filter expression `{expression}`")]
@@ -159,6 +187,7 @@ pub enum FilterError {
 enum PredicateKind {
     Test,
     Tag,
+    Group,
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -418,6 +447,7 @@ impl<'a> Parser<'a> {
                 let kind = match name.as_str() {
                     "test" => PredicateKind::Test,
                     "tag" => PredicateKind::Tag,
+                    "group" => PredicateKind::Group,
                     _ => {
                         return Err(FilterError::UnknownPredicate {
                             name,
@@ -442,6 +472,7 @@ impl<'a> Parser<'a> {
                 let predicate = match kind {
                     PredicateKind::Test => Predicate::Test(matcher),
                     PredicateKind::Tag => Predicate::Tag(matcher),
+                    PredicateKind::Group => Predicate::Group(matcher),
                 };
                 Ok(Expr::Predicate(predicate))
             }
@@ -495,7 +526,7 @@ impl<'a> Parser<'a> {
                 let body = self.parse_matcher_body()?;
                 Ok(match kind {
                     PredicateKind::Test => Matcher::Substring(body),
-                    PredicateKind::Tag => Matcher::Exact(body),
+                    PredicateKind::Tag | PredicateKind::Group => Matcher::Exact(body),
                 })
             }
             _ => Err(FilterError::ExpectedMatcher {
@@ -531,6 +562,19 @@ mod tests {
         EvalContext {
             test_name,
             tags: tag_list,
+            group: None,
+        }
+    }
+
+    fn ctx_with_group<'a>(
+        test_name: &'a str,
+        tag_list: &'a [&'a str],
+        group: &'a str,
+    ) -> EvalContext<'a> {
+        EvalContext {
+            test_name,
+            tags: tag_list,
+            group: Some(group),
         }
     }
 
@@ -609,6 +653,37 @@ mod tests {
         assert!(f.matches(&ctx("mod::test_login", &[])));
         assert!(f.matches(&ctx("mod::test_logout_and_login", &[])));
         assert!(!f.matches(&ctx("mod::test_logout", &[])));
+    }
+
+    #[test]
+    fn group_default_exact() {
+        let f = Filterset::new("group(database)").expect("parse");
+        assert!(f.matches(&ctx_with_group("x", &[], "database")));
+        assert!(!f.matches(&ctx_with_group("x", &[], "databases")));
+        assert!(!f.matches(&ctx("x", &[])));
+    }
+
+    #[test]
+    fn group_substring_explicit() {
+        let f = Filterset::new("group(~db)").expect("parse");
+        assert!(f.matches(&ctx_with_group("x", &[], "db_writes")));
+        assert!(f.matches(&ctx_with_group("x", &[], "shared_db")));
+        assert!(!f.matches(&ctx_with_group("x", &[], "cache")));
+    }
+
+    #[test]
+    fn group_glob() {
+        let f = Filterset::new("group(#db_*)").expect("parse");
+        assert!(f.matches(&ctx_with_group("x", &[], "db_writes")));
+        assert!(!f.matches(&ctx_with_group("x", &[], "cache")));
+    }
+
+    #[test]
+    fn group_combines_with_other_predicates() {
+        let f = Filterset::new("group(database) & tag(slow)").expect("parse");
+        assert!(f.matches(&ctx_with_group("x", &["slow"], "database")));
+        assert!(!f.matches(&ctx_with_group("x", &[], "database")));
+        assert!(!f.matches(&ctx("x", &["slow"])));
     }
 
     #[test]

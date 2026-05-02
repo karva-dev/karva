@@ -239,6 +239,7 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
             let ctx = EvalContext {
                 test_name: &display_name,
                 tags: &custom_names,
+                group: None,
             };
             if !filter.matches(&ctx) {
                 return Some(self.context.register_test_case_result(
