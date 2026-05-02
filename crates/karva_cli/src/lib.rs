@@ -53,7 +53,7 @@ pub struct Args {
 #[derive(Debug, clap::Subcommand)]
 pub enum Command {
     /// Run tests.
-    Test(Box<TestCommand>),
+    Test(TestCommand),
 
     /// Manage snapshots created by `karva.assert_snapshot()`.
     Snapshot(SnapshotCommand),
