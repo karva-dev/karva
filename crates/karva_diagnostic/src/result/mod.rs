@@ -140,6 +140,21 @@ impl TestRunResult {
         }
     }
 
+    /// Mark a test as slow: increments the slow counter and emits a `SLOW`
+    /// line through the reporter. The test's actual outcome (pass/fail) is
+    /// registered separately.
+    pub fn register_slow_test(
+        &mut self,
+        test_case_name: &QualifiedTestName,
+        duration: std::time::Duration,
+        reporter: Option<&dyn Reporter>,
+    ) {
+        self.stats.add(TestResultKind::Slow);
+        if let Some(reporter) = reporter {
+            reporter.report_test_slow(test_case_name, duration);
+        }
+    }
+
     #[must_use]
     pub fn into_sorted(mut self) -> Self {
         self.diagnostics.sort_by(Diagnostic::ruff_start_ordering);

@@ -6,8 +6,8 @@ use clap::builder::Styles;
 use clap::builder::styling::{AnsiColor, Effects};
 use karva_logging::{FinalStatusLevel, StatusLevel, TerminalColor, VerbosityLevel};
 use karva_metadata::{
-    CoverageOptions, MaxFail, NoTestsMode, Options, RunIgnoredMode, SrcOptions, TerminalOptions,
-    TestOptions,
+    CoverageOptions, MaxFail, NoTestsMode, Options, RunIgnoredMode, SlowTimeoutSecs, SrcOptions,
+    TerminalOptions, TestOptions,
 };
 use ruff_db::diagnostic::DiagnosticFormat;
 
@@ -54,7 +54,7 @@ pub struct Args {
 #[derive(Debug, clap::Subcommand)]
 pub enum Command {
     /// Run tests.
-    Test(TestCommand),
+    Test(Box<TestCommand>),
 
     /// Manage snapshots created by `karva.assert_snapshot()`.
     Snapshot(SnapshotCommand),
@@ -230,6 +230,15 @@ pub struct SubTestCommand {
     /// When set, the test will retry failed tests up to this number of times.
     #[clap(long, help_heading = "Runner options")]
     pub retry: Option<u32>,
+
+    /// Threshold in seconds after which a test is flagged as slow.
+    ///
+    /// When a test takes longer than this duration, it is reported with a
+    /// `SLOW` status line (gated on `--status-level=slow` or higher) and
+    /// counted in the run summary. Pass a positive number such as
+    /// `--slow-timeout=60` or `--slow-timeout=0.5`.
+    #[clap(long, value_name = "SECONDS", help_heading = "Runner options")]
+    pub slow_timeout: Option<f64>,
 
     /// Update snapshots directly instead of creating pending `.snap.new` files.
     ///
@@ -462,6 +471,7 @@ impl SubTestCommand {
                 try_import_fixtures: self.try_import_fixtures,
                 retry: self.retry,
                 no_tests: self.no_tests.map(Into::into),
+                slow_timeout: self.slow_timeout.map(SlowTimeoutSecs),
             }),
             coverage: Some(CoverageOptions {
                 sources: (!self.cov.is_empty()).then(|| self.cov.clone()),

@@ -13,7 +13,7 @@ pub enum IndividualTestResultKind {
 ///
 /// Unlike [`IndividualTestResultKind`] this is plain, hashable, and copyable
 /// — it drops contextual fields (like skip reasons) and gains the synthetic
-/// `Flaky` marker for tests that passed only after retries.
+/// `Flaky` and `Slow` markers.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Copy)]
 pub enum TestResultKind {
     Passed,
@@ -23,6 +23,10 @@ pub enum TestResultKind {
     /// (not instead of) `Passed` so the summary can show how many of the
     /// passing tests are flaky.
     Flaky,
+    /// A test whose total duration exceeded the configured `slow-timeout`
+    /// threshold. Tracked alongside the test's actual outcome so the summary
+    /// can show how many tests were slow regardless of pass/fail.
+    Slow,
 }
 
 impl TestResultKind {
@@ -32,6 +36,7 @@ impl TestResultKind {
             Self::Failed => "failed",
             Self::Skipped => "skipped",
             Self::Flaky => "flaky",
+            Self::Slow => "slow",
         }
     }
 
@@ -41,6 +46,7 @@ impl TestResultKind {
             "failed" => Ok(Self::Failed),
             "skipped" => Ok(Self::Skipped),
             "flaky" => Ok(Self::Flaky),
+            "slow" => Ok(Self::Slow),
             _ => Err("invalid TestResultKind"),
         }
     }

@@ -11,8 +11,8 @@ use thiserror::Error;
 use crate::filter::FiltersetSet;
 use crate::max_fail::MaxFail;
 use crate::settings::{
-    CoverageSettings, NoTestsMode, ProjectSettings, RunIgnoredMode, SrcSettings, TerminalSettings,
-    TestSettings,
+    CoverageSettings, NoTestsMode, ProjectSettings, RunIgnoredMode, SlowTimeoutSecs, SrcSettings,
+    TerminalSettings, TestSettings,
 };
 
 /// The implicit name of the default profile.
@@ -376,6 +376,24 @@ pub struct TestOptions {
         "#
     )]
     pub no_tests: Option<NoTestsMode>,
+
+    /// Threshold (in seconds) after which a test is flagged as slow.
+    ///
+    /// When set, tests that take longer than this duration are reported with
+    /// a `SLOW` status line and counted in the run summary. The `SLOW` line
+    /// is gated on `--status-level=slow` (or higher); the summary always
+    /// shows the slow count when `--final-status-level=slow` is set.
+    ///
+    /// Defaults to unset, which disables slow-test detection.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[option(
+        default = r#"null"#,
+        value_type = "float (seconds)",
+        example = r#"
+            slow-timeout = 60.0
+        "#
+    )]
+    pub slow_timeout: Option<SlowTimeoutSecs>,
 }
 
 impl TestOptions {
@@ -396,6 +414,7 @@ impl TestOptions {
             filter: FiltersetSet::default(),
             run_ignored: RunIgnoredMode::default(),
             no_tests: self.no_tests.unwrap_or_default(),
+            slow_timeout: self.slow_timeout.and_then(SlowTimeoutSecs::as_duration),
         }
     }
 }
@@ -595,7 +614,7 @@ nonsense = 42
           |
         4 | nonsense = 42
           | ^^^^^^^^
-        unknown field `nonsense`, expected one of `test-function-prefix`, `fail-fast`, `max-fail`, `try-import-fixtures`, `retry`, `no-tests`
+        unknown field `nonsense`, expected one of `test-function-prefix`, `fail-fast`, `max-fail`, `try-import-fixtures`, `retry`, `no-tests`, `slow-timeout`
         "
         );
     }
@@ -692,6 +711,7 @@ max-fail = 0
                 5,
             ),
             no_tests: None,
+            slow_timeout: None,
         }
         "#);
     }
@@ -719,6 +739,7 @@ max-fail = 0
                 3,
             ),
             no_tests: None,
+            slow_timeout: None,
         }
         "#);
     }
@@ -779,6 +800,7 @@ retry = 2
                     2,
                 ),
                 no_tests: None,
+                slow_timeout: None,
             },
         )
         "#);
@@ -833,6 +855,7 @@ retry = 5
                     5,
                 ),
                 no_tests: None,
+                slow_timeout: None,
             },
         )
         "#);

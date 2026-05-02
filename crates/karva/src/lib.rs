@@ -42,7 +42,7 @@ fn run(f: impl FnOnce(Vec<OsString>) -> Vec<OsString>) -> anyhow::Result<ExitSta
     let args = Args::parse_from(args);
 
     match args.command {
-        Command::Test(test_args) => commands::test::test(test_args),
+        Command::Test(test_args) => commands::test::test(*test_args),
         Command::Snapshot(snapshot_args) => commands::snapshot::snapshot(snapshot_args),
         Command::Cache(cache_args) => commands::cache::cache(&cache_args),
         Command::Version => commands::version::version().map(|()| ExitStatus::Success),

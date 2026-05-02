@@ -112,6 +112,18 @@ impl<'a> Context<'a> {
         );
     }
 
+    /// Mark a test as slow: increments the slow counter and emits the
+    /// `SLOW` reporter line. Called once per test variant whose total
+    /// runtime exceeded the configured `slow-timeout`.
+    pub fn register_slow_test(
+        &self,
+        test_case_name: &QualifiedTestName,
+        duration: std::time::Duration,
+    ) {
+        self.result()
+            .register_slow_test(test_case_name, duration, Some(self.reporter));
+    }
+
     /// Register the final outcome of a retried test. Updates summary stats
     /// (counting the test as flaky if it ultimately passed) without
     /// emitting a duplicate result line — the per-attempt `TRY N STATUS`

@@ -266,6 +266,30 @@ retry = 3
 
 ---
 
+### `slow-timeout`
+
+Threshold (in seconds) after which a test is flagged as slow.
+
+When set, tests that take longer than this duration are reported with
+a `SLOW` status line and counted in the run summary. The `SLOW` line
+is gated on `--status-level=slow` (or higher); the summary always
+shows the slow count when `--final-status-level=slow` is set.
+
+Defaults to unset, which disables slow-test detection.
+
+**Default value**: `null`
+
+**Type**: `float (seconds)`
+
+**Example usage** (`pyproject.toml`):
+
+```toml
+[tool.karva.profile.default.test]
+slow-timeout = 60.0
+```
+
+---
+
 ### `test-function-prefix`
 
 The prefix to use for test functions.
