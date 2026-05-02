@@ -1,5 +1,63 @@
 # Changelog
 
+## 0.0.1-alpha.5
+
+### Bug Fixes
+
+- Fix snapshot diff trailing-newline and show relative paths ([#709](https://github.com/MatthewMckee4/karva/pull/709))
+- Fix incorrect `karva --version` ([#682](https://github.com/MatthewMckee4/karva/pull/682))
+- fix: apply filter expressions in --dry-run and make -qq silent ([#671](https://github.com/MatthewMckee4/karva/pull/671))
+- Add regression tests for autouse fixtures from subdirectory conftests ([#644](https://github.com/MatthewMckee4/karva/pull/644))
+- Add regression test for monkeypatch.setattr(module, attr, None) ([#642](https://github.com/MatthewMckee4/karva/pull/642))
+- Have capsys/capfd save and restore logging.disable level ([#641](https://github.com/MatthewMckee4/karva/pull/641))
+- Add handler attribute to caplog fixture ([#640](https://github.com/MatthewMckee4/karva/pull/640))
+- Discover pytest fixtures imported into conftest.py ([#639](https://github.com/MatthewMckee4/karva/pull/639))
+- Fix capsysbinary to accept bytes writes to sys.stdout/sys.stderr ([#637](https://github.com/MatthewMckee4/karva/pull/637))
+- Remove logging.disable(CRITICAL) from redirect_python_output ([#636](https://github.com/MatthewMckee4/karva/pull/636))
+- Fix get_auto_use_fixtures collecting only first autouse fixture ([#635](https://github.com/MatthewMckee4/karva/pull/635))
+- Fix monkeypatch.context() so __exit__ undoes patches from the yielded instance ([#631](https://github.com/MatthewMckee4/karva/pull/631))
+- Add record_tuples property to caplog fixture ([#629](https://github.com/MatthewMckee4/karva/pull/629))
+- Fix monkeypatch.setattr(obj, attr, None) and caplog record.message ([#626](https://github.com/MatthewMckee4/karva/pull/626))
+- Fix function-scoped built-in fixtures not isolated across parametrize variants ([#616](https://github.com/MatthewMckee4/karva/pull/616))
+- Make collection errors non-fatal diagnostics ([#613](https://github.com/MatthewMckee4/karva/pull/613))
+- Fix monkeypatch.setattr() dotted import string form ([#611](https://github.com/MatthewMckee4/karva/pull/611))
+- Stop project discovery at .git boundary ([#610](https://github.com/MatthewMckee4/karva/pull/610))
+- Fix inline snapshot closing `"""` indentation ([#496](https://github.com/MatthewMckee4/karva/pull/496))
+- Fix inline snapshot corruption on multiline accept + partial accept workflow tests ([#494](https://github.com/MatthewMckee4/karva/pull/494))
+
+### CLI
+
+- Emit per-attempt retry lines and summary counter ([#701](https://github.com/MatthewMckee4/karva/pull/701))
+- Add nextest-style configuration profiles ([#700](https://github.com/MatthewMckee4/karva/pull/700))
+- add --max-fail=N to stop after N failures ([#666](https://github.com/MatthewMckee4/karva/pull/666))
+- Add filterset DSL for test selection ([#663](https://github.com/MatthewMckee4/karva/pull/663))
+- Adopt nextest-style output format ([#599](https://github.com/MatthewMckee4/karva/pull/599))
+- Support `--fail-fast` across workers via file-based signal ([#499](https://github.com/MatthewMckee4/karva/pull/499))
+- Add `karva cache prune` and `karva cache clean` commands ([#498](https://github.com/MatthewMckee4/karva/pull/498))
+
+### Documentation
+
+- docs: document caplog, capsys, capfd, recwarn, tmp_path_factory built-in fixtures ([#664](https://github.com/MatthewMckee4/karva/pull/664))
+- Add complete snapshot documentation ([#495](https://github.com/MatthewMckee4/karva/pull/495))
+
+### Extensions
+
+- Add `@karva.tags.timeout(seconds)` decorator ([#710](https://github.com/MatthewMckee4/karva/pull/710))
+- Make tmp_path_factory and tmpdir_factory session-scoped ([#638](https://github.com/MatthewMckee4/karva/pull/638))
+- Add capsysbinary and capfdbinary built-in fixtures ([#630](https://github.com/MatthewMckee4/karva/pull/630))
+- Add recwarn built-in fixture ([#612](https://github.com/MatthewMckee4/karva/pull/612))
+- Add capsys built-in fixture ([#608](https://github.com/MatthewMckee4/karva/pull/608))
+- Add caplog built-in fixture ([#607](https://github.com/MatthewMckee4/karva/pull/607))
+
+### Snapshot Testing
+
+- Use more snapshot tests and add integration tests ([#497](https://github.com/MatthewMckee4/karva/pull/497))
+
+### Contributors
+
+- [@MatthewMckee4](https://github.com/MatthewMckee4)
+- [@OmChillure](https://github.com/OmChillure)
+
 ## 0.0.1-alpha.4
 
 ### CLI
