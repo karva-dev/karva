@@ -6,7 +6,8 @@ use clap::builder::Styles;
 use clap::builder::styling::{AnsiColor, Effects};
 use karva_logging::{FinalStatusLevel, StatusLevel, TerminalColor, VerbosityLevel};
 use karva_metadata::{
-    MaxFail, NoTestsMode, Options, RunIgnoredMode, SrcOptions, TerminalOptions, TestOptions,
+    CoverageOptions, MaxFail, NoTestsMode, Options, RunIgnoredMode, SrcOptions, TerminalOptions,
+    TestOptions,
 };
 use ruff_db::diagnostic::DiagnosticFormat;
 
@@ -416,6 +417,15 @@ impl From<OutputFormat> for karva_metadata::OutputFormat {
     }
 }
 
+impl From<CovReport> for karva_metadata::CovReport {
+    fn from(value: CovReport) -> Self {
+        match value {
+            CovReport::Term => Self::Term,
+            CovReport::TermMissing => Self::TermMissing,
+        }
+    }
+}
+
 impl SubTestCommand {
     pub fn into_options(self) -> Options {
         // `--no-fail-fast` forces `fail_fast = false` and clears any
@@ -452,6 +462,10 @@ impl SubTestCommand {
                 try_import_fixtures: self.try_import_fixtures,
                 retry: self.retry,
                 no_tests: self.no_tests.map(Into::into),
+            }),
+            coverage: Some(CoverageOptions {
+                sources: (!self.cov.is_empty()).then(|| self.cov.clone()),
+                report: self.cov_report.map(Into::into),
             }),
         }
     }

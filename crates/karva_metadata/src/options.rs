@@ -11,7 +11,8 @@ use thiserror::Error;
 use crate::filter::FiltersetSet;
 use crate::max_fail::MaxFail;
 use crate::settings::{
-    NoTestsMode, ProjectSettings, RunIgnoredMode, SrcSettings, TerminalSettings, TestSettings,
+    CoverageSettings, NoTestsMode, ProjectSettings, RunIgnoredMode, SrcSettings, TerminalSettings,
+    TestSettings,
 };
 
 /// The implicit name of the default profile.
@@ -147,6 +148,9 @@ pub struct Options {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[option_group]
     pub test: Option<TestOptions>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[option_group]
+    pub coverage: Option<CoverageOptions>,
 }
 
 impl Options {
@@ -155,6 +159,7 @@ impl Options {
             terminal: self.terminal.clone().unwrap_or_default().to_settings(),
             src: self.src.clone().unwrap_or_default().to_settings(),
             test: self.test.clone().unwrap_or_default().to_settings(),
+            coverage: self.coverage.clone().unwrap_or_default().to_settings(),
         }
     }
 }
@@ -407,6 +412,73 @@ pub enum KarvaTomlError {
     },
     #[error("invalid profile name `{name}`: {reason}")]
     InvalidProfileName { name: String, reason: &'static str },
+}
+
+#[derive(
+    Debug, Default, Clone, Eq, PartialEq, Combine, Serialize, Deserialize, OptionsMetadata,
+)]
+#[serde(rename_all = "kebab-case", deny_unknown_fields)]
+pub struct CoverageOptions {
+    /// Source paths to measure coverage for.
+    ///
+    /// Equivalent to passing `--cov=<path>` on the command line; may be
+    /// listed multiple times. An empty entry (`""`) measures the current
+    /// working directory, matching pytest-cov's bare `--cov`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[option(
+        default = r#"null"#,
+        value_type = r#"list[str]"#,
+        example = r#"
+            sources = ["src"]
+        "#
+    )]
+    pub sources: Option<Vec<String>>,
+
+    /// Coverage terminal report type.
+    ///
+    /// `term` (default) prints a compact terminal table.
+    /// `term-missing` extends it with a `Missing` column listing the
+    /// uncovered line numbers per file.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[option(
+        default = r#"term"#,
+        value_type = "term | term-missing",
+        example = r#"
+            report = "term-missing"
+        "#
+    )]
+    pub report: Option<CovReport>,
+}
+
+impl CoverageOptions {
+    pub fn to_settings(&self) -> CoverageSettings {
+        CoverageSettings {
+            sources: self.sources.clone().unwrap_or_default(),
+            report: self.report.unwrap_or_default(),
+        }
+    }
+}
+
+/// Coverage terminal report type.
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case", deny_unknown_fields)]
+pub enum CovReport {
+    /// Compact terminal table (default).
+    #[default]
+    Term,
+
+    /// Terminal table with a `Missing` column listing uncovered line numbers.
+    TermMissing,
+}
+
+impl Combine for CovReport {
+    #[inline(always)]
+    fn combine_with(&mut self, _other: Self) {}
+
+    #[inline]
+    fn combine(self, _other: Self) -> Self {
+        self
+    }
 }
 
 /// The diagnostic output format.
@@ -861,6 +933,98 @@ retry = 5
             99,
         )
         ");
+    }
+
+    #[test]
+    fn parse_coverage_section() {
+        let toml = r#"
+[profile.default.coverage]
+sources = ["src", "tests"]
+report = "term-missing"
+"#;
+        let resolved = Config::from_toml_str(toml)
+            .expect("parse")
+            .resolve_profile(None)
+            .expect("resolves");
+        assert_debug_snapshot!(resolved.coverage, @r#"
+        Some(
+            CoverageOptions {
+                sources: Some(
+                    [
+                        "src",
+                        "tests",
+                    ],
+                ),
+                report: Some(
+                    TermMissing,
+                ),
+            },
+        )
+        "#);
+    }
+
+    /// CLI `--cov` sources accumulate with file sources at the tail (matching
+    /// the existing `include` behavior).
+    #[test]
+    fn combine_appends_cli_coverage_sources_after_file() {
+        let cli = CoverageOptions {
+            sources: Some(vec!["tests".to_string()]),
+            ..CoverageOptions::default()
+        };
+        let file = CoverageOptions {
+            sources: Some(vec!["src".to_string()]),
+            report: Some(CovReport::TermMissing),
+        };
+        assert_debug_snapshot!(cli.combine(file), @r#"
+        CoverageOptions {
+            sources: Some(
+                [
+                    "src",
+                    "tests",
+                ],
+            ),
+            report: Some(
+                TermMissing,
+            ),
+        }
+        "#);
+    }
+
+    /// CLI `--cov-report` overrides the configured value (scalar `Combine`).
+    #[test]
+    fn combine_cli_coverage_report_wins_over_file() {
+        let cli = CoverageOptions {
+            report: Some(CovReport::Term),
+            ..CoverageOptions::default()
+        };
+        let file = CoverageOptions {
+            report: Some(CovReport::TermMissing),
+            ..CoverageOptions::default()
+        };
+        assert_debug_snapshot!(cli.combine(file).report, @r"
+        Some(
+            Term,
+        )
+        ");
+    }
+
+    #[test]
+    fn from_toml_str_rejects_unknown_coverage_key() {
+        let toml = r#"
+[profile.default.coverage]
+sources = ["src"]
+nonsense = 1
+"#;
+        assert_snapshot!(
+            Config::from_toml_str(toml).expect_err("unknown field"),
+            @r"
+        TOML parse error at line 4, column 1
+          |
+        4 | nonsense = 1
+          | ^^^^^^^^
+        unknown field `nonsense`, expected `sources` or `report`
+        "
+        );
     }
 }
 

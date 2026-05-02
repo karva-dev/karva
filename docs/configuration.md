@@ -6,6 +6,50 @@ Karva is configured through `karva.toml` (or the `[tool.karva]` table in `pyproj
 
 The reference below documents every field supported inside a profile. Examples target the implicit `default` profile.
 
+## `coverage`
+
+### `report`
+
+Coverage terminal report type.
+
+`term` (default) prints a compact terminal table.
+`term-missing` extends it with a `Missing` column listing the
+uncovered line numbers per file.
+
+**Default value**: `term`
+
+**Type**: `term | term-missing`
+
+**Example usage** (`pyproject.toml`):
+
+```toml
+[tool.karva.profile.default.coverage]
+report = "term-missing"
+```
+
+---
+
+### `sources`
+
+Source paths to measure coverage for.
+
+Equivalent to passing `--cov=<path>` on the command line; may be
+listed multiple times. An empty entry (`""`) measures the current
+working directory, matching pytest-cov's bare `--cov`.
+
+**Default value**: `null`
+
+**Type**: `list[str]`
+
+**Example usage** (`pyproject.toml`):
+
+```toml
+[tool.karva.profile.default.coverage]
+sources = ["src"]
+```
+
+---
+
 ## `src`
 
 ### `include`

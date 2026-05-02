@@ -6,10 +6,10 @@ use std::time::{Duration, Instant};
 
 use anyhow::{Context as _, Result};
 use karva_cache::{AggregatedResults, DisplayFlakyTests};
-use karva_cli::{CovReport, OutputFormat, TestCommand};
+use karva_cli::{OutputFormat, TestCommand};
 use karva_logging::{Printer, Stdout, set_colored_override, setup_tracing};
 use karva_metadata::filter::FiltersetSet;
-use karva_metadata::{NoTestsMode, ProjectMetadata, ProjectOptionsOverrides};
+use karva_metadata::{CovReport, NoTestsMode, ProjectMetadata, ProjectOptionsOverrides};
 use karva_project::Project;
 use karva_project::path::absolute;
 use karva_python_semantic::current_python_version;
@@ -94,10 +94,10 @@ pub fn test(args: TestCommand) -> Result<ExitStatus> {
         durations,
     )?;
 
-    if !sub_command.cov.is_empty() {
+    if !project.settings().coverage().sources.is_empty() {
         let cache_dir = project.cwd().join(karva_cache::CACHE_DIR);
         let coverage_dir = karva_runner::coverage_data_dir(&cache_dir);
-        let show_missing = matches!(sub_command.cov_report, Some(CovReport::TermMissing));
+        let show_missing = matches!(project.settings().coverage().report, CovReport::TermMissing);
         if let Err(err) =
             karva_coverage::combine_and_report(project.cwd(), &coverage_dir, show_missing)
         {
