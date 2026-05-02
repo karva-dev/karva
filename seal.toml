@@ -26,6 +26,7 @@ confirm = true
 "Property Testing" = ["property-testing"]
 "Diagnostics" = ["diagnostics"]
 "Configuration" = ["configuration"]
+"Coverage" = ["coverage"]
 "CLI" = ["cli"]
 "Pytest Compatibility" = ["pytest", "migration"]
 "Documentation" = ["documentation"]
