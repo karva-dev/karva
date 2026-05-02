@@ -15,14 +15,20 @@ impl EnvVars {
     /// When set to "1" or "true", snapshot assertions write directly to `.snap`
     /// instead of creating `.snap.new` pending files.
     pub const KARVA_SNAPSHOT_UPDATE: &'static str = "KARVA_SNAPSHOT_UPDATE";
+}
 
-    /// The 1-indexed attempt number for the currently running test. Mirrors
-    /// nextest's `NEXTEST_ATTEMPT`. Always set; `"1"` when no retries are
-    /// configured.
+/// Environment variables that Karva sets on the test process so tests can
+/// read them at runtime. These are exposed *to* user tests, not consumed by
+/// Karva itself.
+pub struct TestEnvVars;
+
+impl TestEnvVars {
+    /// The 1-indexed attempt number for the currently running test. Always
+    /// set; `"1"` when no retries are configured.
     pub const KARVA_ATTEMPT: &'static str = "KARVA_ATTEMPT";
 
     /// The total number of attempts allowed for the currently running test
-    /// (`retries + 1`). Mirrors nextest's `NEXTEST_TOTAL_ATTEMPTS`. Always set.
+    /// (`retries + 1`). Always set.
     pub const KARVA_TOTAL_ATTEMPTS: &'static str = "KARVA_TOTAL_ATTEMPTS";
 }
 

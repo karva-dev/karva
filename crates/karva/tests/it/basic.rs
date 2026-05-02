@@ -2313,9 +2313,8 @@ def test_always_fails(): assert False
     );
 }
 
-/// `KARVA_ATTEMPT` and `KARVA_TOTAL_ATTEMPTS` are exposed to the test process
-/// (mirroring nextest's `NEXTEST_ATTEMPT` / `NEXTEST_TOTAL_ATTEMPTS`). Without
-/// `--retry`, both are `"1"`.
+/// `KARVA_ATTEMPT` and `KARVA_TOTAL_ATTEMPTS` are exposed to the test process.
+/// Without `--retry`, both are `"1"`.
 #[test]
 fn test_karva_attempt_env_default() {
     let context = TestContext::with_file(
