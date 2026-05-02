@@ -99,6 +99,21 @@ fn combine(data_dir: &Utf8Path) -> Result<BTreeMap<String, CombinedFile>> {
     Ok(combined)
 }
 
+struct Row<'a> {
+    name: &'a str,
+    stmts: &'a str,
+    miss: &'a str,
+    cover: &'a str,
+    missing: &'a str,
+}
+
+struct FileRow {
+    name: String,
+    stmts: u32,
+    miss: u32,
+    missing: String,
+}
+
 fn print_report(
     cwd: &Utf8Path,
     combined: &BTreeMap<String, CombinedFile>,
@@ -107,13 +122,12 @@ fn print_report(
 ) -> Result<()> {
     let cwd_real = std::fs::canonicalize(cwd.as_std_path()).unwrap_or_else(|_| cwd.into());
 
-    let rows: Vec<(String, u32, u32, String)> = combined
+    let rows: Vec<FileRow> = combined
         .iter()
         .map(|(filename, data)| {
-            let display = display_path(filename, &cwd_real);
-            let total = u32::try_from(data.executable.len()).unwrap_or(u32::MAX);
+            let stmts = u32::try_from(data.executable.len()).unwrap_or(u32::MAX);
             let hit = u32::try_from(data.executed.len()).unwrap_or(u32::MAX);
-            let miss = total.saturating_sub(hit);
+            let miss = stmts.saturating_sub(hit);
             let missing = if show_missing {
                 let uncovered: BTreeSet<u32> = data
                     .executable
@@ -124,13 +138,18 @@ fn print_report(
             } else {
                 String::new()
             };
-            (display, total, miss, missing)
+            FileRow {
+                name: display_path(filename, &cwd_real),
+                stmts,
+                miss,
+                missing,
+            }
         })
         .collect();
 
     let name_width = rows
         .iter()
-        .map(|(n, _, _, _)| n.len())
+        .map(|row| row.name.len())
         .max()
         .unwrap_or(0)
         .max("Name".len())
@@ -138,12 +157,14 @@ fn print_report(
 
     let header = format_row(
         name_width,
-        "Name",
-        "Stmts",
-        "Miss",
-        "Cover",
         show_missing,
-        "Missing",
+        &Row {
+            name: "Name",
+            stmts: "Stmts",
+            miss: "Miss",
+            cover: "Cover",
+            missing: "Missing",
+        },
     );
     let rule_len = header.chars().count();
     let rule = "-".repeat(rule_len);
@@ -155,25 +176,27 @@ fn print_report(
     let mut total_stmts: u32 = 0;
     let mut total_miss: u32 = 0;
 
-    for (name, stmts, miss, missing) in &rows {
-        let cover = format_percent(*stmts, *miss);
-        let stmts_str = stmts.to_string();
-        let miss_str = miss.to_string();
+    for row in &rows {
+        let cover = format_percent(row.stmts, row.miss);
+        let stmts_str = row.stmts.to_string();
+        let miss_str = row.miss.to_string();
         writeln!(
             out,
             "{}",
             format_row(
                 name_width,
-                name,
-                &stmts_str,
-                &miss_str,
-                &cover,
                 show_missing,
-                missing
+                &Row {
+                    name: &row.name,
+                    stmts: &stmts_str,
+                    miss: &miss_str,
+                    cover: &cover,
+                    missing: &row.missing,
+                },
             )
         )?;
-        total_stmts = total_stmts.saturating_add(*stmts);
-        total_miss = total_miss.saturating_add(*miss);
+        total_stmts = total_stmts.saturating_add(row.stmts);
+        total_miss = total_miss.saturating_add(row.miss);
     }
 
     writeln!(out, "{rule}")?;
@@ -185,35 +208,33 @@ fn print_report(
         "{}",
         format_row(
             name_width,
-            "TOTAL",
-            &total_stmts_str,
-            &total_miss_str,
-            &total_cover,
             show_missing,
-            "",
+            &Row {
+                name: "TOTAL",
+                stmts: &total_stmts_str,
+                miss: &total_miss_str,
+                cover: &total_cover,
+                missing: "",
+            },
         )
     )?;
 
     Ok(())
 }
 
-fn format_row(
-    name_width: usize,
-    name: &str,
-    stmts: &str,
-    miss: &str,
-    cover: &str,
-    show_missing: bool,
-    missing: &str,
-) -> String {
+fn format_row(name_width: usize, show_missing: bool, row: &Row<'_>) -> String {
     let base = format!(
         "{name:<name_width$}   {stmts:>stmts_w$}   {miss:>miss_w$}   {cover:>cover_w$}",
+        name = row.name,
+        stmts = row.stmts,
+        miss = row.miss,
+        cover = row.cover,
         stmts_w = "Stmts".len(),
         miss_w = "Miss".len(),
         cover_w = "Cover".len(),
     );
-    if show_missing && !missing.is_empty() {
-        format!("{base}   {missing}")
+    if show_missing && !row.missing.is_empty() {
+        format!("{base}   {missing}", missing = row.missing)
     } else {
         base
     }

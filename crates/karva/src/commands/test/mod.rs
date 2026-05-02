@@ -6,7 +6,7 @@ use std::time::{Duration, Instant};
 
 use anyhow::{Context as _, Result};
 use karva_cache::{AggregatedResults, DisplayFlakyTests};
-use karva_cli::{OutputFormat, TestCommand};
+use karva_cli::{CovReport, OutputFormat, TestCommand};
 use karva_logging::{Printer, Stdout, set_colored_override, setup_tracing};
 use karva_metadata::filter::FiltersetSet;
 use karva_metadata::{NoTestsMode, ProjectMetadata, ProjectOptionsOverrides};
@@ -100,7 +100,7 @@ pub fn test(args: TestCommand) -> Result<ExitStatus> {
         let show_missing = sub_command
             .cov_report
             .iter()
-            .any(|kind| kind == "term-missing");
+            .any(|kind| matches!(kind, CovReport::TermMissing));
         if let Err(err) =
             karva_coverage::combine_and_report(project.cwd(), &coverage_dir, show_missing)
         {

@@ -279,16 +279,17 @@ pub struct SubTestCommand {
 
     /// Coverage report type. May be passed multiple times.
     ///
-    /// Currently supported values are `term` (default, compact terminal
-    /// table) and `term-missing` (terminal table with a `Missing` column
-    /// listing the uncovered line numbers per file).
+    /// `term` (default) prints a compact terminal table.
+    /// `term-missing` extends it with a `Missing` column listing the
+    /// uncovered line numbers per file.
     #[clap(
         long = "cov-report",
         value_name = "TYPE",
+        value_enum,
         action = clap::ArgAction::Append,
         help_heading = "Coverage options"
     )]
-    pub cov_report: Vec<String>,
+    pub cov_report: Vec<CovReport>,
 
     /// Internal: per-worker coverage data file path.
     ///
@@ -370,6 +371,19 @@ impl TestCommand {
     pub fn verbosity(&self) -> &Verbosity {
         &self.sub_command.verbosity
     }
+}
+
+/// Coverage terminal report type.
+#[derive(Copy, Clone, Hash, Debug, PartialEq, Eq, PartialOrd, Ord, Default, clap::ValueEnum)]
+pub enum CovReport {
+    /// Compact terminal table (default).
+    #[default]
+    #[value(name = "term")]
+    Term,
+
+    /// Terminal table with a `Missing` column listing uncovered line numbers.
+    #[value(name = "term-missing")]
+    TermMissing,
 }
 
 /// The diagnostic output format.
