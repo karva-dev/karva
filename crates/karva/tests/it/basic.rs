@@ -2313,6 +2313,69 @@ def test_always_fails(): assert False
     );
 }
 
+/// `KARVA_ATTEMPT` and `KARVA_TOTAL_ATTEMPTS` are exposed to the test process
+/// (mirroring nextest's `NEXTEST_ATTEMPT` / `NEXTEST_TOTAL_ATTEMPTS`). Without
+/// `--retry`, both are `"1"`.
+#[test]
+fn test_karva_attempt_env_default() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+import os
+
+def test_default_attempt():
+    assert os.environ['KARVA_ATTEMPT'] == '1'
+    assert os.environ['KARVA_TOTAL_ATTEMPTS'] == '1'
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_default_attempt
+
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+/// With `--retry=N`, `KARVA_TOTAL_ATTEMPTS` is `N+1` and `KARVA_ATTEMPT`
+/// increments on each retry. The test below asserts the attempt number and
+/// only passes on attempt 3, exercising both env vars across the retry loop.
+#[test]
+fn test_karva_attempt_env_increments_on_retry() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+import os
+
+def test_attempt_env():
+    assert os.environ['KARVA_TOTAL_ATTEMPTS'] == '5'
+    assert int(os.environ['KARVA_ATTEMPT']) == 3
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--retry=4"), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+        Starting 1 test across 1 worker
+      TRY 1 FAIL [TIME] test::test_attempt_env
+      TRY 2 FAIL [TIME] test::test_attempt_env
+      TRY 3 PASS [TIME] test::test_attempt_env
+
+    ────────────
+         Summary [TIME] 1 test run: 1 passed (1 flaky), 0 skipped
+       FLAKY 3/5 [TIME] test::test_attempt_env
+
+    ----- stderr -----
+    ");
+}
+
 /// `--max-fail` must reject zero because the underlying type is `NonZeroU32`.
 #[test]
 fn test_max_fail_zero_is_rejected() {
