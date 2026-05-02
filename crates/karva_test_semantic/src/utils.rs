@@ -195,6 +195,14 @@ pub(crate) fn set_attempt_env(py: Python<'_>, attempt: u32, total_attempts: u32)
     Ok(())
 }
 
+/// Sets `KARVA_TEST_NAME` on Python's `os.environ` to the qualified name of
+/// the currently running test variant.
+pub(crate) fn set_test_name_env(py: Python<'_>, qualified_name: &str) -> PyResult<()> {
+    let environ = py.import("os")?.getattr("environ")?;
+    environ.set_item(WorkerEnvVars::KARVA_TEST_NAME, qualified_name)?;
+    Ok(())
+}
+
 /// Adds a directory path to Python's sys.path at the specified index.
 pub(crate) fn add_to_sys_path(py: Python<'_>, path: &Utf8Path, index: isize) -> PyResult<()> {
     let sys_module = py.import("sys")?;

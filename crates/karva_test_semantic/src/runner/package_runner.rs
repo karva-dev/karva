@@ -30,7 +30,8 @@ use crate::runner::fixture_resolver::RuntimeFixtureResolver;
 use crate::runner::test_iterator::{TestVariant, TestVariantIterator};
 use crate::runner::{FinalizerCache, FixtureCache};
 use crate::utils::{
-    full_test_name, run_coroutine, run_test_with_timeout, set_attempt_env, source_file,
+    full_test_name, run_coroutine, run_test_with_timeout, set_attempt_env, set_test_name_env,
+    source_file,
 };
 
 /// Executes discovered tests within a package hierarchy.
@@ -417,6 +418,8 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
             QualifiedTestName::new(name.clone(), Some(computed_full_test_name));
 
         tracing::debug!("Running test `{}`", qualified_test_name);
+
+        let _ = set_test_name_env(py, &qualified_test_name.to_string());
 
         // Set snapshot context so `karva.assert_snapshot()` can determine the current test.
         // Use `function_name()` (not `qualified_test_name`) to avoid doubling the module prefix,

@@ -19,6 +19,7 @@ use karva_logging::Printer;
 use karva_logging::time::format_duration;
 use karva_metadata::ProjectSettings;
 use karva_project::Project;
+use karva_static::WorkerEnvVars;
 
 use crate::collection::ParallelCollector;
 use crate::partition::{Partition, partition_collected_tests};
@@ -163,6 +164,7 @@ fn spawn_workers(
     let mut worker_manager = WorkerManager::default();
 
     let coverage_dir = coverage_data_dir(cache_dir);
+    let run_id = uuid::Uuid::new_v4().to_string();
 
     for (worker_id, partition) in partitions.iter().enumerate() {
         if partition.tests().is_empty() {
@@ -179,7 +181,11 @@ fn spawn_workers(
             .arg(worker_id.to_string())
             .current_dir(project.cwd())
             // Ensure python does not buffer output
-            .env("PYTHONUNBUFFERED", "1");
+            .env("PYTHONUNBUFFERED", "1")
+            .env(WorkerEnvVars::KARVA, "1")
+            .env(WorkerEnvVars::KARVA_WORKER_ID, worker_id.to_string())
+            .env(WorkerEnvVars::KARVA_RUN_ID, &run_id)
+            .env(WorkerEnvVars::KARVA_WORKSPACE_ROOT, project.cwd().as_str());
 
         for path in partition.tests() {
             cmd.arg(path);
