@@ -448,12 +448,25 @@ pub struct CoverageOptions {
         "#
     )]
     pub report: Option<CovReport>,
+
+    /// Set by `--no-cov` to disable coverage for a single run, overriding
+    /// any sources configured in `karva.toml`.
+    ///
+    /// Not user-facing: skipped during (de)serialization so it cannot be
+    /// set from a configuration file.
+    #[serde(skip)]
+    pub disabled: Option<bool>,
 }
 
 impl CoverageOptions {
     pub fn to_settings(&self) -> CoverageSettings {
+        let sources = if self.disabled.unwrap_or(false) {
+            Vec::new()
+        } else {
+            self.sources.clone().unwrap_or_default()
+        };
         CoverageSettings {
-            sources: self.sources.clone().unwrap_or_default(),
+            sources,
             report: self.report.unwrap_or_default(),
         }
     }
@@ -958,6 +971,7 @@ report = "term-missing"
                 report: Some(
                     TermMissing,
                 ),
+                disabled: None,
             },
         )
         "#);
@@ -974,6 +988,7 @@ report = "term-missing"
         let file = CoverageOptions {
             sources: Some(vec!["src".to_string()]),
             report: Some(CovReport::TermMissing),
+            ..CoverageOptions::default()
         };
         assert_debug_snapshot!(cli.combine(file), @r#"
         CoverageOptions {
@@ -986,6 +1001,7 @@ report = "term-missing"
             report: Some(
                 TermMissing,
             ),
+            disabled: None,
         }
         "#);
     }
@@ -1006,6 +1022,41 @@ report = "term-missing"
             Term,
         )
         ");
+    }
+
+    /// `--no-cov` (CLI sets `disabled = Some(true)`) overrides any sources
+    /// configured in `karva.toml`.
+    #[test]
+    fn to_settings_disabled_clears_configured_sources() {
+        let cli = CoverageOptions {
+            disabled: Some(true),
+            ..CoverageOptions::default()
+        };
+        let file = CoverageOptions {
+            sources: Some(vec!["src".to_string()]),
+            ..CoverageOptions::default()
+        };
+        let combined = cli.combine(file);
+        assert_debug_snapshot!(combined.to_settings().sources, @"[]");
+    }
+
+    /// `disabled` is CLI-only; `deny_unknown_fields` should reject it from TOML.
+    #[test]
+    fn from_toml_str_rejects_disabled_key() {
+        let toml = r"
+[profile.default.coverage]
+disabled = true
+";
+        assert_snapshot!(
+            Config::from_toml_str(toml).expect_err("unknown field"),
+            @r"
+        TOML parse error at line 3, column 1
+          |
+        3 | disabled = true
+          | ^^^^^^^^
+        unknown field `disabled`, expected `sources` or `report`
+        "
+        );
     }
 
     #[test]

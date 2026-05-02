@@ -274,9 +274,23 @@ pub struct SubTestCommand {
         num_args = 0..=1,
         default_missing_value = "",
         action = clap::ArgAction::Append,
+        overrides_with = "no_cov",
         help_heading = "Coverage options"
     )]
     pub cov: Vec<String>,
+
+    /// Disable coverage measurement for this run.
+    ///
+    /// Overrides any `--cov` flag and any `[coverage] sources` configured in
+    /// `karva.toml` / `pyproject.toml`. Useful when iterating locally without
+    /// editing config.
+    #[clap(
+        long = "no-cov",
+        action = clap::ArgAction::SetTrue,
+        overrides_with = "cov",
+        help_heading = "Coverage options"
+    )]
+    pub no_cov: bool,
 
     /// Coverage terminal report type.
     ///
@@ -466,6 +480,7 @@ impl SubTestCommand {
             coverage: Some(CoverageOptions {
                 sources: (!self.cov.is_empty()).then(|| self.cov.clone()),
                 report: self.cov_report.map(Into::into),
+                disabled: self.no_cov.then_some(true),
             }),
         }
     }
