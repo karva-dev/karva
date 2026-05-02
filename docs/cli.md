@@ -72,6 +72,8 @@ karva test [OPTIONS] [PATH]...
 </dd><dt id="karva-test--max-fail"><a href="#karva-test--max-fail"><code>--max-fail</code></a> <i>n</i></dt><dd><p>Stop scheduling new tests after this many failures.</p>
 <p>Accepts a positive integer such as <code>--max-fail=3</code>. <code>--max-fail=1</code> is equivalent to the legacy <code>--fail-fast</code>, and <code>--no-fail-fast</code> clears the limit. When <code>--max-fail</code> is provided alongside <code>--fail-fast</code> or <code>--no-fail-fast</code>, <code>--max-fail</code> takes precedence.</p>
 </dd><dt id="karva-test--no-cache"><a href="#karva-test--no-cache"><code>--no-cache</code></a></dt><dd><p>Disable reading the karva cache for test duration history</p>
+</dd><dt id="karva-test--no-capture"><a href="#karva-test--no-capture"><code>--no-capture</code></a></dt><dd><p>Disable output capture and run tests serially.</p>
+<p>Lets stdout/stderr from tests flow directly to the terminal, useful when debugging with print statements or interactive debuggers. Implies <code>--show-output</code> and forces a single worker so output from concurrent tests cannot interleave.</p>
 </dd><dt id="karva-test--no-fail-fast"><a href="#karva-test--no-fail-fast"><code>--no-fail-fast</code></a></dt><dd><p>Run every test regardless of how many fail.</p>
 <p>Clears any <code>fail-fast</code> or <code>max-fail</code> value set in configuration. When <code>--max-fail</code> is provided alongside <code>--no-fail-fast</code>, <code>--max-fail</code> takes precedence.</p>
 </dd><dt id="karva-test--no-ignore"><a href="#karva-test--no-ignore"><code>--no-ignore</code></a></dt><dd><p>When set, .gitignore files will not be respected</p>

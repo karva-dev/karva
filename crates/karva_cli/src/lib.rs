@@ -302,6 +302,15 @@ pub struct TestCommand {
     #[clap(long, default_missing_value = "true", num_args=0..1, help_heading = "Runner options")]
     pub no_parallel: Option<bool>,
 
+    /// Disable output capture and run tests serially.
+    ///
+    /// Lets stdout/stderr from tests flow directly to the terminal,
+    /// useful when debugging with print statements or interactive
+    /// debuggers. Implies `--show-output` and forces a single worker
+    /// so output from concurrent tests cannot interleave.
+    #[clap(long, action = clap::ArgAction::SetTrue, help_heading = "Runner options")]
+    pub no_capture: bool,
+
     /// Disable reading the karva cache for test duration history
     #[clap(long, default_missing_value = "true", num_args=0..1, help_heading = "Runner options")]
     pub no_cache: Option<bool>,
@@ -424,7 +433,11 @@ impl SubTestCommand {
 
 impl TestCommand {
     pub fn into_options(self) -> Options {
-        self.sub_command.into_options()
+        let mut sub_command = self.sub_command;
+        if self.no_capture {
+            sub_command.show_output = Some(true);
+        }
+        sub_command.into_options()
     }
 }
 

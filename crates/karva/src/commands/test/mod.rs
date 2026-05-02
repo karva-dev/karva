@@ -47,7 +47,7 @@ pub fn test(args: TestCommand) -> Result<ExitStatus> {
     let durations = args.durations;
     let last_failed = args.last_failed;
     let no_cache = args.no_cache.unwrap_or(false);
-    let num_workers = if args.no_parallel.unwrap_or(false) {
+    let num_workers = if args.no_parallel.unwrap_or(false) || args.no_capture {
         1
     } else {
         args.num_workers
