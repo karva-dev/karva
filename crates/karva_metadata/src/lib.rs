@@ -11,11 +11,11 @@ mod settings;
 
 pub use max_fail::MaxFail;
 pub use options::{
-    Config, DEFAULT_PROFILE, Options, OutputFormat, ProjectOptionsOverrides, SrcOptions,
-    TerminalOptions, TestOptions, UnknownProfile,
+    Config, CovReport, CoverageOptions, DEFAULT_PROFILE, Options, OutputFormat,
+    ProjectOptionsOverrides, SrcOptions, TerminalOptions, TestOptions, UnknownProfile,
 };
 pub use pyproject::{PyProject, PyProjectError};
-pub use settings::{NoTestsMode, ProjectSettings, RunIgnoredMode};
+pub use settings::{CoverageSettings, NoTestsMode, ProjectSettings, RunIgnoredMode};
 
 use crate::options::KarvaTomlError;
 

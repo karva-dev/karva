@@ -505,3 +505,105 @@ def test_add():
     "
     );
 }
+
+#[test]
+fn test_cov_sources_from_config() {
+    let context = TestContext::with_files([
+        (
+            "karva.toml",
+            r#"
+[profile.default.coverage]
+sources = ["src"]
+"#,
+        ),
+        (
+            "src/mymod.py",
+            r"
+def add(a, b):
+    return a + b
+",
+        ),
+        (
+            "test_mymod.py",
+            r"
+import sys, os
+sys.path.insert(0, os.path.dirname(__file__))
+from src.mymod import add
+
+def test_add():
+    assert add(2, 3) == 5
+",
+        ),
+    ]);
+
+    assert_cmd_snapshot!(
+        context.command_no_parallel()
+            .arg("--status-level=none")
+            .arg("test_mymod.py"),
+        @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    Name           Stmts   Miss   Cover
+    [LONG-LINE]
+    src/mymod.py       2      0    100%
+    [LONG-LINE]
+    TOTAL              2      0    100%
+
+    ----- stderr -----
+    "
+    );
+}
+
+#[test]
+fn test_cov_report_term_missing_from_config() {
+    let context = TestContext::with_files([
+        (
+            "karva.toml",
+            r#"
+[profile.default.coverage]
+sources = [""]
+report = "term-missing"
+"#,
+        ),
+        (
+            "test_missing.py",
+            r"
+def covered():
+    return 1
+
+def uncovered():
+    return 2
+
+def test_only_covered():
+    assert covered() == 1
+",
+        ),
+    ]);
+
+    assert_cmd_snapshot!(
+        context.command_no_parallel()
+            .arg("--status-level=none")
+            .arg("test_missing.py"),
+        @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    Name              Stmts   Miss   Cover   Missing
+    [LONG-LINE]
+    test_missing.py       6      1     83%   6
+    [LONG-LINE]
+    TOTAL                 6      1     83%
+
+    ----- stderr -----
+    "
+    );
+}

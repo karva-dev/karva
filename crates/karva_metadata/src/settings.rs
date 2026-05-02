@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::filter::FiltersetSet;
 use crate::max_fail::MaxFail;
-use crate::options::OutputFormat;
+use crate::options::{CovReport, OutputFormat};
 
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RunIgnoredMode {
@@ -39,6 +39,7 @@ pub struct ProjectSettings {
     pub(crate) terminal: TerminalSettings,
     pub(crate) src: SrcSettings,
     pub(crate) test: TestSettings,
+    pub(crate) coverage: CoverageSettings,
 }
 
 impl ProjectSettings {
@@ -52,6 +53,10 @@ impl ProjectSettings {
 
     pub fn test(&self) -> &TestSettings {
         &self.test
+    }
+
+    pub fn coverage(&self) -> &CoverageSettings {
+        &self.coverage
     }
 
     pub fn max_fail(&self) -> MaxFail {
@@ -79,6 +84,12 @@ pub struct TerminalSettings {
 pub struct SrcSettings {
     pub respect_ignore_files: bool,
     pub include_paths: Vec<String>,
+}
+
+#[derive(Default, Debug, Clone)]
+pub struct CoverageSettings {
+    pub sources: Vec<String>,
+    pub report: CovReport,
 }
 
 #[derive(Default, Debug, Clone)]
