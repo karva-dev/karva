@@ -10,6 +10,7 @@ use anyhow::Result;
 use clap::{Parser, Subcommand};
 
 mod generate_cli_reference;
+mod generate_env_vars;
 mod generate_options;
 
 const ROOT_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../");
@@ -42,6 +43,8 @@ struct Args {
 enum Command {
     /// Generate CLI reference.
     GenerateCliReference(generate_cli_reference::Args),
+    /// Generate environment variables reference.
+    GenerateEnvVars(generate_env_vars::Args),
     /// Generate options reference.
     GenerateOptions(generate_options::Args),
     /// Generate all developer documentation and references.
@@ -54,8 +57,10 @@ fn main() -> Result<ExitCode> {
         Command::GenerateCliReference(args) => generate_cli_reference::main(&args)?,
         Command::GenerateAll => {
             generate_cli_reference::main(&generate_cli_reference::Args { mode: Mode::Write })?;
+            generate_env_vars::main(&generate_env_vars::Args { mode: Mode::Write })?;
             generate_options::main(&generate_options::Args { mode: Mode::Write })?;
         }
+        Command::GenerateEnvVars(args) => generate_env_vars::main(&args)?,
         Command::GenerateOptions(args) => generate_options::main(&args)?,
     }
     Ok(ExitCode::SUCCESS)

@@ -29,7 +29,9 @@ use crate::extensions::tags::timeout::TimeoutTag;
 use crate::runner::fixture_resolver::RuntimeFixtureResolver;
 use crate::runner::test_iterator::{TestVariant, TestVariantIterator};
 use crate::runner::{FinalizerCache, FixtureCache};
-use crate::utils::{full_test_name, run_coroutine, run_test_with_timeout, source_file};
+use crate::utils::{
+    full_test_name, run_coroutine, run_test_with_timeout, set_attempt_env, source_file,
+};
 
 /// Executes discovered tests within a package hierarchy.
 ///
@@ -455,12 +457,14 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
             }
         };
 
+        let configured_retries = self.context.settings().test().retry;
+        let max_attempts = configured_retries.saturating_add(1);
+
         let mut attempt: u32 = 1;
+        let _ = set_attempt_env(py, attempt, max_attempts);
         let mut attempt_start = std::time::Instant::now();
         let mut test_result = run_test();
 
-        let configured_retries = self.context.settings().test().retry;
-        let max_attempts = configured_retries.saturating_add(1);
         let mut retry_count = configured_retries;
         let mut was_retried = false;
         let mut final_attempt_duration = attempt_start.elapsed();
@@ -481,6 +485,7 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
             tracing::debug!("Retrying test `{}`", qualified_test_name);
             retry_count -= 1;
             attempt += 1;
+            let _ = set_attempt_env(py, attempt, max_attempts);
             attempt_start = std::time::Instant::now();
             test_result = run_test();
             final_attempt_duration = attempt_start.elapsed();
