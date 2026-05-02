@@ -46,12 +46,16 @@ pub fn prepare_data_dir(data_dir: &Utf8Path) -> Result<()> {
 
 /// Combine per-worker data files in `data_dir` and print a terminal report
 /// to stdout. No-ops if there is no data to report.
-pub fn combine_and_report(cwd: &Utf8Path, data_dir: &Utf8Path) -> Result<()> {
+///
+/// When `show_missing` is true, the report includes a final `Missing` column
+/// listing the uncovered line numbers per file (consecutive lines collapsed
+/// into `a-b` ranges).
+pub fn combine_and_report(cwd: &Utf8Path, data_dir: &Utf8Path, show_missing: bool) -> Result<()> {
     let combined = combine(data_dir)?;
     if combined.is_empty() {
         return Ok(());
     }
-    print_report(cwd, &combined, &mut std::io::stdout().lock())?;
+    print_report(cwd, &combined, show_missing, &mut std::io::stdout().lock())?;
     Ok(())
 }
 
@@ -98,30 +102,49 @@ fn combine(data_dir: &Utf8Path) -> Result<BTreeMap<String, CombinedFile>> {
 fn print_report(
     cwd: &Utf8Path,
     combined: &BTreeMap<String, CombinedFile>,
+    show_missing: bool,
     out: &mut dyn Write,
 ) -> Result<()> {
     let cwd_real = std::fs::canonicalize(cwd.as_std_path()).unwrap_or_else(|_| cwd.into());
 
-    let rows: Vec<(String, u32, u32)> = combined
+    let rows: Vec<(String, u32, u32, String)> = combined
         .iter()
         .map(|(filename, data)| {
             let display = display_path(filename, &cwd_real);
             let total = u32::try_from(data.executable.len()).unwrap_or(u32::MAX);
             let hit = u32::try_from(data.executed.len()).unwrap_or(u32::MAX);
             let miss = total.saturating_sub(hit);
-            (display, total, miss)
+            let missing = if show_missing {
+                let uncovered: BTreeSet<u32> = data
+                    .executable
+                    .difference(&data.executed)
+                    .copied()
+                    .collect();
+                collapse_ranges(&uncovered)
+            } else {
+                String::new()
+            };
+            (display, total, miss, missing)
         })
         .collect();
 
     let name_width = rows
         .iter()
-        .map(|(n, _, _)| n.len())
+        .map(|(n, _, _, _)| n.len())
         .max()
         .unwrap_or(0)
         .max("Name".len())
         .max("TOTAL".len());
 
-    let header = format_row(name_width, "Name", "Stmts", "Miss", "Cover");
+    let header = format_row(
+        name_width,
+        "Name",
+        "Stmts",
+        "Miss",
+        "Cover",
+        show_missing,
+        "Missing",
+    );
     let rule_len = header.chars().count();
     let rule = "-".repeat(rule_len);
 
@@ -132,14 +155,22 @@ fn print_report(
     let mut total_stmts: u32 = 0;
     let mut total_miss: u32 = 0;
 
-    for (name, stmts, miss) in &rows {
+    for (name, stmts, miss, missing) in &rows {
         let cover = format_percent(*stmts, *miss);
         let stmts_str = stmts.to_string();
         let miss_str = miss.to_string();
         writeln!(
             out,
             "{}",
-            format_row(name_width, name, &stmts_str, &miss_str, &cover)
+            format_row(
+                name_width,
+                name,
+                &stmts_str,
+                &miss_str,
+                &cover,
+                show_missing,
+                missing
+            )
         )?;
         total_stmts = total_stmts.saturating_add(*stmts);
         total_miss = total_miss.saturating_add(*miss);
@@ -158,19 +189,60 @@ fn print_report(
             &total_stmts_str,
             &total_miss_str,
             &total_cover,
+            show_missing,
+            "",
         )
     )?;
 
     Ok(())
 }
 
-fn format_row(name_width: usize, name: &str, stmts: &str, miss: &str, cover: &str) -> String {
-    format!(
+fn format_row(
+    name_width: usize,
+    name: &str,
+    stmts: &str,
+    miss: &str,
+    cover: &str,
+    show_missing: bool,
+    missing: &str,
+) -> String {
+    let base = format!(
         "{name:<name_width$}   {stmts:>stmts_w$}   {miss:>miss_w$}   {cover:>cover_w$}",
         stmts_w = "Stmts".len(),
         miss_w = "Miss".len(),
         cover_w = "Cover".len(),
-    )
+    );
+    if show_missing && !missing.is_empty() {
+        format!("{base}   {missing}")
+    } else {
+        base
+    }
+}
+
+fn collapse_ranges(lines: &BTreeSet<u32>) -> String {
+    let mut parts: Vec<String> = Vec::new();
+    let mut iter = lines.iter().copied();
+    let Some(mut start) = iter.next() else {
+        return String::new();
+    };
+    let mut end = start;
+    for line in iter {
+        if line != end + 1 {
+            parts.push(format_range(start, end));
+            start = line;
+        }
+        end = line;
+    }
+    parts.push(format_range(start, end));
+    parts.join(", ")
+}
+
+fn format_range(start: u32, end: u32) -> String {
+    if start == end {
+        start.to_string()
+    } else {
+        format!("{start}-{end}")
+    }
 }
 
 fn format_percent(total: u32, miss: u32) -> String {
@@ -223,12 +295,53 @@ mod tests {
         data.insert("/proj/b.py".to_string(), cf(&[1, 2], &[1, 2]));
 
         let mut buf: Vec<u8> = Vec::new();
-        print_report(Utf8Path::new("/proj"), &data, &mut buf).unwrap();
+        print_report(Utf8Path::new("/proj"), &data, false, &mut buf).unwrap();
         let out = String::from_utf8(buf).unwrap();
 
         assert!(out.contains("a.py"));
         assert!(out.contains("b.py"));
         assert!(out.contains("TOTAL"));
         assert!(out.contains("67%"));
+        assert!(!out.contains("Missing"));
+    }
+
+    #[test]
+    fn report_with_missing_shows_uncovered_lines() {
+        let mut data = BTreeMap::new();
+        data.insert(
+            "/proj/a.py".to_string(),
+            cf(&[1, 2, 3, 4, 5, 6, 7, 8, 9], &[1, 5, 9]),
+        );
+
+        let mut buf: Vec<u8> = Vec::new();
+        print_report(Utf8Path::new("/proj"), &data, true, &mut buf).unwrap();
+        let out = String::from_utf8(buf).unwrap();
+
+        assert!(out.contains("Missing"));
+        assert!(out.contains("2-4, 6-8"));
+    }
+
+    #[test]
+    fn collapse_empty() {
+        let set: BTreeSet<u32> = BTreeSet::new();
+        assert_eq!(collapse_ranges(&set), "");
+    }
+
+    #[test]
+    fn collapse_singletons() {
+        let set: BTreeSet<u32> = [3, 7, 12].into_iter().collect();
+        assert_eq!(collapse_ranges(&set), "3, 7, 12");
+    }
+
+    #[test]
+    fn collapse_mixed_ranges() {
+        let set: BTreeSet<u32> = [26, 87, 94, 95, 119, 120, 121, 157].into_iter().collect();
+        assert_eq!(collapse_ranges(&set), "26, 87, 94-95, 119-121, 157");
+    }
+
+    #[test]
+    fn collapse_single_contiguous_range() {
+        let set: BTreeSet<u32> = [10, 11, 12, 13].into_iter().collect();
+        assert_eq!(collapse_ranges(&set), "10-13");
     }
 }

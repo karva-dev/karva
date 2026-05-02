@@ -53,7 +53,7 @@ pub struct Args {
 #[derive(Debug, clap::Subcommand)]
 pub enum Command {
     /// Run tests.
-    Test(TestCommand),
+    Test(Box<TestCommand>),
 
     /// Manage snapshots created by `karva.assert_snapshot()`.
     Snapshot(SnapshotCommand),
@@ -276,6 +276,19 @@ pub struct SubTestCommand {
         help_heading = "Coverage options"
     )]
     pub cov: Vec<String>,
+
+    /// Coverage report type. May be passed multiple times.
+    ///
+    /// Currently supported values are `term` (default, compact terminal
+    /// table) and `term-missing` (terminal table with a `Missing` column
+    /// listing the uncovered line numbers per file).
+    #[clap(
+        long = "cov-report",
+        value_name = "TYPE",
+        action = clap::ArgAction::Append,
+        help_heading = "Coverage options"
+    )]
+    pub cov_report: Vec<String>,
 
     /// Internal: per-worker coverage data file path.
     ///

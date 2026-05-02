@@ -246,6 +246,93 @@ def test_only_covered():
 }
 
 #[test]
+fn test_cov_report_term_missing() {
+    let context = TestContext::with_file(
+        "test_missing.py",
+        r"
+def covered():
+    return 1
+
+def uncovered_a():
+    return 2
+
+def uncovered_b():
+    x = 3
+    y = 4
+    return x + y
+
+def test_only_covered():
+    assert covered() == 1
+",
+    );
+
+    assert_cmd_snapshot!(
+        context.command_no_parallel()
+            .arg("--cov")
+            .arg("--cov-report=term-missing")
+            .arg("--status-level=none")
+            .arg("test_missing.py"),
+        @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    Name              Stmts   Miss   Cover   Missing
+    [LONG-LINE]
+    test_missing.py      10      4     60%   6, 9-11
+    [LONG-LINE]
+    TOTAL                10      4     60%
+
+    ----- stderr -----
+    "
+    );
+}
+
+#[test]
+fn test_cov_report_term_default_no_missing_column() {
+    let context = TestContext::with_file(
+        "test_partial.py",
+        r"
+def covered():
+    return 1
+
+def uncovered():
+    return 2
+
+def test_only_covered():
+    assert covered() == 1
+",
+    );
+
+    assert_cmd_snapshot!(
+        context.command_no_parallel()
+            .arg("--cov")
+            .arg("--cov-report=term")
+            .arg("--status-level=none")
+            .arg("test_partial.py"),
+        @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    Name              Stmts   Miss   Cover
+    [LONG-LINE]
+    test_partial.py       6      1     83%
+    [LONG-LINE]
+    TOTAL                 6      1     83%
+
+    ----- stderr -----
+    "
+    );
+}
+
+#[test]
 fn test_cov_skips_docstrings() {
     let context = TestContext::with_file(
         "test_docstrings.py",
