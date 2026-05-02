@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::fmt::Write;
 
 use camino::Utf8Path;
-use karva_static::TestEnvVars;
+use karva_static::WorkerEnvVars;
 use pyo3::prelude::*;
 use pyo3::types::{PyAnyMethods, PyDict};
 use pyo3::{PyResult, Python};
@@ -187,9 +187,9 @@ def _make_sync(async_fn):
 /// the currently running test can read them.
 pub(crate) fn set_attempt_env(py: Python<'_>, attempt: u32, total_attempts: u32) -> PyResult<()> {
     let environ = py.import("os")?.getattr("environ")?;
-    environ.set_item(TestEnvVars::KARVA_ATTEMPT, attempt.to_string())?;
+    environ.set_item(WorkerEnvVars::KARVA_ATTEMPT, attempt.to_string())?;
     environ.set_item(
-        TestEnvVars::KARVA_TOTAL_ATTEMPTS,
+        WorkerEnvVars::KARVA_TOTAL_ATTEMPTS,
         total_attempts.to_string(),
     )?;
     Ok(())

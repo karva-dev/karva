@@ -33,6 +33,7 @@ nav = [
     { "Configuration" = "configuration.md"},
     { "Profiles" = "profiles.md"},
     { "CLI" = "cli.md"},
+    { "Environment Variables" = "env-vars.md"},
 ]
 
 [project.theme]

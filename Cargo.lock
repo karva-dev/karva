@@ -1185,6 +1185,7 @@ dependencies = [
  "itertools",
  "karva_cli",
  "karva_metadata",
+ "karva_static",
  "markdown",
  "pretty_assertions",
  "ruff_options_metadata",
