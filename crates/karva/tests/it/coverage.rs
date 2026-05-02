@@ -560,6 +560,74 @@ def test_add():
 }
 
 #[test]
+fn test_no_cov_overrides_config_sources() {
+    let context = TestContext::with_files([
+        (
+            "karva.toml",
+            r#"
+[profile.default.coverage]
+sources = [""]
+"#,
+        ),
+        (
+            "test_simple.py",
+            r"
+def test_one():
+    assert 1 + 1 == 2
+",
+        ),
+    ]);
+
+    assert_cmd_snapshot!(
+        context.command_no_parallel()
+            .arg("--no-cov")
+            .arg("--status-level=none")
+            .arg("test_simple.py"),
+        @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    "
+    );
+}
+
+/// `--cov --no-cov` (no-cov last) disables coverage; clap `overrides_with`
+/// makes the later flag win.
+#[test]
+fn test_no_cov_after_cov_disables_coverage() {
+    let context = TestContext::with_file(
+        "test_simple.py",
+        r"
+def test_one():
+    assert 1 + 1 == 2
+",
+    );
+
+    assert_cmd_snapshot!(
+        context.command_no_parallel()
+            .arg("--cov")
+            .arg("--no-cov")
+            .arg("--status-level=none")
+            .arg("test_simple.py"),
+        @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    "
+    );
+}
+
+#[test]
 fn test_cov_report_term_missing_from_config() {
     let context = TestContext::with_files([
         (

@@ -80,6 +80,8 @@ karva test [OPTIONS] [PATH]...
 </dd><dt id="karva-test--no-cache"><a href="#karva-test--no-cache"><code>--no-cache</code></a></dt><dd><p>Disable reading the karva cache for test duration history</p>
 </dd><dt id="karva-test--no-capture"><a href="#karva-test--no-capture"><code>--no-capture</code></a></dt><dd><p>Disable output capture and run tests serially.</p>
 <p>Lets stdout/stderr from tests flow directly to the terminal, useful when debugging with print statements or interactive debuggers. Implies <code>--show-output</code> and forces a single worker so output from concurrent tests cannot interleave.</p>
+</dd><dt id="karva-test--no-cov"><a href="#karva-test--no-cov"><code>--no-cov</code></a></dt><dd><p>Disable coverage measurement for this run.</p>
+<p>Overrides any <code>--cov</code> flag and any <code>[coverage] sources</code> configured in <code>karva.toml</code> / <code>pyproject.toml</code>. Useful when iterating locally without editing config.</p>
 </dd><dt id="karva-test--no-fail-fast"><a href="#karva-test--no-fail-fast"><code>--no-fail-fast</code></a></dt><dd><p>Run every test regardless of how many fail.</p>
 <p>Clears any <code>fail-fast</code> or <code>max-fail</code> value set in configuration. When <code>--max-fail</code> is provided alongside <code>--no-fail-fast</code>, <code>--max-fail</code> takes precedence.</p>
 </dd><dt id="karva-test--no-ignore"><a href="#karva-test--no-ignore"><code>--no-ignore</code></a></dt><dd><p>When set, .gitignore files will not be respected</p>
