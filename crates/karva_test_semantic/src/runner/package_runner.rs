@@ -231,15 +231,21 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
     ) -> Option<bool> {
         let filter = &self.context.settings().test().filter;
         let run_ignored = self.context.settings().test().run_ignored;
+        let group_resolver = &self.context.settings().test().group_resolver;
 
         if !filter.is_empty() {
             let qualified = QualifiedTestName::new(name.clone(), None);
             let display_name = qualified.to_string();
             let custom_names = tags.custom_tag_names();
+            let group = if group_resolver.is_empty() {
+                None
+            } else {
+                group_resolver.resolve(&display_name, &custom_names)
+            };
             let ctx = EvalContext {
                 test_name: &display_name,
                 tags: &custom_names,
-                group: None,
+                group,
             };
             if !filter.matches(&ctx) {
                 return Some(self.context.register_test_case_result(

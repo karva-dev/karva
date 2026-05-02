@@ -1,4 +1,5 @@
 mod profile;
+mod test_groups;
 
 use insta_cmd::assert_cmd_snapshot;
 

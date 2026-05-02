@@ -17,7 +17,7 @@ use karva_cli::SubTestCommand;
 use karva_collector::{CollectedPackage, CollectionSettings};
 use karva_logging::Printer;
 use karva_logging::time::format_duration;
-use karva_metadata::ProjectSettings;
+use karva_metadata::{OverridesList, ProjectSettings};
 use karva_project::Project;
 use karva_static::WorkerEnvVars;
 
@@ -192,6 +192,9 @@ fn spawn_workers(
         }
 
         cmd.args(inner_cli_args(project.settings(), args));
+        if let Some(toml) = encode_group_overrides(project.metadata().resolved_overrides()) {
+            cmd.arg("--group-overrides").arg(toml);
+        }
 
         if !project.settings().coverage().sources.is_empty() {
             let data_file = karva_coverage::worker_data_file(&coverage_dir, worker_id);
@@ -315,6 +318,15 @@ pub fn run_parallel_tests(
     } else {
         HashSet::new()
     };
+
+    // Validate `[[profile.*.overrides]]` against `[test-groups]` up front so
+    // misconfigurations are rejected before any worker spawns. Workers only
+    // see the resolved override list (forwarded via `--group-overrides`),
+    // so they don't redo this check.
+    project
+        .metadata()
+        .build_test_group_resolver()
+        .map_err(|err| anyhow::anyhow!("invalid test-groups configuration: {err}"))?;
 
     let partitions = partition_collected_tests(
         &collected,
@@ -471,4 +483,27 @@ fn inner_cli_args(settings: &ProjectSettings, args: &SubTestCommand) -> Vec<Stri
 
 pub fn coverage_data_dir(cache_dir: &Utf8PathBuf) -> Utf8PathBuf {
     cache_dir.join("coverage")
+}
+
+/// Serialize the resolved override list as TOML for forwarding to workers.
+///
+/// Workers rebuild a `TestGroupResolver` from the same data so `group(...)`
+/// filter predicates evaluate consistently on both sides. Returns `None`
+/// when there are no overrides to forward, so the `--group-overrides` flag
+/// is omitted entirely rather than passed with an empty value.
+fn encode_group_overrides(overrides: &[karva_metadata::OverrideOptions]) -> Option<String> {
+    if overrides.is_empty() {
+        return None;
+    }
+    let list = OverridesList(overrides.to_vec());
+    match list.to_toml_string() {
+        Ok(toml) => Some(toml),
+        Err(err) => {
+            tracing::warn!(
+                ?err,
+                "failed to serialize group overrides; workers will not resolve groups"
+            );
+            None
+        }
+    }
 }

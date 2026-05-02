@@ -10,8 +10,8 @@ use karva_cache::{Cache, RunHash};
 use karva_cli::{SubTestCommand, Verbosity};
 use karva_diagnostic::{DummyReporter, Reporter, TestCaseReporter};
 use karva_logging::{Printer, StatusLevel, set_colored_override, setup_tracing};
-use karva_metadata::RunIgnoredMode;
 use karva_metadata::filter::FiltersetSet;
+use karva_metadata::{OverridesList, RunIgnoredMode, TestGroupResolver};
 use karva_project::path::{TestPath, TestPathError, absolute};
 use karva_python_semantic::current_python_version;
 use karva_static::EnvVars;
@@ -141,6 +141,19 @@ fn run(f: impl FnOnce(Vec<OsString>) -> Vec<OsString>) -> anyhow::Result<ExitSta
     let filter = FiltersetSet::new(&args.sub_command.filter_expressions)
         .context("invalid `--filter` expression")?;
 
+    let group_resolver = match args.sub_command.group_overrides.as_deref() {
+        Some(toml) if !toml.is_empty() => {
+            let overrides = OverridesList::from_toml_str(toml)
+                .context("failed to parse `--group-overrides` (forwarded by main process)")?;
+            // The main process already validated overrides against `[test-groups]`,
+            // so the worker only needs the list to compute group assignments
+            // at filter-eval time.
+            TestGroupResolver::from_validated_overrides(&overrides)
+                .context("failed to build group resolver from overrides")?
+        }
+        _ => TestGroupResolver::default(),
+    };
+
     let run_ignored = args
         .sub_command
         .run_ignored
@@ -161,6 +174,7 @@ fn run(f: impl FnOnce(Vec<OsString>) -> Vec<OsString>) -> anyhow::Result<ExitSta
     let mut settings = args.sub_command.into_options().to_settings();
     settings.set_filter(filter);
     settings.set_run_ignored(run_ignored);
+    settings.set_group_resolver(group_resolver);
 
     let run_hash = RunHash::from_existing(&args.run_hash);
 

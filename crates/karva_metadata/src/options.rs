@@ -14,6 +14,7 @@ use crate::settings::{
     CoverageSettings, NoTestsMode, ProjectSettings, RunIgnoredMode, SlowTimeoutSecs, SrcSettings,
     TerminalSettings, TestSettings,
 };
+use crate::test_groups::{OverridesList, TestGroupOptions, TestGroupsError};
 
 /// The implicit name of the default profile.
 pub const DEFAULT_PROFILE: &str = "default";
@@ -28,13 +29,25 @@ pub const DEFAULT_PROFILE: &str = "default";
 pub struct Config {
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub profile: BTreeMap<String, Options>,
+
+    /// Named test-groups that limit how many workers may run tests from the
+    /// group at once. See [nextest's docs](https://nexte.st/docs/configuration/test-groups/).
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub test_groups: BTreeMap<String, TestGroupOptions>,
 }
 
 impl Config {
     pub fn from_toml_str(content: &str) -> Result<Self, KarvaTomlError> {
         let config: Self = toml::from_str(content)?;
         validate_profile_names(&config.profile)?;
+        crate::test_groups::validate_group_names(&config.test_groups)
+            .map_err(KarvaTomlError::InvalidTestGroups)?;
         Ok(config)
+    }
+
+    /// Borrow the configured `[test-groups]` table.
+    pub fn test_groups(&self) -> &BTreeMap<String, TestGroupOptions> {
+        &self.test_groups
     }
 
     pub(crate) fn from_karva_configuration_file(
@@ -151,6 +164,11 @@ pub struct Options {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[option_group]
     pub coverage: Option<CoverageOptions>,
+
+    /// Per-profile filter→test-group assignments. Evaluated top-down per
+    /// test; the first matching override wins.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub overrides: Option<OverridesList>,
 }
 
 impl Options {
@@ -415,6 +433,7 @@ impl TestOptions {
             run_ignored: RunIgnoredMode::default(),
             no_tests: self.no_tests.unwrap_or_default(),
             slow_timeout: self.slow_timeout.and_then(SlowTimeoutSecs::as_duration),
+            group_resolver: crate::test_groups::TestGroupResolver::default(),
         }
     }
 }
@@ -431,6 +450,8 @@ pub enum KarvaTomlError {
     },
     #[error("invalid profile name `{name}`: {reason}")]
     InvalidProfileName { name: String, reason: &'static str },
+    #[error(transparent)]
+    InvalidTestGroups(TestGroupsError),
 }
 
 #[derive(
@@ -645,7 +666,7 @@ foo = 1
           |
         2 | [bogus]
           |  ^^^^^
-        unknown field `bogus`, expected `profile`
+        unknown field `bogus`, expected `profile` or `test-groups`
         "
         );
     }
@@ -663,7 +684,7 @@ test-function-prefix = "test"
           |
         2 | [test]
           |  ^^^^
-        unknown field `test`, expected `profile`
+        unknown field `test`, expected `profile` or `test-groups`
         "
         );
     }
@@ -673,6 +694,7 @@ test-function-prefix = "test"
         assert_debug_snapshot!(Config::from_toml_str("").expect("parse"), @"
         Config {
             profile: {},
+            test_groups: {},
         }
         ");
     }
@@ -944,6 +966,95 @@ retry = 1
         assert_snapshot!(
             Config::from_toml_str(toml).expect_err("invalid"),
             @"invalid profile name `ci/fast`: profile names may only contain ASCII letters, digits, `-`, and `_`"
+        );
+    }
+
+    #[test]
+    fn parse_test_groups_table() {
+        let toml = r"
+[test-groups.database]
+max-threads = 4
+
+[test-groups.serial]
+max-threads = 1
+";
+        let config = Config::from_toml_str(toml).expect("parse");
+        assert_eq!(config.test_groups().len(), 2);
+        assert_eq!(
+            config
+                .test_groups()
+                .get("database")
+                .expect("database group")
+                .max_threads
+                .get(),
+            4
+        );
+    }
+
+    #[test]
+    fn parse_overrides_inside_profile() {
+        let toml = r#"
+[test-groups.serial]
+max-threads = 1
+
+[[profile.default.overrides]]
+filter = "tag(exclusive)"
+test-group = "serial"
+
+[[profile.default.overrides]]
+filter = "tag(slow)"
+"#;
+        let config = Config::from_toml_str(toml).expect("parse");
+        let resolved = config.resolve_profile(None).expect("resolves");
+        let overrides = resolved.overrides.expect("has overrides").0;
+        assert_eq!(overrides.len(), 2);
+        assert_eq!(overrides[0].filter, "tag(exclusive)");
+        assert_eq!(overrides[0].test_group.as_deref(), Some("serial"));
+        assert_eq!(overrides[1].test_group, None);
+    }
+
+    #[test]
+    fn resolve_profile_orders_named_overrides_before_default() {
+        let toml = r#"
+[test-groups.serial]
+max-threads = 1
+
+[test-groups.database]
+max-threads = 4
+
+[[profile.default.overrides]]
+filter = "tag(slow)"
+test-group = "database"
+
+[[profile.ci.overrides]]
+filter = "tag(exclusive)"
+test-group = "serial"
+"#;
+        let config = Config::from_toml_str(toml).expect("parse");
+        let resolved = config.resolve_profile(Some("ci")).expect("resolves");
+        let overrides = resolved.overrides.expect("has overrides").0;
+        let filters: Vec<&str> = overrides.iter().map(|o| o.filter.as_str()).collect();
+        assert_eq!(filters, vec!["tag(exclusive)", "tag(slow)"]);
+    }
+
+    #[test]
+    fn from_toml_str_rejects_zero_max_threads() {
+        let toml = r"
+[test-groups.serial]
+max-threads = 0
+";
+        assert!(Config::from_toml_str(toml).is_err());
+    }
+
+    #[test]
+    fn from_toml_str_rejects_at_prefix_group_name() {
+        let toml = r#"
+[test-groups."@global"]
+max-threads = 1
+"#;
+        assert_snapshot!(
+            Config::from_toml_str(toml).expect_err("reserved"),
+            @"invalid test-group name `@global`: the `@` prefix is reserved for built-in test-groups"
         );
     }
 

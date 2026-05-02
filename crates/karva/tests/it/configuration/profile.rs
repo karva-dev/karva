@@ -338,13 +338,13 @@ test-function-prefix = "check"
       |
     2 | [test]
       |  ^^^^
-    unknown field `test`, expected `profile`
+    unknown field `test`, expected `profile` or `test-groups`
 
       Cause: TOML parse error at line 2, column 2
       |
     2 | [test]
       |  ^^^^
-    unknown field `test`, expected `profile`
+    unknown field `test`, expected `profile` or `test-groups`
     ");
 }
 

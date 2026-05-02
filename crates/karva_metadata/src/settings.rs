@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use crate::filter::FiltersetSet;
 use crate::max_fail::MaxFail;
 use crate::options::{CovReport, OutputFormat};
+use crate::test_groups::TestGroupResolver;
 
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RunIgnoredMode {
@@ -104,6 +105,10 @@ impl ProjectSettings {
     pub fn set_run_ignored(&mut self, mode: RunIgnoredMode) {
         self.test.run_ignored = mode;
     }
+
+    pub fn set_group_resolver(&mut self, resolver: TestGroupResolver) {
+        self.test.group_resolver = resolver;
+    }
 }
 
 #[derive(Default, Debug, Clone)]
@@ -138,4 +143,5 @@ pub struct TestSettings {
     /// Threshold after which a test is flagged as slow. `None` disables
     /// slow-test detection entirely.
     pub slow_timeout: Option<Duration>,
+    pub group_resolver: TestGroupResolver,
 }

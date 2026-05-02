@@ -320,6 +320,13 @@ pub struct SubTestCommand {
     /// for direct use.
     #[clap(long, hide = true, value_name = "PATH")]
     pub cov_data_file: Option<Utf8PathBuf>,
+
+    /// Internal: TOML-encoded list of profile overrides forwarded from the
+    /// main process so workers can resolve `group(...)` predicates against
+    /// the same group assignments the partitioner used. Not intended for
+    /// direct use.
+    #[clap(long, hide = true, value_name = "TOML")]
+    pub group_overrides: Option<String>,
 }
 
 #[derive(Debug, Parser)]
@@ -492,6 +499,7 @@ impl SubTestCommand {
                 report: self.cov_report.map(Into::into),
                 disabled: self.no_cov.then_some(true),
             }),
+            overrides: None,
         }
     }
 }

@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use camino::{Utf8Path, Utf8PathBuf};
 use karva_combine::Combine;
 use ruff_python_ast::PythonVersion;
@@ -8,6 +10,7 @@ mod max_fail;
 mod options;
 mod pyproject;
 mod settings;
+pub mod test_groups;
 
 pub use max_fail::MaxFail;
 pub use options::{
@@ -17,6 +20,9 @@ pub use options::{
 pub use pyproject::{PyProject, PyProjectError};
 pub use settings::{
     CoverageSettings, NoTestsMode, ProjectSettings, RunIgnoredMode, SlowTimeoutSecs,
+};
+pub use test_groups::{
+    OverrideOptions, OverridesList, TestGroupOptions, TestGroupResolver, TestGroupsError,
 };
 
 use crate::options::KarvaTomlError;
@@ -35,6 +41,10 @@ pub struct ProjectMetadata {
     pub config: Config,
 
     pub options: Options,
+
+    /// Snapshot of `[test-groups]` taken at `apply_overrides` time so the
+    /// table survives `std::mem::take(&mut self.config)`.
+    pub test_groups: BTreeMap<String, TestGroupOptions>,
 }
 
 impl ProjectMetadata {
@@ -45,6 +55,7 @@ impl ProjectMetadata {
             python_version,
             config: Config::default(),
             options: Options::default(),
+            test_groups: BTreeMap::new(),
         }
     }
 
@@ -67,6 +78,7 @@ impl ProjectMetadata {
             python_version,
             config,
             options: Options::default(),
+            test_groups: BTreeMap::new(),
         })
     }
 
@@ -93,6 +105,7 @@ impl ProjectMetadata {
             python_version,
             config,
             options: Options::default(),
+            test_groups: BTreeMap::new(),
         }
     }
 
@@ -201,9 +214,34 @@ impl ProjectMetadata {
         &mut self,
         overrides: &ProjectOptionsOverrides,
     ) -> Result<(), UnknownProfile> {
-        let config = std::mem::take(&mut self.config);
+        let mut config = std::mem::take(&mut self.config);
+        self.test_groups = std::mem::take(&mut config.test_groups);
         self.options = overrides.apply_to(config)?;
         Ok(())
+    }
+
+    /// Build a [`TestGroupResolver`] from the resolved overrides and
+    /// configured `[test-groups]` table.
+    pub fn build_test_group_resolver(&self) -> Result<TestGroupResolver, TestGroupsError> {
+        let overrides = self
+            .options
+            .overrides
+            .as_ref()
+            .map(|list| list.0.as_slice())
+            .unwrap_or(&[]);
+        TestGroupResolver::new(overrides, &self.test_groups)
+    }
+
+    pub fn test_groups(&self) -> &BTreeMap<String, TestGroupOptions> {
+        &self.test_groups
+    }
+
+    pub fn resolved_overrides(&self) -> &[OverrideOptions] {
+        self.options
+            .overrides
+            .as_ref()
+            .map(|list| list.0.as_slice())
+            .unwrap_or(&[])
     }
 
     /// Combine the project options with the CLI options where the CLI options take precedence.
