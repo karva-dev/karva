@@ -1629,6 +1629,32 @@ def test_with_print():
 }
 
 #[test]
+fn test_no_capture() {
+    let context = TestContext::with_file(
+        "test.py",
+        r#"
+def test_with_print():
+    print("hello from test")
+    assert True
+        "#,
+    );
+
+    assert_cmd_snapshot!(context.command().arg("--no-capture"), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+        Starting 1 test across 1 worker
+    hello from test
+            PASS [TIME] test::test_with_print
+
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
 fn test_retry_flag() {
     let context = TestContext::with_file(
         "test.py",
