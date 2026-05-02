@@ -15,7 +15,9 @@ pub use options::{
     ProjectOptionsOverrides, SrcOptions, TerminalOptions, TestOptions, UnknownProfile,
 };
 pub use pyproject::{PyProject, PyProjectError};
-pub use settings::{CoverageSettings, NoTestsMode, ProjectSettings, RunIgnoredMode};
+pub use settings::{
+    CoverageSettings, NoTestsMode, ProjectSettings, RunIgnoredMode, SlowTimeoutSecs,
+};
 
 use crate::options::KarvaTomlError;
 

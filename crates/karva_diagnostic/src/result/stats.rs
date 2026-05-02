@@ -54,6 +54,10 @@ impl TestResultStats {
         self.get(TestResultKind::Flaky)
     }
 
+    pub fn slow(&self) -> usize {
+        self.get(TestResultKind::Slow)
+    }
+
     pub fn add(&mut self, kind: TestResultKind) {
         self.inner.entry(kind).and_modify(|v| *v += 1).or_insert(1);
     }
@@ -100,7 +104,10 @@ impl<'de> Deserialize<'de> for TestResultStats {
 
                 while let Some((key, value)) = access.next_entry::<String, usize>()? {
                     let kind = TestResultKind::from_str(&key).map_err(|_| {
-                        de::Error::unknown_field(&key, &["passed", "failed", "skipped", "flaky"])
+                        de::Error::unknown_field(
+                            &key,
+                            &["passed", "failed", "skipped", "flaky", "slow"],
+                        )
                     })?;
                     inner.insert(kind, value);
                 }
@@ -162,6 +169,14 @@ impl fmt::Display for DisplayTestResultStats<'_> {
                 .bold()
                 .to_string(),
         );
+        if self.stats.slow() > 0 {
+            parts.push(
+                format!("{} slow", self.stats.slow())
+                    .yellow()
+                    .bold()
+                    .to_string(),
+            );
+        }
 
         writeln!(
             f,

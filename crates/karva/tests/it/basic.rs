@@ -2813,3 +2813,105 @@ fn test_test_prefix_requires_value() {
     For more information, try '--help'.
     ");
 }
+
+/// `--slow-timeout` flags tests whose total duration exceeds the threshold.
+/// At `--status-level=slow` the SLOW line precedes the PASS line and the
+/// summary picks up a `1 slow` counter.
+#[test]
+fn test_slow_timeout_emits_slow_line_and_counter() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+import time
+
+def test_slow():
+    time.sleep(0.05)
+
+def test_fast():
+    pass
+",
+    );
+
+    assert_cmd_snapshot!(
+        context.command_no_parallel().args([
+            "--slow-timeout=0.001",
+            "--status-level=slow",
+        ]),
+        @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+        Starting 2 tests across 1 worker
+            SLOW [TIME] test::test_slow
+
+    ────────────
+         Summary [TIME] 2 tests run: 2 passed, 0 skipped, 1 slow
+
+    ----- stderr -----
+    "
+    );
+}
+
+/// Below `--status-level=slow` the SLOW line is suppressed, but the slow
+/// counter still appears in the summary so `--final-status-level=slow` users
+/// can elevate the summary independently.
+#[test]
+fn test_slow_timeout_counter_visible_below_slow_status_level() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+import time
+
+def test_slow():
+    time.sleep(0.05)
+",
+    );
+
+    assert_cmd_snapshot!(
+        context.command_no_parallel().args([
+            "--slow-timeout=0.001",
+            "--status-level=fail",
+        ]),
+        @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+        Starting 1 test across 1 worker
+
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped, 1 slow
+
+    ----- stderr -----
+    "
+    );
+}
+
+/// A test that completes well under the threshold is not reported as slow
+/// and does not bump the counter.
+#[test]
+fn test_slow_timeout_does_not_flag_fast_tests() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+def test_fast(): pass
+",
+    );
+
+    assert_cmd_snapshot!(
+        context.command_no_parallel().args([
+            "--slow-timeout=60",
+            "--status-level=slow",
+        ]),
+        @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+        Starting 1 test across 1 worker
+
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    "
+    );
+}

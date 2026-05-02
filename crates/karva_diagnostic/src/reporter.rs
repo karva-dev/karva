@@ -33,12 +33,20 @@ pub trait Reporter: Send + Sync {
     ) {
         let _ = (test_name, attempt, result_kind, duration);
     }
+
+    /// Report that a test exceeded the configured slow-test threshold.
+    ///
+    /// Emitted in addition to (and ahead of) the regular result line. Default
+    /// no-op for reporters that don't surface slow-test detail.
+    fn report_test_slow(&self, test_name: &QualifiedTestName, duration: Duration) {
+        let _ = (test_name, duration);
+    }
 }
 
 fn show_for_status_level(level: StatusLevel, kind: &IndividualTestResultKind) -> bool {
     // Levels are cumulative, like nextest: each level shows itself plus all
-    // earlier levels. Karva does not yet implement a slow-test threshold, so
-    // `Slow` currently behaves like `Retry`.
+    // earlier levels. The `Slow` line is gated separately in
+    // `report_test_slow`, so `Slow` here acts the same as `Retry`.
     match level {
         StatusLevel::None => false,
         StatusLevel::Fail | StatusLevel::Retry | StatusLevel::Slow => {
@@ -118,6 +126,31 @@ impl Reporter for TestCaseReporter {
         writeln!(
             stdout,
             "{padding}{colored_label} {duration_str} {module}::{fn_name}{params}{suffix}"
+        )
+        .ok();
+    }
+
+    fn report_test_slow(&self, test_name: &QualifiedTestName, duration: Duration) {
+        if self.printer.status_level() < StatusLevel::Slow {
+            return;
+        }
+
+        let label = "SLOW";
+        let colored_label = label.yellow().bold().to_string();
+        let padding = " ".repeat(12usize.saturating_sub(label.len()));
+        let duration_str = format_duration_bracketed(duration);
+
+        let module = test_name.function_name().module_path().module_name().cyan();
+        let fn_name = test_name.function_name().function_name().blue().bold();
+        let params = test_name
+            .params()
+            .map(|p| p.blue().bold().to_string())
+            .unwrap_or_default();
+
+        let mut stdout = self.printer.stream_for_test_result().lock();
+        writeln!(
+            stdout,
+            "{padding}{colored_label} {duration_str} {module}::{fn_name}{params}"
         )
         .ok();
     }

@@ -76,6 +76,21 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
             .is_exceeded_by(self.failed_count.get())
     }
 
+    /// If the test exceeded the configured `slow-timeout`, register it as
+    /// slow so the reporter emits a `SLOW` line ahead of the result line and
+    /// the run summary includes a slow counter.
+    fn maybe_register_slow(
+        &self,
+        test_name: &QualifiedTestName,
+        total_duration: std::time::Duration,
+    ) {
+        if let Some(threshold) = self.context.settings().test().slow_timeout
+            && total_duration > threshold
+        {
+            self.context.register_slow_test(test_name, total_duration);
+        }
+    }
+
     /// Record a test variant's outcome for `max-fail` accounting.
     fn record_outcome(&self, passed: bool) {
         if !passed {
@@ -527,6 +542,7 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
             );
 
             let total_duration = start_time.elapsed();
+            self.maybe_register_slow(&qualified_test_name, total_duration);
             self.classify_test_result(py, test_result, fixture_call_errors, &report_ctx, |kind| {
                 self.context.register_retried_result(
                     &qualified_test_name,
@@ -538,6 +554,7 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
             })
         } else {
             let total_duration = start_time.elapsed();
+            self.maybe_register_slow(&qualified_test_name, total_duration);
             self.classify_test_result(py, test_result, fixture_call_errors, &report_ctx, |kind| {
                 self.context
                     .register_test_case_result(&qualified_test_name, kind, total_duration)

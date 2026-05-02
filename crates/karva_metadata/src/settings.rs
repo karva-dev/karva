@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use karva_combine::Combine;
 use karva_logging::{FinalStatusLevel, StatusLevel};
 use serde::{Deserialize, Serialize};
@@ -25,6 +27,38 @@ pub enum NoTestsMode {
 }
 
 impl Combine for NoTestsMode {
+    #[inline(always)]
+    fn combine_with(&mut self, _other: Self) {}
+
+    #[inline]
+    fn combine(self, _other: Self) -> Self {
+        self
+    }
+}
+
+/// A slow-test threshold expressed in seconds.
+///
+/// Wraps `f64` so the surrounding [`crate::options::TestOptions`] can keep
+/// deriving `Eq`/`Combine` without pulling `f64` into those bounds. Bit-wise
+/// equality is used (`NaN` is not a valid value because the option is
+/// validated at parse time).
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[serde(transparent)]
+pub struct SlowTimeoutSecs(pub f64);
+
+impl Eq for SlowTimeoutSecs {}
+
+impl SlowTimeoutSecs {
+    pub fn as_duration(self) -> Option<Duration> {
+        if self.0.is_finite() && self.0 > 0.0 {
+            Some(Duration::from_secs_f64(self.0))
+        } else {
+            None
+        }
+    }
+}
+
+impl Combine for SlowTimeoutSecs {
     #[inline(always)]
     fn combine_with(&mut self, _other: Self) {}
 
@@ -101,4 +135,7 @@ pub struct TestSettings {
     pub filter: FiltersetSet,
     pub run_ignored: RunIgnoredMode,
     pub no_tests: NoTestsMode,
+    /// Threshold after which a test is flagged as slow. `None` disables
+    /// slow-test detection entirely.
+    pub slow_timeout: Option<Duration>,
 }
