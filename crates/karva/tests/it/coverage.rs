@@ -663,7 +663,7 @@ def test_only_covered():
     [LONG-LINE]
     TOTAL                 6      1     83%
 
-    coverage failure: total of 83% is below fail-under=90%
+    coverage failure: total of 83.33% is below fail-under=90%
 
     ----- stderr -----
     "
@@ -752,7 +752,7 @@ def test_only_covered():
     [LONG-LINE]
     TOTAL                 6      1     83%
 
-    coverage failure: total of 83% is below fail-under=90%
+    coverage failure: total of 83.33% is below fail-under=90%
 
     ----- stderr -----
     "
