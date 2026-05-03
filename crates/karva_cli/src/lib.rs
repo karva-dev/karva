@@ -6,8 +6,8 @@ use clap::builder::Styles;
 use clap::builder::styling::{AnsiColor, Effects};
 use karva_logging::{FinalStatusLevel, StatusLevel, TerminalColor, VerbosityLevel};
 use karva_metadata::{
-    CoverageOptions, MaxFail, NoTestsMode, Options, RunIgnoredMode, SlowTimeoutSecs, SrcOptions,
-    TerminalOptions, TestOptions,
+    CovFailUnder, CoverageOptions, MaxFail, NoTestsMode, Options, RunIgnoredMode, SlowTimeoutSecs,
+    SrcOptions, TerminalOptions, TestOptions,
 };
 use ruff_db::diagnostic::DiagnosticFormat;
 
@@ -314,6 +314,20 @@ pub struct SubTestCommand {
     )]
     pub cov_report: Option<CovReport>,
 
+    /// Fail the run if total coverage is below the given percentage.
+    ///
+    /// Accepts any value in `0..=100` (fractional values such as `90.5`
+    /// are allowed). When the reported `TOTAL` percentage is below the
+    /// threshold, the test command exits with a non-zero status even if
+    /// every test passed. Has no effect when tests have already failed.
+    #[clap(
+        long = "cov-fail-under",
+        value_name = "PERCENT",
+        value_parser = parse_cov_fail_under,
+        help_heading = "Coverage options"
+    )]
+    pub cov_fail_under: Option<f64>,
+
     /// Internal: per-worker coverage data file path.
     ///
     /// Set automatically by the runner when `--cov` is enabled. Not intended
@@ -490,6 +504,7 @@ impl SubTestCommand {
             coverage: Some(CoverageOptions {
                 sources: (!self.cov.is_empty()).then(|| self.cov.clone()),
                 report: self.cov_report.map(Into::into),
+                fail_under: self.cov_fail_under.map(CovFailUnder),
                 disabled: self.no_cov.then_some(true),
             }),
         }
@@ -560,4 +575,17 @@ impl From<NoTests> for NoTestsMode {
             NoTests::Fail => Self::Fail,
         }
     }
+}
+
+/// Parse and validate a `--cov-fail-under=N` argument.
+///
+/// Accepts any finite percentage in `0..=100`.
+fn parse_cov_fail_under(raw: &str) -> Result<f64, String> {
+    let value: f64 = raw
+        .parse()
+        .map_err(|err| format!("`{raw}` is not a valid number: {err}"))?;
+    if !value.is_finite() || !(0.0..=100.0).contains(&value) {
+        return Err(format!("must be between 0 and 100, got `{raw}`"));
+    }
+    Ok(value)
 }

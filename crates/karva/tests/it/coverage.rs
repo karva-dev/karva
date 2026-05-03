@@ -628,6 +628,114 @@ def test_one():
 }
 
 #[test]
+fn test_cov_fail_under_below_threshold_fails() {
+    let context = TestContext::with_file(
+        "test_partial.py",
+        r"
+def covered():
+    return 1
+
+def uncovered():
+    return 2
+
+def test_only_covered():
+    assert covered() == 1
+",
+    );
+
+    assert_cmd_snapshot!(
+        context.command_no_parallel()
+            .arg("--cov")
+            .arg("--cov-fail-under=90")
+            .arg("--status-level=none")
+            .arg("test_partial.py"),
+        @r"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    Name              Stmts   Miss   Cover
+    [LONG-LINE]
+    test_partial.py       6      1     83%
+    [LONG-LINE]
+    TOTAL                 6      1     83%
+    coverage failure: total of 83.33% is below `--cov-fail-under=90`
+
+    ----- stderr -----
+    "
+    );
+}
+
+#[test]
+fn test_cov_fail_under_at_threshold_passes() {
+    let context = TestContext::with_file(
+        "test_covered.py",
+        r"
+def add(a, b):
+    return a + b
+
+def test_add():
+    assert add(1, 2) == 3
+",
+    );
+
+    assert_cmd_snapshot!(
+        context.command_no_parallel()
+            .arg("--cov")
+            .arg("--cov-fail-under=100")
+            .arg("--status-level=none")
+            .arg("test_covered.py"),
+        @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    Name              Stmts   Miss   Cover
+    [LONG-LINE]
+    test_covered.py       4      0    100%
+    [LONG-LINE]
+    TOTAL                 4      0    100%
+
+    ----- stderr -----
+    "
+    );
+}
+
+#[test]
+fn test_cov_fail_under_rejects_out_of_range() {
+    let context = TestContext::with_file(
+        "test_simple.py",
+        r"
+def test_one():
+    assert 1 + 1 == 2
+",
+    );
+
+    assert_cmd_snapshot!(
+        context.command_no_parallel()
+            .arg("--cov")
+            .arg("--cov-fail-under=150")
+            .arg("test_simple.py"),
+        @r"
+    success: false
+    exit_code: 2
+    ----- stdout -----
+
+    ----- stderr -----
+    error: invalid value '150' for '--cov-fail-under <PERCENT>': must be between 0 and 100, got `150`
+
+    For more information, try '--help'.
+    "
+    );
+}
+
+#[test]
 fn test_cov_report_term_missing_from_config() {
     let context = TestContext::with_files([
         (
