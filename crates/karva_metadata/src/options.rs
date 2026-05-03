@@ -11,8 +11,8 @@ use thiserror::Error;
 use crate::filter::FiltersetSet;
 use crate::max_fail::MaxFail;
 use crate::settings::{
-    CoverageSettings, NoTestsMode, ProjectSettings, RunIgnoredMode, SlowTimeoutSecs, SrcSettings,
-    TerminalSettings, TestSettings,
+    CovFailUnder, CoverageSettings, NoTestsMode, ProjectSettings, RunIgnoredMode, SlowTimeoutSecs,
+    SrcSettings, TerminalSettings, TestSettings,
 };
 
 /// The implicit name of the default profile.
@@ -468,6 +468,22 @@ pub struct CoverageOptions {
     )]
     pub report: Option<CovReport>,
 
+    /// Minimum total coverage percentage required for the run to succeed.
+    ///
+    /// When set, the test command exits with a non-zero status if the
+    /// reported `TOTAL` coverage is below this value, even when every test
+    /// passed. Has no effect when tests already failed (the exit code is
+    /// already non-zero).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[option(
+        default = r#"null"#,
+        value_type = r#"float (0..=100)"#,
+        example = r#"
+            fail-under = 90
+        "#
+    )]
+    pub fail_under: Option<CovFailUnder>,
+
     /// Set by `--no-cov` to disable coverage for a single run, overriding
     /// any sources configured in `karva.toml`.
     ///
@@ -487,6 +503,7 @@ impl CoverageOptions {
         CoverageSettings {
             sources,
             report: self.report.unwrap_or_default(),
+            fail_under: self.fail_under.map(|t| t.0),
         }
     }
 }
@@ -994,6 +1011,7 @@ report = "term-missing"
                 report: Some(
                     TermMissing,
                 ),
+                fail_under: None,
                 disabled: None,
             },
         )
@@ -1024,6 +1042,7 @@ report = "term-missing"
             report: Some(
                 TermMissing,
             ),
+            fail_under: None,
             disabled: None,
         }
         "#);
@@ -1077,7 +1096,7 @@ disabled = true
           |
         3 | disabled = true
           | ^^^^^^^^
-        unknown field `disabled`, expected `sources` or `report`
+        unknown field `disabled`, expected one of `sources`, `report`, `fail-under`
         "
         );
     }
@@ -1096,7 +1115,7 @@ nonsense = 1
           |
         4 | nonsense = 1
           | ^^^^^^^^
-        unknown field `nonsense`, expected `sources` or `report`
+        unknown field `nonsense`, expected one of `sources`, `report`, `fail-under`
         "
         );
     }

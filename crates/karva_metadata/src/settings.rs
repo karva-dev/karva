@@ -68,6 +68,28 @@ impl Combine for SlowTimeoutSecs {
     }
 }
 
+/// A coverage threshold expressed as a percentage (`0..=100`).
+///
+/// Wraps `f64` for the same reason as [`SlowTimeoutSecs`]: keeps the
+/// surrounding [`crate::options::CoverageOptions`] `Eq`/`Combine` derives
+/// straightforward. `NaN` is rejected at parse time so bit-wise equality is
+/// safe here.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[serde(transparent)]
+pub struct CovFailUnder(pub f64);
+
+impl Eq for CovFailUnder {}
+
+impl Combine for CovFailUnder {
+    #[inline(always)]
+    fn combine_with(&mut self, _other: Self) {}
+
+    #[inline]
+    fn combine(self, _other: Self) -> Self {
+        self
+    }
+}
+
 #[derive(Default, Debug, Clone)]
 pub struct ProjectSettings {
     pub(crate) terminal: TerminalSettings,
@@ -124,6 +146,10 @@ pub struct SrcSettings {
 pub struct CoverageSettings {
     pub sources: Vec<String>,
     pub report: CovReport,
+    /// Minimum total coverage percentage (`0..=100`). When set and the
+    /// reported `TOTAL` coverage is below this value, the test command
+    /// exits with a non-zero status even if every test passed.
+    pub fail_under: Option<f64>,
 }
 
 #[derive(Default, Debug, Clone)]

@@ -50,13 +50,21 @@ pub fn prepare_data_dir(data_dir: &Utf8Path) -> Result<()> {
 /// When `show_missing` is true, the report includes a final `Missing` column
 /// listing the uncovered line numbers per file (consecutive lines collapsed
 /// into `a-b` ranges).
-pub fn combine_and_report(cwd: &Utf8Path, data_dir: &Utf8Path, show_missing: bool) -> Result<()> {
+///
+/// Returns the total coverage percentage (`0.0..=100.0`) shown in the
+/// `TOTAL` row, or `None` if there was no data to report. Files with zero
+/// executable lines do not contribute to the total.
+pub fn combine_and_report(
+    cwd: &Utf8Path,
+    data_dir: &Utf8Path,
+    show_missing: bool,
+) -> Result<Option<f64>> {
     let combined = combine(data_dir)?;
     if combined.is_empty() {
-        return Ok(());
+        return Ok(None);
     }
-    print_report(cwd, &combined, show_missing, &mut std::io::stdout().lock())?;
-    Ok(())
+    let total = print_report(cwd, &combined, show_missing, &mut std::io::stdout().lock())?;
+    Ok(Some(total))
 }
 
 #[derive(Debug, Default)]
@@ -119,7 +127,7 @@ fn print_report(
     combined: &BTreeMap<String, CombinedFile>,
     show_missing: bool,
     out: &mut dyn Write,
-) -> Result<()> {
+) -> Result<f64> {
     let cwd_real = std::fs::canonicalize(cwd.as_std_path()).unwrap_or_else(|_| cwd.into());
 
     let rows: Vec<FileRow> = combined
@@ -200,6 +208,7 @@ fn print_report(
     }
 
     writeln!(out, "{rule}")?;
+    let total_pct = percent(total_stmts, total_miss);
     let total_cover = format_percent(total_stmts, total_miss);
     let total_stmts_str = total_stmts.to_string();
     let total_miss_str = total_miss.to_string();
@@ -219,7 +228,7 @@ fn print_report(
         )
     )?;
 
-    Ok(())
+    Ok(total_pct)
 }
 
 fn format_row(name_width: usize, show_missing: bool, row: &Row<'_>) -> String {
@@ -266,12 +275,16 @@ fn format_range(start: u32, end: u32) -> String {
     }
 }
 
-fn format_percent(total: u32, miss: u32) -> String {
+fn percent(total: u32, miss: u32) -> f64 {
     if total == 0 {
-        return "100%".to_string();
+        return 100.0;
     }
     let hit = total - miss.min(total);
-    let pct = f64::from(hit) / f64::from(total) * 100.0;
+    f64::from(hit) / f64::from(total) * 100.0
+}
+
+fn format_percent(total: u32, miss: u32) -> String {
+    let pct = percent(total, miss);
     format!("{pct:.0}%")
 }
 
@@ -316,7 +329,7 @@ mod tests {
         data.insert("/proj/b.py".to_string(), cf(&[1, 2], &[1, 2]));
 
         let mut buf: Vec<u8> = Vec::new();
-        print_report(Utf8Path::new("/proj"), &data, false, &mut buf).unwrap();
+        let total = print_report(Utf8Path::new("/proj"), &data, false, &mut buf).unwrap();
         let out = String::from_utf8(buf).unwrap();
 
         assert!(out.contains("a.py"));
@@ -324,6 +337,9 @@ mod tests {
         assert!(out.contains("TOTAL"));
         assert!(out.contains("67%"));
         assert!(!out.contains("Missing"));
+        // 4/6 hit lines ≈ 66.67%; displayed as a rounded `67%` but the
+        // returned float is preserved for threshold checks.
+        assert!(total > 66.0 && total < 67.0);
     }
 
     #[test]

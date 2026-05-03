@@ -8,6 +8,28 @@ The reference below documents every field supported inside a profile. Examples t
 
 ## `coverage`
 
+### `fail-under`
+
+Minimum total coverage percentage required for the run to succeed.
+
+When set, the test command exits with a non-zero status if the
+reported `TOTAL` coverage is below this value, even when every test
+passed. Has no effect when tests already failed (the exit code is
+already non-zero).
+
+**Default value**: `null`
+
+**Type**: `float (0..=100)`
+
+**Example usage** (`pyproject.toml`):
+
+```toml
+[tool.karva.profile.default.coverage]
+fail-under = 90
+```
+
+---
+
 ### `report`
 
 Coverage terminal report type.

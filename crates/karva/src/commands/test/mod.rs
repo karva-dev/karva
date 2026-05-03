@@ -94,14 +94,26 @@ pub fn test(args: TestCommand) -> Result<ExitStatus> {
         durations,
     )?;
 
+    let mut coverage_below_threshold = false;
     if !project.settings().coverage().sources.is_empty() {
         let cache_dir = project.cwd().join(karva_cache::CACHE_DIR);
         let coverage_dir = karva_runner::coverage_data_dir(&cache_dir);
         let show_missing = matches!(project.settings().coverage().report, CovReport::TermMissing);
-        if let Err(err) =
-            karva_coverage::combine_and_report(project.cwd(), &coverage_dir, show_missing)
-        {
-            tracing::error!("Coverage report failed: {err:#}");
+        match karva_coverage::combine_and_report(project.cwd(), &coverage_dir, show_missing) {
+            Ok(Some(total)) => {
+                if let Some(threshold) = project.settings().coverage().fail_under
+                    && total < threshold
+                {
+                    let mut stdout = printer.stream_for_message().lock();
+                    writeln!(
+                        stdout,
+                        "\ncoverage failure: required total coverage of {threshold}% not reached, total coverage was {total:.2}%",
+                    )?;
+                    coverage_below_threshold = true;
+                }
+            }
+            Ok(None) => {}
+            Err(err) => tracing::error!("Coverage report failed: {err:#}"),
         }
     }
 
@@ -124,7 +136,10 @@ pub fn test(args: TestCommand) -> Result<ExitStatus> {
         }
     }
 
-    if result.stats.is_success() && result.discovery_diagnostics.is_empty() {
+    if result.stats.is_success()
+        && result.discovery_diagnostics.is_empty()
+        && !coverage_below_threshold
+    {
         Ok(ExitStatus::Success)
     } else {
         Ok(ExitStatus::Failure)
