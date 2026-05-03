@@ -7,7 +7,7 @@
 
 use std::cell::{Cell, RefCell};
 use std::collections::{BTreeMap, HashMap, HashSet};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use camino::{Utf8Path, Utf8PathBuf};
 use pyo3::prelude::*;
@@ -91,7 +91,8 @@ impl CoverageSession {
         }
 
         let executed = std::mem::take(&mut bound.borrow_mut().state.borrow_mut().executed);
-        save_data(&data_file, executed).map_err(|err| {
+        let roots = bound.borrow().roots.clone();
+        save_data(&data_file, executed, &roots).map_err(|err| {
             pyo3::exceptions::PyOSError::new_err(format!(
                 "failed to write coverage data to {data_file}: {err}"
             ))
@@ -272,10 +273,68 @@ fn install_settrace(py: Python<'_>, tracer: &Py<CoverageTracer>) -> PyResult<()>
     Ok(())
 }
 
+/// Walk source roots collecting `.py` files so that files which were never
+/// imported during the run still appear in the report at 0% coverage.
+/// Skips directories matching [`PATH_EXCLUDES`] and never follows symlinks
+/// (avoids descending into a symlinked `.venv`).
+fn walk_source_files(roots: &[PathBuf]) -> Vec<PathBuf> {
+    let mut out = Vec::new();
+    let mut seen: HashSet<PathBuf> = HashSet::new();
+    for root in roots {
+        let Ok(metadata) = std::fs::symlink_metadata(root) else {
+            continue;
+        };
+        if metadata.file_type().is_symlink() {
+            continue;
+        }
+        if metadata.is_file() {
+            if is_python_source(root) && seen.insert(root.clone()) {
+                out.push(root.clone());
+            }
+        } else if metadata.is_dir() {
+            walk_dir(root, &mut out, &mut seen);
+        }
+    }
+    out
+}
+
+fn walk_dir(dir: &Path, out: &mut Vec<PathBuf>, seen: &mut HashSet<PathBuf>) {
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let Ok(file_type) = entry.file_type() else {
+            continue;
+        };
+        if file_type.is_symlink() {
+            continue;
+        }
+        let path = entry.path();
+        if file_type.is_dir() {
+            let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+            if PATH_EXCLUDES.contains(&name) {
+                continue;
+            }
+            walk_dir(&path, out, seen);
+        } else if file_type.is_file() && is_python_source(&path) && seen.insert(path.clone()) {
+            out.push(path);
+        }
+    }
+}
+
+fn is_python_source(path: &Path) -> bool {
+    path.extension().and_then(|e| e.to_str()) == Some("py")
+}
+
 fn save_data(
     data_file: &Utf8Path,
-    executed: HashMap<PathBuf, HashSet<u32>>,
+    mut executed: HashMap<PathBuf, HashSet<u32>>,
+    roots: &[PathBuf],
 ) -> std::io::Result<()> {
+    for path in walk_source_files(roots) {
+        executed.entry(path).or_default();
+    }
+
     let mut files = BTreeMap::new();
     for (path, hits) in executed {
         let executable = executable_lines(&path);
