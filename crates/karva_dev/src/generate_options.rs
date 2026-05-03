@@ -13,14 +13,14 @@ use crate::{Mode, REGENERATE_ALL_COMMAND, ROOT_DIR};
 
 #[derive(clap::Args)]
 pub(crate) struct Args {
-    /// Write the generated table to stdout (rather than to `docs/configuration.md`).
+    /// Write the generated table to stdout (rather than to `docs/configuration/configuration.md`).
     #[arg(long, default_value_t, value_enum)]
     pub(crate) mode: Mode,
 }
 
 pub(crate) fn main(args: &Args) -> anyhow::Result<()> {
     let mut output = String::new();
-    let file_name = "docs/configuration.md";
+    let file_name = "docs/configuration/configuration.md";
     let markdown_path = PathBuf::from(ROOT_DIR).join(file_name);
 
     if !markdown_path.exists() {

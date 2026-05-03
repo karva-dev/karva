@@ -15,25 +15,25 @@ extra_css = ["stylesheets/extra.css"]
 nav = [
     { "Home" = "index.md"},
     { "Get Started" = [
-        { "Installation" = "installation.md"},
-        { "Tutorial" = "tutorial.md"},
+        { "Installation" = "get-started/installation.md"},
+        { "Tutorial" = "get-started/tutorial.md"},
     ]},
     { "Usage" = [
         { "Running Tests" = [
-            { "Filtering Tests" = "usage/filtering.md"},
-            { "Parallel Execution" = "usage/parallel.md"},
-            { "Watch Mode" = "usage/watch.md"},
-            { "Cache" = "usage/cache.md"},
+            { "Filtering Tests" = "usage/running-tests/filtering.md"},
+            { "Parallel Execution" = "usage/running-tests/parallel.md"},
+            { "Watch Mode" = "usage/running-tests/watch.md"},
+            { "Cache" = "usage/running-tests/cache.md"},
         ]},
         { "Failure Handling" = [
-            { "Failing Fast" = "usage/fail-fast.md"},
-            { "Retries" = "usage/retries.md"},
-            { "Slow Tests" = "usage/slow-tests.md"},
+            { "Failing Fast" = "usage/failure-handling/fail-fast.md"},
+            { "Retries" = "usage/failure-handling/retries.md"},
+            { "Slow Tests" = "usage/failure-handling/slow-tests.md"},
         ]},
         { "Writing Tests" = [
-            { "Snapshots" = "usage/snapshots.md"},
-            { "Coverage" = "usage/coverage.md"},
-            { "Other Functions" = "usage/functions.md"},
+            { "Snapshots" = "usage/writing-tests/snapshots.md"},
+            { "Coverage" = "usage/writing-tests/coverage.md"},
+            { "Other Functions" = "usage/writing-tests/functions.md"},
         ]},
         { "Fixtures" = [
             { "Fixtures" = "usage/fixtures/fixtures.md"},
@@ -47,12 +47,12 @@ nav = [
         ]},
     ]},
     { "Configuration" = [
-        { "Configuration" = "configuration.md"},
-        { "Profiles" = "profiles.md"},
+        { "Configuration" = "configuration/configuration.md"},
+        { "Profiles" = "configuration/profiles.md"},
     ]},
     { "Reference" = [
-        { "CLI" = "cli.md"},
-        { "Environment Variables" = "env-vars.md"},
+        { "CLI" = "reference/cli.md"},
+        { "Environment Variables" = "reference/env-vars.md"},
     ]},
 ]
 

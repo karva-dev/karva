@@ -20,7 +20,7 @@ pub(crate) struct Args {
 
 pub(crate) fn main(args: &Args) -> Result<()> {
     let reference_string = generate();
-    let filename = "docs/cli.md";
+    let filename = "docs/reference/cli.md";
     let reference_path = Utf8PathBuf::from(ROOT_DIR).join(filename);
 
     match args.mode {

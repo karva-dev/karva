@@ -46,8 +46,8 @@ uv run karva test
 
 ## Where to next
 
-- [Filtering Tests](usage/filtering.md) — pick which tests run with the `-E` filter DSL.
-- [Fixtures](usage/fixtures/fixtures.md) — share setup and teardown between tests.
-- [Snapshots](usage/snapshots.md) — pin large outputs to a file.
-- [Coverage](usage/coverage.md) — measure line coverage with `--cov`.
-- [Watch Mode](usage/watch.md) — re-run tests on save.
+- [Filtering Tests](../usage/running-tests/filtering.md) — pick which tests run with the `-E` filter DSL.
+- [Fixtures](../usage/fixtures/fixtures.md) — share setup and teardown between tests.
+- [Snapshots](../usage/writing-tests/snapshots.md) — pin large outputs to a file.
+- [Coverage](../usage/writing-tests/coverage.md) — measure line coverage with `--cov`.
+- [Watch Mode](../usage/running-tests/watch.md) — re-run tests on save.

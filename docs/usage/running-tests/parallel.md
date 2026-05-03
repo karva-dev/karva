@@ -29,7 +29,7 @@ def database_url():
     return f"postgresql:///test_{worker}"
 ```
 
-`KARVA_WORKER_ID` is `0`-indexed and stable for the lifetime of the worker. See [Environment Variables](../env-vars.md) for the full list of variables the worker exposes to tests.
+`KARVA_WORKER_ID` is `0`-indexed and stable for the lifetime of the worker. See [Environment Variables](../../reference/env-vars.md) for the full list of variables the worker exposes to tests.
 
 ## Output capture
 

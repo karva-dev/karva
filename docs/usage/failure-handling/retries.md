@@ -39,7 +39,7 @@ def test_eventual_consistency():
         ...
 ```
 
-Both variables are always set, even when retries are disabled. See [Environment Variables](../env-vars.md) for the full list.
+Both variables are always set, even when retries are disabled. See [Environment Variables](../../reference/env-vars.md) for the full list.
 
 ## When not to retry
 

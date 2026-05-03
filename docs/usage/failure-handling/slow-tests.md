@@ -23,7 +23,7 @@ The `SLOW` line is gated behind `--status-level=slow` (or higher); the summary s
 karva test --slow-timeout=2.0 --status-level=slow --final-status-level=slow
 ```
 
-Slow detection is purely informational — it does not fail the run or kill the test. To time-box a test instead, use [`@karva.tags.timeout`](tags/timeout.md).
+Slow detection is purely informational — it does not fail the run or kill the test. To time-box a test instead, use [`@karva.tags.timeout`](../tags/timeout.md).
 
 ## Ranking the slowest tests
 

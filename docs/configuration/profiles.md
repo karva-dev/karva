@@ -76,4 +76,4 @@ error that lists the profiles that are available.
 ## See also
 
 - [Configuration](configuration.md) — reference for every supported field.
-- [CLI](cli.md) — every flag, including `--profile` and `--config-file`.
+- [CLI](../reference/cli.md) — every flag, including `--profile` and `--config-file`.

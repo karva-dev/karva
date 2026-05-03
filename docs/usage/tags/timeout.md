@@ -25,4 +25,4 @@ Fixture setup runs before the timeout starts, so a slow fixture does not count t
 
 ## See also
 
-- [Slow tests](../slow-tests.md) for `--slow-timeout`, which only flags slow tests rather than failing them.
+- [Slow tests](../failure-handling/slow-tests.md) for `--slow-timeout`, which only flags slow tests rather than failing them.
