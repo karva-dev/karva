@@ -107,7 +107,7 @@ pub fn test(args: TestCommand) -> Result<ExitStatus> {
                     let mut stdout = printer.stream_for_message().lock();
                     writeln!(
                         stdout,
-                        "\ncoverage failure: total of {total:.2}% is below fail-under={threshold}%",
+                        "\ncoverage failure: required total coverage of {threshold}% not reached, total coverage was {total:.2}%",
                     )?;
                     coverage_below_threshold = true;
                 }
