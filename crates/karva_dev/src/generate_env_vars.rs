@@ -12,12 +12,12 @@ use crate::{Mode, REGENERATE_ALL_COMMAND, ROOT_DIR};
 
 #[derive(clap::Args)]
 pub(crate) struct Args {
-    /// Write the generated reference to stdout (rather than to `docs/env-vars.md`).
+    /// Write the generated reference to stdout (rather than to `docs/reference/env-vars.md`).
     #[arg(long, default_value_t, value_enum)]
     pub(crate) mode: Mode,
 }
 
-const FILE_NAME: &str = "docs/env-vars.md";
+const FILE_NAME: &str = "docs/reference/env-vars.md";
 
 const HEADER: &str = "<!-- WARNING: This file is auto-generated (cargo run -p karva_dev generate-all). Update the doc comments on the env-var structs in 'crates/karva_static/src/lib.rs' if you want to change anything here. -->\n\n# Environment Variables\n\nThis page lists every environment variable that Karva reads from the \
 environment, plus the variables the worker exposes to running tests.\n\n";

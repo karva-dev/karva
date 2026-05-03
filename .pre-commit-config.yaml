@@ -1,9 +1,9 @@
 exclude:
   glob:
     - "*.svg"
-    - docs/cli.md
-    - docs/configuration.md
-    - docs/env-vars.md
+    - docs/configuration/configuration.md
+    - docs/reference/cli.md
+    - docs/reference/env-vars.md
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
