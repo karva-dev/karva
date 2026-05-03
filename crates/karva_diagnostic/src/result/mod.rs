@@ -18,10 +18,8 @@ pub use stats::TestResultStats;
 /// This is held in the test context and updated throughout the test run.
 #[derive(Debug, Clone, Default)]
 pub struct TestRunResult {
-    /// Diagnostics generated during test discovery.
-    discovery_diagnostics: Vec<Diagnostic>,
-
-    /// Diagnostics generated during test collection and  execution.
+    /// Diagnostics generated during test discovery, collection, and execution,
+    /// in the order they were emitted.
     diagnostics: Vec<Diagnostic>,
 
     /// Stats generated during test execution.
@@ -40,14 +38,6 @@ pub struct TestRunResult {
 impl TestRunResult {
     pub fn diagnostics(&self) -> &[Diagnostic] {
         &self.diagnostics
-    }
-
-    pub fn discovery_diagnostics(&self) -> &[Diagnostic] {
-        &self.discovery_diagnostics
-    }
-
-    pub fn add_discovery_diagnostic(&mut self, diagnostic: Diagnostic) {
-        self.discovery_diagnostics.push(diagnostic);
     }
 
     pub fn add_diagnostic(&mut self, diagnostic: Diagnostic) {

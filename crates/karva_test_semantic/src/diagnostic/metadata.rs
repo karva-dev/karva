@@ -50,22 +50,17 @@ pub struct DiagnosticGuardBuilder<'ctx, 'a> {
 
     /// Severity level for this diagnostic.
     severity: Severity,
-
-    /// Whether this diagnostic occurred during test discovery.
-    is_discovery: bool,
 }
 
 impl<'ctx, 'a> DiagnosticGuardBuilder<'ctx, 'a> {
     pub(crate) fn new(
         context: &'ctx Context<'a>,
         diagnostic_type: &'static DiagnosticType,
-        is_discovery: bool,
     ) -> Self {
         DiagnosticGuardBuilder {
             context,
             id: DiagnosticId::Lint(diagnostic_type.name),
             severity: diagnostic_type.severity,
-            is_discovery,
         }
     }
 
@@ -77,7 +72,6 @@ impl<'ctx, 'a> DiagnosticGuardBuilder<'ctx, 'a> {
         DiagnosticGuard {
             context: self.context,
             diag: Some(Diagnostic::new(self.id, self.severity, message)),
-            is_discovery: self.is_discovery,
         }
     }
 }
@@ -92,9 +86,6 @@ pub struct DiagnosticGuard<'ctx, 'a> {
 
     /// The diagnostic being built, wrapped in Option for take-on-drop.
     diag: Option<Diagnostic>,
-
-    /// Whether this diagnostic occurred during test discovery.
-    is_discovery: bool,
 }
 
 /// Return a immutable borrow of the diagnostic in this guard.
@@ -116,11 +107,6 @@ impl std::ops::DerefMut for DiagnosticGuard<'_, '_> {
 impl Drop for DiagnosticGuard<'_, '_> {
     fn drop(&mut self) {
         let diag = self.diag.take().unwrap();
-
-        if self.is_discovery {
-            self.context.result().add_discovery_diagnostic(diag);
-        } else {
-            self.context.result().add_diagnostic(diag);
-        }
+        self.context.result().add_diagnostic(diag);
     }
 }

@@ -6,7 +6,7 @@ use anyhow::Context as _;
 use camino::Utf8PathBuf;
 use clap::Parser;
 use colored::Colorize;
-use karva_cache::{Cache, RunHash};
+use karva_cache::{RunCache, RunHash};
 use karva_cli::{SubTestCommand, Verbosity};
 use karva_diagnostic::{DummyReporter, Reporter, TestCaseReporter};
 use karva_logging::{Printer, StatusLevel, set_colored_override, setup_tracing};
@@ -164,7 +164,7 @@ fn run(f: impl FnOnce(Vec<OsString>) -> Vec<OsString>) -> anyhow::Result<ExitSta
 
     let run_hash = RunHash::from_existing(&args.run_hash);
 
-    let cache = Cache::new(&args.cache_dir, &run_hash);
+    let cache = RunCache::new(&args.cache_dir, &run_hash);
 
     let reporter: Box<dyn Reporter> = if matches!(printer.status_level(), StatusLevel::None) {
         Box::new(DummyReporter)

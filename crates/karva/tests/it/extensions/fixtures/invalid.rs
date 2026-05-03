@@ -366,15 +366,15 @@ fn test_fixture_generator_two_yields() {
     );
 
     assert_cmd_snapshot!(context.command(), @"
-    success: true
-    exit_code: 0
+    success: false
+    exit_code: 1
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_fixture_generator(fixture_generator=1)
 
     diagnostics:
 
-    warning[invalid-fixture-finalizer]: Discovered an invalid fixture finalizer `fixture_generator`
+    error[invalid-fixture-finalizer]: Discovered an invalid fixture finalizer `fixture_generator`
      --> test.py:5:5
       |
     4 | @karva.fixture
@@ -410,15 +410,15 @@ fn test_fixture_generator_fail_in_teardown() {
     );
 
     assert_cmd_snapshot!(context.command(), @r#"
-    success: true
-    exit_code: 0
+    success: false
+    exit_code: 1
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_fixture_generator(fixture_generator=1)
 
     diagnostics:
 
-    warning[invalid-fixture-finalizer]: Discovered an invalid fixture finalizer `fixture_generator`
+    error[invalid-fixture-finalizer]: Discovered an invalid fixture finalizer `fixture_generator`
      --> test.py:5:5
       |
     4 | @karva.fixture

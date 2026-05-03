@@ -3,6 +3,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde::{Deserialize, Serialize};
 
+use crate::RUN_PREFIX;
+
 /// A unique identifier for a test run based on a millisecond timestamp.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct RunHash {
@@ -25,7 +27,7 @@ impl RunHash {
     /// Falls back to timestamp `0` if the input cannot be parsed.
     pub fn from_existing(hash: &str) -> Self {
         let timestamp = hash
-            .strip_prefix("run-")
+            .strip_prefix(RUN_PREFIX)
             .unwrap_or(hash)
             .parse()
             .unwrap_or(0);
@@ -34,7 +36,7 @@ impl RunHash {
 
     /// Returns the string representation used as a directory name (e.g. `run-1234`).
     pub fn inner(&self) -> String {
-        format!("run-{}", self.timestamp)
+        format!("{RUN_PREFIX}{}", self.timestamp)
     }
 
     /// Returns the underlying timestamp, used for ordering runs chronologically.

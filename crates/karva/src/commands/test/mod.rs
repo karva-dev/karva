@@ -136,10 +136,7 @@ pub fn test(args: TestCommand) -> Result<ExitStatus> {
         }
     }
 
-    if result.stats.is_success()
-        && result.discovery_diagnostics.is_empty()
-        && !coverage_below_threshold
-    {
+    if result.stats.is_success() && result.diagnostics.is_empty() && !coverage_below_threshold {
         Ok(ExitStatus::Success)
     } else {
         Ok(ExitStatus::Failure)
@@ -147,9 +144,7 @@ pub fn test(args: TestCommand) -> Result<ExitStatus> {
 }
 
 fn no_tests_collected(result: &AggregatedResults) -> bool {
-    result.stats.total() == 0
-        && result.discovery_diagnostics.is_empty()
-        && result.diagnostics.is_empty()
+    result.stats.total() == 0 && result.diagnostics.is_empty()
 }
 
 /// Print test output: diagnostics, durations, and result summary.
@@ -163,8 +158,7 @@ pub fn print_test_output(
     let mut details = printer.stream_for_details().lock();
     let is_concise = matches!(output_format, Some(OutputFormat::Concise));
 
-    let has_diagnostics =
-        !result.diagnostics.is_empty() || !result.discovery_diagnostics.is_empty();
+    let has_diagnostics = !result.diagnostics.is_empty();
     let has_durations = durations.is_some_and(|n| n > 0) && !result.durations.is_empty();
     let has_preceding_test_lines = result.stats.total() > 0;
 
@@ -209,7 +203,7 @@ fn write_diagnostics_block(
     is_concise: bool,
     needs_leading_blank: bool,
 ) -> Result<()> {
-    if result.discovery_diagnostics.is_empty() && result.diagnostics.is_empty() {
+    if result.diagnostics.is_empty() {
         return Ok(());
     }
 
@@ -218,13 +212,7 @@ fn write_diagnostics_block(
     }
     writeln!(stdout, "diagnostics:")?;
     writeln!(stdout)?;
-
-    if !result.discovery_diagnostics.is_empty() {
-        write!(stdout, "{}", result.discovery_diagnostics)?;
-    }
-    if !result.diagnostics.is_empty() {
-        write!(stdout, "{}", result.diagnostics)?;
-    }
+    write!(stdout, "{}", result.diagnostics)?;
     // Non-concise diagnostic content ends with a trailing blank line of its
     // own; concise mode needs an explicit one to match.
     if is_concise {

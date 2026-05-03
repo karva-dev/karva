@@ -249,15 +249,15 @@ def test_something():
     );
 
     assert_cmd_snapshot!(context.command_no_parallel(), @r#"
-    success: true
-    exit_code: 0
+    success: false
+    exit_code: 1
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_something
 
     diagnostics:
 
-    warning[invalid-fixture-finalizer]: Discovered an invalid fixture finalizer `failing_teardown_fixture`
+    error[invalid-fixture-finalizer]: Discovered an invalid fixture finalizer `failing_teardown_fixture`
      --> test.py:5:5
       |
     4 | @karva.fixture(auto_use=True)
@@ -329,8 +329,8 @@ def test_second():
     );
 
     assert_cmd_snapshot!(context.command_no_parallel(), @r#"
-    success: true
-    exit_code: 0
+    success: false
+    exit_code: 1
     ----- stdout -----
         Starting 2 tests across 1 worker
             PASS [TIME] test::test_first

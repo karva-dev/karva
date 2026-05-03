@@ -26,9 +26,11 @@ use crate::{Context, declare_diagnostic_type};
 declare_diagnostic_type! {
     /// ## Failed to import module
     ///
-    /// This comes from when we try to import tests or fixtures.
-    /// If we try to import a module and it fails, we will raise this warning.
-    /// Tests that were successfully collected still run and determine the exit code.
+    /// Raised when karva tries to import a test module or fixture file and the
+    /// import itself fails (e.g. a syntax error, an unresolved import, an
+    /// exception at top level). Any tests inside the module are not discovered;
+    /// successfully-collected tests in other modules still run, but the run
+    /// exits non-zero.
     pub static FAILED_TO_IMPORT_MODULE = {
         summary: "Failed to import python module",
         severity: Severity::Error,
@@ -53,7 +55,7 @@ declare_diagnostic_type! {
     /// If a finalizer tries to yield another value, we will raise this error.
     pub static INVALID_FIXTURE_FINALIZER = {
         summary: "Tried to run an invalid fixture finalizer",
-        severity: Severity::Warning,
+        severity: Severity::Error,
     }
 }
 
@@ -137,7 +139,7 @@ fn report_dependency_chain(
 }
 
 pub fn report_failed_to_import_module(context: &Context, module_name: &str, error: &str) {
-    let builder = context.report_discovery_diagnostic(&FAILED_TO_IMPORT_MODULE);
+    let builder = context.report_diagnostic(&FAILED_TO_IMPORT_MODULE);
 
     builder.into_diagnostic(format!(
         "Failed to import python module `{module_name}`: {error}"

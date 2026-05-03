@@ -155,14 +155,7 @@ impl<'a> Context<'a> {
         &'ctx self,
         rule: &'static DiagnosticType,
     ) -> DiagnosticGuardBuilder<'ctx, 'a> {
-        DiagnosticGuardBuilder::new(self, rule, false)
-    }
-
-    pub(crate) fn report_discovery_diagnostic<'ctx>(
-        &'ctx self,
-        rule: &'static DiagnosticType,
-    ) -> DiagnosticGuardBuilder<'ctx, 'a> {
-        DiagnosticGuardBuilder::new(self, rule, true)
+        DiagnosticGuardBuilder::new(self, rule)
     }
 
     pub fn python_version(&self) -> PythonVersion {

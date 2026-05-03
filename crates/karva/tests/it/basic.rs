@@ -259,7 +259,7 @@ fn test_fail_concise_output() {
 
     diagnostics:
 
-    test_fail.py:5:5: warning[invalid-fixture-finalizer] Discovered an invalid fixture finalizer `fixture_1`
+    test_fail.py:5:5: error[invalid-fixture-finalizer] Discovered an invalid fixture finalizer `fixture_1`
     test_fail.py:9:5: error[test-failure] Test `test_1` failed
     test_fail.py:16:5: error[missing-fixtures] Test `test_2` has missing fixtures: `fixture_2`
     test_fail.py:19:5: error[test-failure] Test `test_3` failed
@@ -610,15 +610,15 @@ fn test_fixture_generator_two_yields_passing_test() {
     );
 
     assert_cmd_snapshot!(context.command(), @"
-    success: true
-    exit_code: 0
+    success: false
+    exit_code: 1
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_fixture_generator(fixture_generator=1)
 
     diagnostics:
 
-    warning[invalid-fixture-finalizer]: Discovered an invalid fixture finalizer `fixture_generator`
+    error[invalid-fixture-finalizer]: Discovered an invalid fixture finalizer `fixture_generator`
      --> test.py:5:5
       |
     4 | @karva.fixture
@@ -662,7 +662,7 @@ fn test_fixture_generator_two_yields_failing_test() {
 
     diagnostics:
 
-    warning[invalid-fixture-finalizer]: Discovered an invalid fixture finalizer `fixture_generator`
+    error[invalid-fixture-finalizer]: Discovered an invalid fixture finalizer `fixture_generator`
      --> test.py:5:5
       |
     4 | @karva.fixture
@@ -717,15 +717,15 @@ fn test_fixture_generator_fail_in_teardown() {
     );
 
     assert_cmd_snapshot!(context.command(), @r#"
-    success: true
-    exit_code: 0
+    success: false
+    exit_code: 1
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_fixture_generator(fixture_generator=1)
 
     diagnostics:
 
-    warning[invalid-fixture-finalizer]: Discovered an invalid fixture finalizer `fixture_generator`
+    error[invalid-fixture-finalizer]: Discovered an invalid fixture finalizer `fixture_generator`
      --> test.py:5:5
       |
     4 | @karva.fixture
