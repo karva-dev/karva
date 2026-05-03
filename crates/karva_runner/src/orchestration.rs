@@ -10,7 +10,7 @@ use crossbeam_channel::{Receiver, TryRecvError};
 
 use crate::shutdown::shutdown_receiver;
 use karva_cache::{
-    AggregatedResults, CACHE_DIR, Cache, RunHash, read_last_failed, read_recent_durations,
+    AggregatedResults, CACHE_DIR, RunCache, RunHash, read_last_failed, read_recent_durations,
     write_last_failed,
 };
 use karva_cli::SubTestCommand;
@@ -58,7 +58,11 @@ impl WorkerManager {
     /// Wait for all workers to complete.
     /// Returns early if a message is received on `shutdown_rx` or if the cache
     /// contains a fail-fast signal indicating a worker encountered a test failure.
-    fn wait_for_completion(&mut self, shutdown_rx: Option<&Receiver<()>>, cache: Option<&Cache>) {
+    fn wait_for_completion(
+        &mut self,
+        shutdown_rx: Option<&Receiver<()>>,
+        cache: Option<&RunCache>,
+    ) {
         if self.workers.is_empty() {
             return;
         }
@@ -340,7 +344,7 @@ pub fn run_parallel_tests(
         None
     };
 
-    let cache = Cache::new(&cache_dir, &run_hash);
+    let cache = RunCache::new(&cache_dir, &run_hash);
 
     let max_fail_cache = project.settings().max_fail().has_limit().then_some(&cache);
 

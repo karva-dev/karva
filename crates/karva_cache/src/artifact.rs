@@ -18,10 +18,8 @@ use serde::de::DeserializeOwned;
 pub enum CacheFile {
     /// Per-worker JSON: aggregated `TestResultStats`.
     Stats,
-    /// Per-worker text: rendered diagnostics from test execution.
+    /// Per-worker text: rendered diagnostics from discovery, collection, and execution.
     Diagnostics,
-    /// Per-worker text: rendered diagnostics from collection/discovery.
-    DiscoveryDiagnostics,
     /// Per-worker JSON: map of test id to wall-clock duration.
     Durations,
     /// Per-worker JSON: list of failed test names.
@@ -40,7 +38,6 @@ impl CacheFile {
         match self {
             Self::Stats => "stats.json",
             Self::Diagnostics => "diagnostics.txt",
-            Self::DiscoveryDiagnostics => "discover_diagnostics.txt",
             Self::Durations => "durations.json",
             Self::FailedTests => "failed_tests.json",
             Self::FlakyTests => "flaky_tests.json",

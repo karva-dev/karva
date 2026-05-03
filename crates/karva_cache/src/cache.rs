@@ -7,29 +7,27 @@ use camino::{Utf8Path, Utf8PathBuf};
 use karva_diagnostic::{FlakyTest, TestResultStats, TestRunResult};
 use ruff_db::diagnostic::{DisplayDiagnosticConfig, DisplayDiagnostics, FileResolver};
 
-use crate::RunHash;
 use crate::artifact::{CacheFile, read_json, read_text, write_json, write_json_if_nonempty};
-use crate::worker_folder;
+use crate::{RUN_PREFIX, RunHash, WORKER_PREFIX, worker_folder};
 
 /// Aggregated test results collected from all worker processes.
 #[derive(Default)]
 pub struct AggregatedResults {
     pub stats: TestResultStats,
     pub diagnostics: String,
-    pub discovery_diagnostics: String,
     pub failed_tests: Vec<String>,
     pub flaky_tests: Vec<FlakyTest>,
     pub durations: HashMap<String, Duration>,
 }
 
 /// Reads and writes test results in the cache directory for a specific run.
-pub struct Cache {
+pub struct RunCache {
     run_dir: Utf8PathBuf,
 }
 
-impl Cache {
+impl RunCache {
     /// Constructs a cache handle for a specific run within the cache directory.
-    pub fn new(cache_dir: &Utf8PathBuf, run_hash: &RunHash) -> Self {
+    pub fn new(cache_dir: &Utf8Path, run_hash: &RunHash) -> Self {
         let run_dir = cache_dir.join(run_hash.to_string());
         Self { run_dir }
     }
@@ -50,27 +48,8 @@ impl Cache {
     pub fn aggregate_results(&self) -> Result<AggregatedResults> {
         let mut results = AggregatedResults::default();
 
-        if self.run_dir.exists() {
-            let mut worker_dirs: Vec<Utf8PathBuf> = fs::read_dir(&self.run_dir)?
-                .filter_map(|entry| {
-                    let entry = entry.ok()?;
-                    let path = Utf8PathBuf::try_from(entry.path()).ok()?;
-                    if path.is_dir()
-                        && path
-                            .file_name()
-                            .is_some_and(|name| name.starts_with("worker-"))
-                    {
-                        Some(path)
-                    } else {
-                        None
-                    }
-                })
-                .collect();
-            worker_dirs.sort();
-
-            for worker_dir in &worker_dirs {
-                read_worker_results(worker_dir, &mut results)?;
-            }
+        for worker_dir in list_worker_dirs(&self.run_dir)? {
+            read_worker_results(&worker_dir, &mut results)?;
         }
 
         Ok(results)
@@ -103,33 +82,25 @@ impl Cache {
     }
 }
 
-/// Renders test and discovery diagnostics into the worker directory.
+/// Renders diagnostics into the worker directory.
 ///
 /// Diagnostics use the ruff `DisplayDiagnostics` formatter rather than JSON,
-/// so they don't share the [`write_json`] path; both files are skipped when
-/// their respective diagnostic lists are empty.
+/// so they don't share the [`write_json`] path; the file is skipped entirely
+/// when there are no diagnostics.
 fn write_diagnostics(
     worker_dir: &Utf8Path,
     result: &TestRunResult,
     resolver: &dyn FileResolver,
     config: &DisplayDiagnosticConfig,
 ) -> Result<()> {
-    if !result.diagnostics().is_empty() {
-        let output = DisplayDiagnostics::new(resolver, config, result.diagnostics());
-        fs::write(
-            CacheFile::Diagnostics.path_in(worker_dir),
-            output.to_string(),
-        )?;
+    if result.diagnostics().is_empty() {
+        return Ok(());
     }
-
-    if !result.discovery_diagnostics().is_empty() {
-        let output = DisplayDiagnostics::new(resolver, config, result.discovery_diagnostics());
-        fs::write(
-            CacheFile::DiscoveryDiagnostics.path_in(worker_dir),
-            output.to_string(),
-        )?;
-    }
-
+    let output = DisplayDiagnostics::new(resolver, config, result.diagnostics());
+    fs::write(
+        CacheFile::Diagnostics.path_in(worker_dir),
+        output.to_string(),
+    )?;
     Ok(())
 }
 
@@ -141,10 +112,6 @@ fn read_worker_results(worker_dir: &Utf8Path, results: &mut AggregatedResults) -
 
     if let Some(content) = read_text(worker_dir, CacheFile::Diagnostics)? {
         results.diagnostics.push_str(&content);
-    }
-
-    if let Some(content) = read_text(worker_dir, CacheFile::DiscoveryDiagnostics)? {
-        results.discovery_diagnostics.push_str(&content);
     }
 
     if let Some(failed) = read_json::<Vec<String>>(worker_dir, CacheFile::FailedTests)? {
@@ -179,22 +146,45 @@ pub fn read_last_failed(cache_dir: &Utf8Path) -> Result<Vec<String>> {
     Ok(read_json::<Vec<String>>(cache_dir, CacheFile::LastFailed)?.unwrap_or_default())
 }
 
-/// Collects sorted `run-*` directory names from the cache directory.
-fn collect_run_dirs(cache_dir: &Utf8Path) -> Result<Vec<String>> {
-    let mut run_dirs = Vec::new();
-
-    for entry in fs::read_dir(cache_dir)? {
-        let entry = entry?;
-        let path = entry.path();
-        if path.is_dir() {
-            if let Some(dir_name) = path.file_name().and_then(|n| n.to_str()) {
-                if dir_name.starts_with("run-") {
-                    run_dirs.push(dir_name.to_string());
-                }
-            }
-        }
+/// Lists subdirectories of `parent` whose name starts with `prefix`.
+///
+/// Returns an empty vec if `parent` does not exist. Non-UTF-8 entries and
+/// non-directory entries are silently skipped.
+fn list_subdirs_with_prefix(parent: &Utf8Path, prefix: &str) -> Result<Vec<Utf8PathBuf>> {
+    if !parent.exists() {
+        return Ok(Vec::new());
     }
 
+    let mut dirs = Vec::new();
+    for entry in fs::read_dir(parent)? {
+        let entry = entry?;
+        let Ok(path) = Utf8PathBuf::try_from(entry.path()) else {
+            continue;
+        };
+        if path.is_dir()
+            && path
+                .file_name()
+                .is_some_and(|name| name.starts_with(prefix))
+        {
+            dirs.push(path);
+        }
+    }
+    Ok(dirs)
+}
+
+/// Returns sorted `worker-*` directories within a run directory.
+fn list_worker_dirs(run_dir: &Utf8Path) -> Result<Vec<Utf8PathBuf>> {
+    let mut dirs = list_subdirs_with_prefix(run_dir, WORKER_PREFIX)?;
+    dirs.sort();
+    Ok(dirs)
+}
+
+/// Returns `run-*` directory names sorted chronologically by their parsed timestamp.
+fn collect_run_dirs(cache_dir: &Utf8Path) -> Result<Vec<String>> {
+    let mut run_dirs: Vec<String> = list_subdirs_with_prefix(cache_dir, RUN_PREFIX)?
+        .into_iter()
+        .filter_map(|p| p.file_name().map(str::to_string))
+        .collect();
     run_dirs.sort_by_key(|hash| RunHash::from_existing(hash).sort_key());
     Ok(run_dirs)
 }
@@ -203,33 +193,21 @@ fn collect_run_dirs(cache_dir: &Utf8Path) -> Result<Vec<String>> {
 ///
 /// Finds the most recent `run-{timestamp}` directory, then aggregates
 /// all durations from all worker directories within it.
-pub fn read_recent_durations(cache_dir: &Utf8PathBuf) -> Result<HashMap<String, Duration>> {
+pub fn read_recent_durations(cache_dir: &Utf8Path) -> Result<HashMap<String, Duration>> {
     let run_dirs = collect_run_dirs(cache_dir)?;
-
     let most_recent = run_dirs
         .last()
         .ok_or_else(|| anyhow::anyhow!("No run directories found"))?;
-
     let run_dir = cache_dir.join(most_recent);
 
     let mut aggregated_durations = HashMap::new();
-
-    for entry in fs::read_dir(&run_dir)? {
-        let entry = entry?;
-        let worker_path = Utf8PathBuf::try_from(entry.path())
-            .map_err(|e| anyhow::anyhow!("Invalid UTF-8 path: {e}"))?;
-
-        if !worker_path.is_dir() {
-            continue;
-        }
-
+    for worker_dir in list_worker_dirs(&run_dir)? {
         if let Some(durations) =
-            read_json::<HashMap<String, Duration>>(&worker_path, CacheFile::Durations)?
+            read_json::<HashMap<String, Duration>>(&worker_dir, CacheFile::Durations)?
         {
             aggregated_durations.extend(durations);
         }
     }
-
     Ok(aggregated_durations)
 }
 
@@ -342,7 +320,7 @@ mod tests {
         create_cache_with_stats(tmp.path(), "run-500", 0, r#"{"passed": 3, "failed": 1}"#);
         create_cache_with_stats(tmp.path(), "run-500", 1, r#"{"passed": 2, "skipped": 1}"#);
 
-        let cache = Cache::new(&cache_dir, &run_hash);
+        let cache = RunCache::new(&cache_dir, &run_hash);
         let results = cache.aggregate_results().unwrap();
 
         assert_eq!(results.stats.passed(), 5);
@@ -359,7 +337,7 @@ mod tests {
         let run_dir = tmp.path().join("run-600");
         fs::create_dir_all(&run_dir).unwrap();
 
-        let cache = Cache::new(&cache_dir, &run_hash);
+        let cache = RunCache::new(&cache_dir, &run_hash);
         let results = cache.aggregate_results().unwrap();
 
         assert_eq!(results.stats.total(), 0);
@@ -553,7 +531,7 @@ mod tests {
         )
         .unwrap();
 
-        let cache = Cache::new(&cache_dir, &run_hash);
+        let cache = RunCache::new(&cache_dir, &run_hash);
         let results = cache.aggregate_results().unwrap();
 
         let mut failed = results.failed_tests.clone();
@@ -586,7 +564,7 @@ mod tests {
         let tmp = tempfile::tempdir().unwrap();
         let cache_dir = Utf8PathBuf::try_from(tmp.path().to_path_buf()).unwrap();
         let run_hash = RunHash::from_existing("run-800");
-        let cache = Cache::new(&cache_dir, &run_hash);
+        let cache = RunCache::new(&cache_dir, &run_hash);
 
         assert!(!cache.has_fail_fast_signal());
         cache.write_fail_fast_signal().unwrap();
