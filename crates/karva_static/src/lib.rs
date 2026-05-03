@@ -107,7 +107,7 @@ env_vars! {
         /// `--num-workers` (capped to the number of useful workers).
         pub const KARVA_TEST_THREADS: &'static str = "KARVA_TEST_THREADS";
 
-        /// Version of the running karva CLI, e.g. `"0.0.1-alpha.5"`.
+        /// Version of the running karva CLI.
         pub const KARVA_VERSION: &'static str = "KARVA_VERSION";
     }
 }

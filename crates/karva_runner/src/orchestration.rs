@@ -156,25 +156,66 @@ pub struct ParallelTestConfig {
     pub profile: Option<String>,
 }
 
+/// Inputs shared by every worker spawned in a single run.
+struct WorkerSpawn<'a> {
+    project: &'a Project,
+    cache_dir: &'a Utf8PathBuf,
+    cache: &'a RunCache,
+    run_hash: &'a RunHash,
+    args: &'a SubTestCommand,
+    num_workers: usize,
+    profile: &'a str,
+    run_id: &'a str,
+    worker_binary: &'a Utf8PathBuf,
+    coverage_enabled: bool,
+}
+
+/// Build the `Command` for a single worker.
+fn worker_command(spawn: &WorkerSpawn, worker_id: usize, partition: &Partition) -> Command {
+    let mut cmd = Command::new(spawn.worker_binary);
+    cmd.arg("--cache-dir")
+        .arg(spawn.cache_dir)
+        .arg("--run-hash")
+        .arg(spawn.run_hash.inner())
+        .arg("--worker-id")
+        .arg(worker_id.to_string())
+        .current_dir(spawn.project.cwd())
+        // Ensure python does not buffer output
+        .env("PYTHONUNBUFFERED", "1")
+        .env(WorkerEnvVars::KARVA, "1")
+        .env(WorkerEnvVars::KARVA_WORKER_ID, worker_id.to_string())
+        .env(WorkerEnvVars::KARVA_RUN_ID, spawn.run_id)
+        .env(
+            WorkerEnvVars::KARVA_WORKSPACE_ROOT,
+            spawn.project.cwd().as_str(),
+        )
+        .env(WorkerEnvVars::KARVA_PROFILE, spawn.profile)
+        .env(
+            WorkerEnvVars::KARVA_TEST_THREADS,
+            spawn.num_workers.to_string(),
+        )
+        .env(WorkerEnvVars::KARVA_VERSION, karva_version::version());
+
+    for path in partition.tests() {
+        cmd.arg(path);
+    }
+
+    cmd.args(inner_cli_args(spawn.project.settings(), spawn.args));
+
+    if spawn.coverage_enabled {
+        let data_file = spawn.cache.coverage_data_file(worker_id);
+        cmd.arg("--cov-data-file").arg(data_file.as_str());
+    }
+
+    cmd
+}
+
 /// Spawn worker processes for each partition
 ///
 /// Creates a worker process for each non-empty partition, passing the appropriate
 /// subset of tests and command-line arguments to each worker.
-fn spawn_workers(
-    project: &Project,
-    partitions: &[Partition],
-    cache_dir: &Utf8PathBuf,
-    cache: &RunCache,
-    run_hash: &RunHash,
-    args: &SubTestCommand,
-    num_workers: usize,
-    profile: &str,
-) -> Result<WorkerManager> {
-    let core_binary = find_karva_worker_binary(project.cwd())?;
+fn spawn_workers(spawn: &WorkerSpawn, partitions: &[Partition]) -> Result<WorkerManager> {
     let mut worker_manager = WorkerManager::default();
-
-    let run_id = uuid::Uuid::new_v4().to_string();
-    let coverage_enabled = !project.settings().coverage().sources.is_empty();
 
     for (worker_id, partition) in partitions.iter().enumerate() {
         if partition.tests().is_empty() {
@@ -182,36 +223,7 @@ fn spawn_workers(
             continue;
         }
 
-        let mut cmd = Command::new(&core_binary);
-        cmd.arg("--cache-dir")
-            .arg(cache_dir)
-            .arg("--run-hash")
-            .arg(run_hash.inner())
-            .arg("--worker-id")
-            .arg(worker_id.to_string())
-            .current_dir(project.cwd())
-            // Ensure python does not buffer output
-            .env("PYTHONUNBUFFERED", "1")
-            .env(WorkerEnvVars::KARVA, "1")
-            .env(WorkerEnvVars::KARVA_WORKER_ID, worker_id.to_string())
-            .env(WorkerEnvVars::KARVA_RUN_ID, &run_id)
-            .env(WorkerEnvVars::KARVA_WORKSPACE_ROOT, project.cwd().as_str())
-            .env(WorkerEnvVars::KARVA_PROFILE, profile)
-            .env(WorkerEnvVars::KARVA_TEST_THREADS, num_workers.to_string())
-            .env(WorkerEnvVars::KARVA_VERSION, karva_version::version());
-
-        for path in partition.tests() {
-            cmd.arg(path);
-        }
-
-        cmd.args(inner_cli_args(project.settings(), args));
-
-        if coverage_enabled {
-            let data_file = cache.coverage_data_file(worker_id);
-            cmd.arg("--cov-data-file").arg(data_file.as_str());
-        }
-
-        let child = cmd
+        let child = worker_command(spawn, worker_id, partition)
             .stdout(Stdio::inherit())
             .stderr(Stdio::inherit())
             .spawn()
@@ -352,17 +364,20 @@ pub fn run_parallel_tests(
 
     tracing::info!("Spawning {} workers", partitions.len());
 
-    let profile = config.profile.as_deref().unwrap_or("default");
-    let mut worker_manager = spawn_workers(
+    let worker_binary = find_karva_worker_binary(project.cwd())?;
+    let spawn = WorkerSpawn {
         project,
-        &partitions,
-        &cache_dir,
-        &cache,
-        &run_hash,
+        cache_dir: &cache_dir,
+        cache: &cache,
+        run_hash: &run_hash,
         args,
         num_workers,
-        profile,
-    )?;
+        profile: config.profile.as_deref().unwrap_or("default"),
+        run_id: &uuid::Uuid::new_v4().to_string(),
+        worker_binary: &worker_binary,
+        coverage_enabled: !project.settings().coverage().sources.is_empty(),
+    };
+    let mut worker_manager = spawn_workers(&spawn, &partitions)?;
 
     let shutdown_rx = if config.create_ctrlc_handler {
         Some(shutdown_receiver())

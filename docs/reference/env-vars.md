@@ -80,5 +80,5 @@ Configured number of worker processes for this run. Mirrors
 
 ### `KARVA_VERSION`
 
-Version of the running karva CLI, e.g. `"0.0.1-alpha.5"`.
+Version of the running karva CLI.
 
