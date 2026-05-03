@@ -628,6 +628,65 @@ def test_one():
 }
 
 #[test]
+fn test_cov_includes_unimported_files_at_zero_percent() {
+    let context = TestContext::with_files([
+        ("src/__init__.py", ""),
+        (
+            "src/imported.py",
+            r"
+def used():
+    return 1
+",
+        ),
+        (
+            "src/unimported.py",
+            r"
+def lonely():
+    return 2
+
+def other():
+    return 3
+",
+        ),
+        (
+            "test_partial.py",
+            r"
+import sys, os
+sys.path.insert(0, os.path.dirname(__file__))
+from src.imported import used
+
+def test_used():
+    assert used() == 1
+",
+        ),
+    ]);
+
+    assert_cmd_snapshot!(
+        context.command_no_parallel()
+            .arg("--cov=src")
+            .arg("--status-level=none")
+            .arg("test_partial.py"),
+        @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    Name                Stmts   Miss   Cover
+    [LONG-LINE]
+    src/imported.py         2      0    100%
+    src/unimported.py       4      4      0%
+    [LONG-LINE]
+    TOTAL                   6      4     33%
+
+    ----- stderr -----
+    "
+    );
+}
+
+#[test]
 fn test_cov_report_term_missing_from_config() {
     let context = TestContext::with_files([
         (
