@@ -119,15 +119,15 @@ async def test_bad(bad_fixture):
     );
 
     assert_cmd_snapshot!(test_context.command(), @"
-    success: true
-    exit_code: 0
+    success: false
+    exit_code: 1
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_bad(bad_fixture=1)
 
     diagnostics:
 
-    warning[invalid-fixture-finalizer]: Discovered an invalid fixture finalizer `bad_fixture`
+    error[invalid-fixture-finalizer]: Discovered an invalid fixture finalizer `bad_fixture`
      --> test.py:4:11
       |
     3 | @karva.fixture
@@ -162,15 +162,15 @@ async def test_error(error_fixture):
     );
 
     assert_cmd_snapshot!(test_context.command(), @r#"
-    success: true
-    exit_code: 0
+    success: false
+    exit_code: 1
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_error(error_fixture=1)
 
     diagnostics:
 
-    warning[invalid-fixture-finalizer]: Discovered an invalid fixture finalizer `error_fixture`
+    error[invalid-fixture-finalizer]: Discovered an invalid fixture finalizer `error_fixture`
      --> test.py:4:11
       |
     3 | @karva.fixture
