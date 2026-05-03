@@ -55,8 +55,8 @@ pub fn test(args: TestCommand) -> Result<ExitStatus> {
     };
 
     let profile = args.profile.clone();
-    let project_options_overrides =
-        ProjectOptionsOverrides::new(config_file, args.into_options()).with_profile(profile);
+    let project_options_overrides = ProjectOptionsOverrides::new(config_file, args.into_options())
+        .with_profile(profile.clone());
     project_metadata
         .apply_overrides(&project_options_overrides)
         .map_err(|err| anyhow::anyhow!("{err}"))?;
@@ -75,6 +75,7 @@ pub fn test(args: TestCommand) -> Result<ExitStatus> {
         no_cache,
         create_ctrlc_handler: true,
         last_failed,
+        profile,
     };
 
     if watch {

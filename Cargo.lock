@@ -1308,6 +1308,7 @@ dependencies = [
  "karva_metadata",
  "karva_project",
  "karva_static",
+ "karva_version",
  "tracing",
  "uuid",
  "which",

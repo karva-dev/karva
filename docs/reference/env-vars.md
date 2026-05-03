@@ -68,3 +68,17 @@ set; `"1"` when no retries are configured.
 The total number of attempts allowed for the currently running test
 (`retries + 1`). Always set.
 
+### `KARVA_PROFILE`
+
+Name of the active configuration profile, e.g. `"default"` or
+whatever was passed to `--profile` / `KARVA_PROFILE`.
+
+### `KARVA_TEST_THREADS`
+
+Configured number of worker processes for this run. Mirrors
+`--num-workers` (capped to the number of useful workers).
+
+### `KARVA_VERSION`
+
+Version of the running karva CLI, e.g. `"0.0.1-alpha.5"`.
+

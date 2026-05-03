@@ -151,6 +151,9 @@ pub struct ParallelTestConfig {
     pub create_ctrlc_handler: bool,
     /// When `true`, only tests that failed in the previous run will be executed.
     pub last_failed: bool,
+    /// Active configuration profile name. Propagated to workers as
+    /// `KARVA_PROFILE`; falls back to `"default"` when `None`.
+    pub profile: Option<String>,
 }
 
 /// Spawn worker processes for each partition
@@ -164,6 +167,8 @@ fn spawn_workers(
     cache: &RunCache,
     run_hash: &RunHash,
     args: &SubTestCommand,
+    num_workers: usize,
+    profile: &str,
 ) -> Result<WorkerManager> {
     let core_binary = find_karva_worker_binary(project.cwd())?;
     let mut worker_manager = WorkerManager::default();
@@ -190,7 +195,10 @@ fn spawn_workers(
             .env(WorkerEnvVars::KARVA, "1")
             .env(WorkerEnvVars::KARVA_WORKER_ID, worker_id.to_string())
             .env(WorkerEnvVars::KARVA_RUN_ID, &run_id)
-            .env(WorkerEnvVars::KARVA_WORKSPACE_ROOT, project.cwd().as_str());
+            .env(WorkerEnvVars::KARVA_WORKSPACE_ROOT, project.cwd().as_str())
+            .env(WorkerEnvVars::KARVA_PROFILE, profile)
+            .env(WorkerEnvVars::KARVA_TEST_THREADS, num_workers.to_string())
+            .env(WorkerEnvVars::KARVA_VERSION, karva_version::version());
 
         for path in partition.tests() {
             cmd.arg(path);
@@ -344,8 +352,17 @@ pub fn run_parallel_tests(
 
     tracing::info!("Spawning {} workers", partitions.len());
 
-    let mut worker_manager =
-        spawn_workers(project, &partitions, &cache_dir, &cache, &run_hash, args)?;
+    let profile = config.profile.as_deref().unwrap_or("default");
+    let mut worker_manager = spawn_workers(
+        project,
+        &partitions,
+        &cache_dir,
+        &cache,
+        &run_hash,
+        args,
+        num_workers,
+        profile,
+    )?;
 
     let shutdown_rx = if config.create_ctrlc_handler {
         Some(shutdown_receiver())
