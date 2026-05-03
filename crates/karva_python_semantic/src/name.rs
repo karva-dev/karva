@@ -55,6 +55,7 @@ impl Serialize for QualifiedFunctionName {
 pub struct QualifiedTestName {
     function_name: QualifiedFunctionName,
     full_name: Option<String>,
+    case_index: Option<usize>,
 }
 
 impl QualifiedTestName {
@@ -63,7 +64,16 @@ impl QualifiedTestName {
         Self {
             function_name,
             full_name,
+            case_index: None,
         }
+    }
+
+    /// Attach a parametrize case index. Used for stable cache/duration keys
+    /// that survive renaming of parameter values across runs.
+    #[must_use]
+    pub fn with_case_index(mut self, case_index: Option<usize>) -> Self {
+        self.case_index = case_index;
+        self
     }
 
     /// Return the underlying qualified function name.
@@ -71,11 +81,28 @@ impl QualifiedTestName {
         &self.function_name
     }
 
+    /// Return the parametrize case index if this name refers to a specific case.
+    pub fn case_index(&self) -> Option<usize> {
+        self.case_index
+    }
+
     /// Return the parameter portion of the test name (e.g., `"(a=1, b=2)"`), if any.
     pub fn params(&self) -> Option<&str> {
         let full_name = self.full_name.as_deref()?;
         let base = self.function_name.to_string();
         full_name.strip_prefix(&base)
+    }
+
+    /// Stable string identifier for cache and partitioning, of the form
+    /// `module::test_name` (no parametrize) or `module::test_name[idx]`.
+    ///
+    /// Distinct from `Display`, which renders the human-facing name with
+    /// parameter values.
+    pub fn cache_key(&self) -> String {
+        match self.case_index {
+            Some(idx) => format!("{}[{idx}]", self.function_name),
+            None => self.function_name.to_string(),
+        }
     }
 }
 

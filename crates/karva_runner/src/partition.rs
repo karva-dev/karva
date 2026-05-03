@@ -10,6 +10,10 @@ struct TestInfo {
     path: String,
     /// Actual runtime from previous test run (if available)
     duration: Option<Duration>,
+    /// Qualified name without any `[idx]` suffix. Cases of the same
+    /// parametrized function share this key so they can be shuffled and
+    /// reasoned about as a single unit.
+    function_root: String,
 }
 
 /// Calculate the weight of a test for partitioning.
@@ -199,28 +203,50 @@ fn compare_test_weights(a: &TestInfo, b: &TestInfo) -> std::cmp::Ordering {
     }
 }
 
-/// Shuffles only the tests that have no historical duration data.
+/// Shuffles tests that have no historical duration data, treating cases of
+/// the same parametrized function as a single unit.
 ///
-/// This ensures tests without timing info are randomly distributed across partitions
-/// rather than always landing in the same order.
-fn shuffle_tests_without_durations(test_infos: &mut [TestInfo]) {
-    let no_duration_indices: Vec<usize> = test_infos
+/// Without this grouping, parametrize cases for one function would be
+/// reordered relative to one another, making test output order
+/// non-deterministic in the common single-worker case.
+fn shuffle_tests_without_durations(test_infos: &mut Vec<TestInfo>) {
+    let mut groups: Vec<Vec<TestInfo>> = Vec::new();
+    let mut group_index: HashMap<String, usize> = HashMap::new();
+
+    for info in test_infos.drain(..) {
+        if let Some(idx) = group_index.get(&info.function_root) {
+            groups[*idx].push(info);
+        } else {
+            group_index.insert(info.function_root.clone(), groups.len());
+            groups.push(vec![info]);
+        }
+    }
+
+    let no_duration_groups: Vec<usize> = groups
         .iter()
         .enumerate()
-        .filter(|(_, t)| t.duration.is_none())
+        .filter(|(_, g)| g.iter().any(|t| t.duration.is_none()))
         .map(|(i, _)| i)
         .collect();
 
-    // Fisher-Yates shuffle on the indices
-    for i in (1..no_duration_indices.len()).rev() {
+    for i in (1..no_duration_groups.len()).rev() {
         let j = fastrand::usize(..=i);
-        let idx_a = no_duration_indices[i];
-        let idx_b = no_duration_indices[j];
-        test_infos.swap(idx_a, idx_b);
+        let idx_a = no_duration_groups[i];
+        let idx_b = no_duration_groups[j];
+        groups.swap(idx_a, idx_b);
+    }
+
+    for group in groups {
+        test_infos.extend(group);
     }
 }
 
-/// Recursively collects test information from a package and all its subpackages
+/// Recursively collects test information from a package and all its subpackages.
+///
+/// For each test function whose `@parametrize` decorators can be statically
+/// counted, emits one `TestInfo` per case so that the partitioner can split
+/// individual cases across workers. Cases of the same function share a
+/// `function_root` key so they can be reordered as a unit.
 fn collect_test_paths_recursive(
     package: &karva_collector::CollectedPackage,
     test_infos: &mut Vec<TestInfo>,
@@ -228,15 +254,34 @@ fn collect_test_paths_recursive(
 ) {
     for module in package.modules.values() {
         for test_fn_def in &module.test_function_defs {
-            let qualified_name = format!("{}::{}", module.path.module_name(), test_fn_def.name);
-            let duration = previous_durations.get(&qualified_name).copied();
+            let module_name = module.path.module_name();
+            let module_path = module.path.path();
+            let function_name = test_fn_def.name.as_str();
+            let function_root = format!("{module_name}::{function_name}");
+            let case_count = karva_collector::count_parametrize_cases(test_fn_def).unwrap_or(1);
 
-            test_infos.push(TestInfo {
-                module_name: module.path.module_name().to_string(),
-                qualified_name,
-                path: format!("{}::{}", module.path.path(), test_fn_def.name),
-                duration,
-            });
+            if case_count <= 1 {
+                let duration = previous_durations.get(&function_root).copied();
+                test_infos.push(TestInfo {
+                    module_name: module_name.to_string(),
+                    qualified_name: function_root.clone(),
+                    path: format!("{module_path}::{function_name}"),
+                    duration,
+                    function_root,
+                });
+            } else {
+                for idx in 0..case_count {
+                    let qualified_name = format!("{function_root}[{idx}]");
+                    let duration = previous_durations.get(&qualified_name).copied();
+                    test_infos.push(TestInfo {
+                        module_name: module_name.to_string(),
+                        qualified_name,
+                        path: format!("{module_path}::{function_name}[{idx}]"),
+                        duration,
+                        function_root: function_root.clone(),
+                    });
+                }
+            }
         }
     }
 

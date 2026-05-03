@@ -406,6 +406,7 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
             use_fixture_dependencies,
             auto_use_fixtures,
             tags: _variant_tags,
+            case_index,
         } = variant;
 
         let name = test.name.clone();
@@ -430,7 +431,8 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
         let computed_full_test_name = full_test_name(py, name.to_string(), &function_arguments);
 
         let qualified_test_name =
-            QualifiedTestName::new(name.clone(), Some(computed_full_test_name));
+            QualifiedTestName::new(name.clone(), Some(computed_full_test_name))
+                .with_case_index(case_index);
 
         tracing::debug!("Running test `{}`", qualified_test_name);
 

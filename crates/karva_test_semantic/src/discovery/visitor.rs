@@ -106,7 +106,11 @@ impl FunctionDefinitionVisitor<'_, '_, '_, '_> {
         }
     }
 
-    fn process_test_function(&mut self, stmt_function_def: StmtFunctionDef) {
+    fn process_test_function(
+        &mut self,
+        stmt_function_def: StmtFunctionDef,
+        case_filter: Option<Vec<usize>>,
+    ) {
         self.try_import_module();
 
         let Some(py_module) = self.py_module.as_ref() else {
@@ -119,6 +123,7 @@ impl FunctionDefinitionVisitor<'_, '_, '_, '_> {
                 self.module,
                 Rc::new(stmt_function_def),
                 py_function.unbind(),
+                case_filter,
             ));
         }
     }
@@ -239,7 +244,7 @@ pub fn discover(
     context: &Context,
     py: Python,
     module: &mut DiscoveredModule,
-    test_function_defs: Vec<StmtFunctionDef>,
+    test_function_defs: Vec<(StmtFunctionDef, Option<Vec<usize>>)>,
     fixture_function_defs: Vec<StmtFunctionDef>,
 ) {
     let is_conftest = module
@@ -249,8 +254,8 @@ pub fn discover(
 
     let mut visitor = FunctionDefinitionVisitor::new(py, context, module);
 
-    for test_function_def in test_function_defs {
-        visitor.process_test_function(test_function_def);
+    for (test_function_def, case_filter) in test_function_defs {
+        visitor.process_test_function(test_function_def, case_filter);
     }
 
     for fixture_function_def in fixture_function_defs {

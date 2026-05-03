@@ -229,6 +229,13 @@ impl Tags {
         Some(Self { inner: tags })
     }
 
+    /// True if any decorator on the test is a parametrize tag.
+    pub(crate) fn has_parametrize(&self) -> bool {
+        self.inner
+            .iter()
+            .any(|tag| matches!(tag, Tag::Parametrize(_)))
+    }
+
     /// Return all parametrizations
     ///
     /// This function ensures that if we have multiple parametrize tags, we combine them together.

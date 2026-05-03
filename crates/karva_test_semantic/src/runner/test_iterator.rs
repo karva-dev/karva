@@ -41,6 +41,11 @@ pub(super) struct TestVariant<'a> {
 
     /// Combined tags from the test and its parameter set.
     pub tags: Tags,
+
+    /// Original parametrize index in the test's full case list (`None` for
+    /// non-parametrized tests). Used to form a stable per-case cache key
+    /// even when the worker only ran a filtered subset of cases.
+    pub case_index: Option<usize>,
 }
 
 impl TestVariant<'_> {
@@ -77,9 +82,10 @@ impl TestVariant<'_> {
 /// producing N variants costs N refcount bumps rather than N deep clones.
 pub(super) struct TestVariantIterator<'a> {
     test: &'a DiscoveredTestFunction,
-    /// Consumed as we iterate, so `values` and `tags` on each
-    /// `ParametrizationArgs` are moved into the emitted variant (not cloned).
-    param_args: std::vec::IntoIter<ParametrizationArgs>,
+    /// Consumed as we iterate. Each item is `(original case index, args)`.
+    /// `original case index` is `None` for non-parametrized tests; otherwise
+    /// it is the index in the full pre-filter parametrize expansion.
+    param_args: std::vec::IntoIter<(Option<usize>, ParametrizationArgs)>,
     fixture_dependencies: Rc<[Rc<NormalizedFixture>]>,
     use_fixture_dependencies: Rc<[Rc<NormalizedFixture>]>,
     auto_use_fixtures: Rc<[Rc<NormalizedFixture>]>,
@@ -116,10 +122,28 @@ impl<'a> TestVariantIterator<'a> {
         let use_fixture_names = test.tags.required_fixtures_names();
         let use_fixture_dependencies = resolver.resolve_use_fixtures(py, &use_fixture_names);
 
-        let param_args = if test_params.is_empty() {
-            vec![ParametrizationArgs::default()]
+        let is_parametrized = test.tags.has_parametrize();
+
+        let param_args: Vec<(Option<usize>, ParametrizationArgs)> = if !is_parametrized {
+            vec![(None, ParametrizationArgs::default())]
+        } else if let Some(allowed_indices) = test.case_filter.as_ref() {
+            // The worker was told to run only specific parametrize case indices
+            // (the partitioner split a parametrized test across workers).
+            // Indices outside the actual case range silently drop — they would
+            // have come from a stale plan, not real tests.
+            let total = test_params.len();
+            allowed_indices
+                .iter()
+                .copied()
+                .filter(|idx| *idx < total)
+                .filter_map(|idx| test_params.get(idx).cloned().map(|args| (Some(idx), args)))
+                .collect()
         } else {
             test_params
+                .into_iter()
+                .enumerate()
+                .map(|(idx, args)| (Some(idx), args))
+                .collect()
         };
 
         Self {
@@ -136,7 +160,7 @@ impl<'a> Iterator for TestVariantIterator<'a> {
     type Item = TestVariant<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let param_args = self.param_args.next()?;
+        let (case_index, param_args) = self.param_args.next()?;
 
         let mut tags = self.test.tags.clone();
         tags.extend(&param_args.tags);
@@ -148,6 +172,7 @@ impl<'a> Iterator for TestVariantIterator<'a> {
             use_fixture_dependencies: Rc::clone(&self.use_fixture_dependencies),
             auto_use_fixtures: Rc::clone(&self.auto_use_fixtures),
             tags,
+            case_index,
         })
     }
 

@@ -6,8 +6,10 @@ use karva_python_semantic::ModulePath;
 use karva_python_semantic::is_fixture_function;
 
 mod models;
+mod parametrize;
 
 pub use models::{CollectedModule, CollectedPackage, ModuleType};
+pub use parametrize::count_parametrize_cases;
 
 /// Settings that control how test files are collected and parsed.
 pub struct CollectionSettings<'a> {

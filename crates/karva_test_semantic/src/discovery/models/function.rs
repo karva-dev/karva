@@ -25,6 +25,11 @@ pub struct DiscoveredTestFunction {
 
     /// Decorator tags like parametrize, skip, xfail, etc.
     pub(crate) tags: Tags,
+
+    /// Restrict execution to these parametrize case indices when `Some`,
+    /// or run every case when `None`. Set by the worker CLI when the user
+    /// (or partitioner) requested a subset like `file::test[3]`.
+    pub(crate) case_filter: Option<Vec<usize>>,
 }
 
 impl DiscoveredTestFunction {
@@ -33,6 +38,7 @@ impl DiscoveredTestFunction {
         module: &DiscoveredModule,
         stmt_function_def: Rc<StmtFunctionDef>,
         py_function: Py<PyAny>,
+        case_filter: Option<Vec<usize>>,
     ) -> Self {
         let name = QualifiedFunctionName::new(
             stmt_function_def.name.to_string(),
@@ -46,6 +52,7 @@ impl DiscoveredTestFunction {
             stmt_function_def,
             py_function,
             tags,
+            case_filter,
         }
     }
 }

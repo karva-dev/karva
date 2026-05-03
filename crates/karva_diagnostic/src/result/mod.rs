@@ -4,7 +4,7 @@ mod stats;
 
 use std::collections::HashMap;
 
-use karva_python_semantic::{QualifiedFunctionName, QualifiedTestName};
+use karva_python_semantic::QualifiedTestName;
 use ruff_db::diagnostic::Diagnostic;
 
 use crate::reporter::Reporter;
@@ -27,11 +27,14 @@ pub struct TestRunResult {
     /// Stats generated during test execution.
     stats: TestResultStats,
 
-    /// The duration of each test function.
-    durations: HashMap<QualifiedFunctionName, std::time::Duration>,
+    /// The duration of each test, keyed by [`QualifiedTestName::cache_key`]
+    /// (e.g., `module::test_name` or `module::test_name[3]`). Per-case
+    /// keys let the partitioner schedule individual parametrize cases.
+    durations: HashMap<String, std::time::Duration>,
 
-    /// Names of tests that failed during this run.
-    failed_tests: Vec<QualifiedFunctionName>,
+    /// Names of tests that failed during this run, in the same per-case
+    /// cache key format as `durations`.
+    failed_tests: Vec<String>,
 
     /// Tests that passed only after at least one retry.
     flaky_tests: Vec<FlakyTest>,
@@ -67,10 +70,10 @@ impl TestRunResult {
     ) {
         self.stats.add(result.clone().into());
 
-        let function_name = test_case_name.function_name().clone();
+        let cache_key = test_case_name.cache_key();
 
         if matches!(result, IndividualTestResultKind::Failed) {
-            self.failed_tests.push(function_name.clone());
+            self.failed_tests.push(cache_key.clone());
         }
 
         if let Some(reporter) = reporter {
@@ -78,7 +81,7 @@ impl TestRunResult {
         }
 
         self.durations
-            .entry(function_name)
+            .entry(cache_key)
             .and_modify(|existing_duration| *existing_duration += duration)
             .or_insert(duration);
     }
@@ -104,10 +107,10 @@ impl TestRunResult {
     ) {
         self.stats.add(result.clone().into());
 
-        let function_name = test_case_name.function_name().clone();
+        let cache_key = test_case_name.cache_key();
 
         if matches!(result, IndividualTestResultKind::Failed) {
-            self.failed_tests.push(function_name.clone());
+            self.failed_tests.push(cache_key.clone());
         } else if matches!(result, IndividualTestResultKind::Passed) {
             self.stats.add(TestResultKind::Flaky);
             self.flaky_tests.push(FlakyTest::from_qualified_name(
@@ -119,7 +122,7 @@ impl TestRunResult {
         }
 
         self.durations
-            .entry(function_name)
+            .entry(cache_key)
             .and_modify(|existing_duration| *existing_duration += duration)
             .or_insert(duration);
     }
@@ -161,11 +164,11 @@ impl TestRunResult {
         self
     }
 
-    pub fn durations(&self) -> &HashMap<QualifiedFunctionName, std::time::Duration> {
+    pub fn durations(&self) -> &HashMap<String, std::time::Duration> {
         &self.durations
     }
 
-    pub fn failed_tests(&self) -> &[QualifiedFunctionName] {
+    pub fn failed_tests(&self) -> &[String] {
         &self.failed_tests
     }
 
