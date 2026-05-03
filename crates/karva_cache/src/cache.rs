@@ -6,12 +6,10 @@ use anyhow::Result;
 use camino::{Utf8Path, Utf8PathBuf};
 use karva_diagnostic::{FlakyTest, TestResultStats, TestRunResult};
 use ruff_db::diagnostic::{DisplayDiagnosticConfig, DisplayDiagnostics, FileResolver};
-use serde::de::DeserializeOwned;
 
-use crate::{
-    DIAGNOSTICS_FILE, DISCOVER_DIAGNOSTICS_FILE, DURATIONS_FILE, FAIL_FAST_SIGNAL_FILE,
-    FAILED_TESTS_FILE, FLAKY_TESTS_FILE, LAST_FAILED_FILE, RunHash, STATS_FILE, worker_folder,
-};
+use crate::RunHash;
+use crate::artifact::{CacheFile, read_json, read_text, write_json, write_json_if_nonempty};
+use crate::worker_folder;
 
 /// Aggregated test results collected from all worker processes.
 #[derive(Default)]
@@ -39,14 +37,13 @@ impl Cache {
     /// Writes a fail-fast signal file to indicate a worker encountered a test failure.
     pub fn write_fail_fast_signal(&self) -> Result<()> {
         fs::create_dir_all(&self.run_dir)?;
-        let signal_path = self.run_dir.join(FAIL_FAST_SIGNAL_FILE);
-        fs::write(signal_path, "")?;
+        fs::write(CacheFile::FailFastSignal.path_in(&self.run_dir), "")?;
         Ok(())
     }
 
     /// Checks whether any worker has written a fail-fast signal file.
     pub fn has_fail_fast_signal(&self) -> bool {
-        self.run_dir.join(FAIL_FAST_SIGNAL_FILE).exists()
+        CacheFile::FailFastSignal.path_in(&self.run_dir).exists()
     }
 
     /// Reads and merges test results from all worker directories for this run.
@@ -91,16 +88,26 @@ impl Cache {
         fs::create_dir_all(&worker_dir)?;
 
         write_diagnostics(&worker_dir, result, resolver, config)?;
-        write_stats(&worker_dir, result.stats())?;
-        write_durations(&worker_dir, result.durations())?;
-        write_failed_tests(&worker_dir, result.failed_tests())?;
-        write_flaky_tests(&worker_dir, result.flaky_tests())?;
+        write_json(&worker_dir, CacheFile::Stats, result.stats())?;
+        write_json(&worker_dir, CacheFile::Durations, result.durations())?;
+
+        let failed_names: Vec<String> = result
+            .failed_tests()
+            .iter()
+            .map(ToString::to_string)
+            .collect();
+        write_json_if_nonempty(&worker_dir, CacheFile::FailedTests, &failed_names)?;
+        write_json_if_nonempty(&worker_dir, CacheFile::FlakyTests, result.flaky_tests())?;
 
         Ok(())
     }
 }
 
-/// Formats and writes test diagnostics and discovery diagnostics to files.
+/// Renders test and discovery diagnostics into the worker directory.
+///
+/// Diagnostics use the ruff `DisplayDiagnostics` formatter rather than JSON,
+/// so they don't share the [`write_json`] path; both files are skipped when
+/// their respective diagnostic lists are empty.
 fn write_diagnostics(
     worker_dir: &Utf8Path,
     result: &TestRunResult,
@@ -109,13 +116,16 @@ fn write_diagnostics(
 ) -> Result<()> {
     if !result.diagnostics().is_empty() {
         let output = DisplayDiagnostics::new(resolver, config, result.diagnostics());
-        fs::write(worker_dir.join(DIAGNOSTICS_FILE), output.to_string())?;
+        fs::write(
+            CacheFile::Diagnostics.path_in(worker_dir),
+            output.to_string(),
+        )?;
     }
 
     if !result.discovery_diagnostics().is_empty() {
         let output = DisplayDiagnostics::new(resolver, config, result.discovery_diagnostics());
         fs::write(
-            worker_dir.join(DISCOVER_DIAGNOSTICS_FILE),
+            CacheFile::DiscoveryDiagnostics.path_in(worker_dir),
             output.to_string(),
         )?;
     }
@@ -123,87 +133,30 @@ fn write_diagnostics(
     Ok(())
 }
 
-/// Writes test result stats as JSON.
-fn write_stats(worker_dir: &Utf8Path, stats: &TestResultStats) -> Result<()> {
-    let json = serde_json::to_string_pretty(stats)?;
-    fs::write(worker_dir.join(STATS_FILE), json)?;
-    Ok(())
-}
-
-/// Writes test durations as JSON.
-fn write_durations<K: serde::Serialize, V: serde::Serialize>(
-    worker_dir: &Utf8Path,
-    durations: &HashMap<K, V>,
-) -> Result<()> {
-    let json = serde_json::to_string_pretty(durations)?;
-    fs::write(worker_dir.join(DURATIONS_FILE), json)?;
-    Ok(())
-}
-
-/// Writes the list of failed test names as JSON, skipping if empty.
-fn write_failed_tests(worker_dir: &Utf8Path, failed_tests: &[impl ToString]) -> Result<()> {
-    if !failed_tests.is_empty() {
-        let names: Vec<String> = failed_tests.iter().map(ToString::to_string).collect();
-        let json = serde_json::to_string_pretty(&names)?;
-        fs::write(worker_dir.join(FAILED_TESTS_FILE), json)?;
-    }
-    Ok(())
-}
-
-/// Writes the list of flaky tests as JSON, skipping if empty.
-fn write_flaky_tests(worker_dir: &Utf8Path, flaky_tests: &[FlakyTest]) -> Result<()> {
-    if !flaky_tests.is_empty() {
-        let json = serde_json::to_string_pretty(flaky_tests)?;
-        fs::write(worker_dir.join(FLAKY_TESTS_FILE), json)?;
-    }
-    Ok(())
-}
-
-/// Reads a JSON file from a directory and deserializes it, returning `None` if the file
-/// does not exist.
-fn read_and_parse<T: DeserializeOwned>(dir: &Utf8Path, filename: &str) -> Result<Option<T>> {
-    let path = dir.join(filename);
-    if !path.exists() {
-        return Ok(None);
-    }
-    let content = fs::read_to_string(&path)?;
-    let value = serde_json::from_str(&content)?;
-    Ok(Some(value))
-}
-
-/// Reads a text file from a directory, returning `None` if the file does not exist.
-fn read_text(dir: &Utf8Path, filename: &str) -> Result<Option<String>> {
-    let path = dir.join(filename);
-    if !path.exists() {
-        return Ok(None);
-    }
-    Ok(Some(fs::read_to_string(&path)?))
-}
-
-/// Read results from a single worker directory into the accumulator.
+/// Reads results from a single worker directory into the accumulator.
 fn read_worker_results(worker_dir: &Utf8Path, results: &mut AggregatedResults) -> Result<()> {
-    if let Some(stats) = read_and_parse::<TestResultStats>(worker_dir, STATS_FILE)? {
+    if let Some(stats) = read_json::<TestResultStats>(worker_dir, CacheFile::Stats)? {
         results.stats.merge(&stats);
     }
 
-    if let Some(content) = read_text(worker_dir, DIAGNOSTICS_FILE)? {
+    if let Some(content) = read_text(worker_dir, CacheFile::Diagnostics)? {
         results.diagnostics.push_str(&content);
     }
 
-    if let Some(content) = read_text(worker_dir, DISCOVER_DIAGNOSTICS_FILE)? {
+    if let Some(content) = read_text(worker_dir, CacheFile::DiscoveryDiagnostics)? {
         results.discovery_diagnostics.push_str(&content);
     }
 
-    if let Some(failed) = read_and_parse::<Vec<String>>(worker_dir, FAILED_TESTS_FILE)? {
+    if let Some(failed) = read_json::<Vec<String>>(worker_dir, CacheFile::FailedTests)? {
         results.failed_tests.extend(failed);
     }
 
-    if let Some(flaky) = read_and_parse::<Vec<FlakyTest>>(worker_dir, FLAKY_TESTS_FILE)? {
+    if let Some(flaky) = read_json::<Vec<FlakyTest>>(worker_dir, CacheFile::FlakyTests)? {
         results.flaky_tests.extend(flaky);
     }
 
     if let Some(durations) =
-        read_and_parse::<HashMap<String, Duration>>(worker_dir, DURATIONS_FILE)?
+        read_json::<HashMap<String, Duration>>(worker_dir, CacheFile::Durations)?
     {
         results.durations.extend(durations);
     }
@@ -216,23 +169,14 @@ fn read_worker_results(worker_dir: &Utf8Path, results: &mut AggregatedResults) -
 /// This overwrites any previous last-failed list.
 pub fn write_last_failed(cache_dir: &Utf8Path, failed_tests: &[String]) -> Result<()> {
     fs::create_dir_all(cache_dir)?;
-    let path = cache_dir.join(LAST_FAILED_FILE);
-    let json = serde_json::to_string_pretty(failed_tests)?;
-    fs::write(path, json)?;
-    Ok(())
+    write_json(cache_dir, CacheFile::LastFailed, &failed_tests)
 }
 
 /// Reads the list of previously failed tests from the cache directory root.
 ///
 /// Returns an empty list if the file does not exist.
 pub fn read_last_failed(cache_dir: &Utf8Path) -> Result<Vec<String>> {
-    let path = cache_dir.join(LAST_FAILED_FILE);
-    if !path.exists() {
-        return Ok(Vec::new());
-    }
-    let content = fs::read_to_string(&path)?;
-    let failed_tests: Vec<String> = serde_json::from_str(&content)?;
-    Ok(failed_tests)
+    Ok(read_json::<Vec<String>>(cache_dir, CacheFile::LastFailed)?.unwrap_or_default())
 }
 
 /// Collects sorted `run-*` directory names from the cache directory.
@@ -280,7 +224,7 @@ pub fn read_recent_durations(cache_dir: &Utf8PathBuf) -> Result<HashMap<String, 
         }
 
         if let Some(durations) =
-            read_and_parse::<HashMap<String, Duration>>(&worker_path, DURATIONS_FILE)?
+            read_json::<HashMap<String, Duration>>(&worker_path, CacheFile::Durations)?
         {
             aggregated_durations.extend(durations);
         }
@@ -347,7 +291,7 @@ mod tests {
         let worker_dir = dir.join(run_name).join(format!("worker-{worker_id}"));
         fs::create_dir_all(&worker_dir).unwrap();
         let json = serde_json::to_string(durations).unwrap();
-        fs::write(worker_dir.join(DURATIONS_FILE), json).unwrap();
+        fs::write(worker_dir.join(CacheFile::Durations.filename()), json).unwrap();
     }
 
     fn create_cache_with_stats(
@@ -358,7 +302,7 @@ mod tests {
     ) {
         let worker_dir = dir.join(run_name).join(format!("worker-{worker_id}"));
         fs::create_dir_all(&worker_dir).unwrap();
-        fs::write(worker_dir.join(STATS_FILE), stats_json).unwrap();
+        fs::write(worker_dir.join(CacheFile::Stats.filename()), stats_json).unwrap();
     }
 
     #[test]
@@ -583,20 +527,28 @@ mod tests {
         fs::create_dir_all(&worker0).unwrap();
         fs::create_dir_all(&worker1).unwrap();
 
-        fs::write(worker0.join(FAILED_TESTS_FILE), r#"["mod::test_a"]"#).unwrap();
-        fs::write(worker1.join(FAILED_TESTS_FILE), r#"["mod::test_b"]"#).unwrap();
+        fs::write(
+            worker0.join(CacheFile::FailedTests.filename()),
+            r#"["mod::test_a"]"#,
+        )
+        .unwrap();
+        fs::write(
+            worker1.join(CacheFile::FailedTests.filename()),
+            r#"["mod::test_b"]"#,
+        )
+        .unwrap();
 
         let mut d0 = HashMap::new();
         d0.insert("mod::test_a".to_string(), Duration::from_millis(10));
         let mut d1 = HashMap::new();
         d1.insert("mod::test_b".to_string(), Duration::from_millis(20));
         fs::write(
-            worker0.join(DURATIONS_FILE),
+            worker0.join(CacheFile::Durations.filename()),
             serde_json::to_string(&d0).unwrap(),
         )
         .unwrap();
         fs::write(
-            worker1.join(DURATIONS_FILE),
+            worker1.join(CacheFile::Durations.filename()),
             serde_json::to_string(&d1).unwrap(),
         )
         .unwrap();
