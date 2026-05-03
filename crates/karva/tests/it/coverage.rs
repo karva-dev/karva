@@ -627,6 +627,50 @@ def test_one():
     );
 }
 
+/// `# pragma: no cover` on a simple statement excludes that line from
+/// `Stmts`, while a pragma on a compound head excludes the whole block.
+/// `uncovered()` would be 1 missed line; the pragma drops it from the
+/// statement count entirely so coverage reports 100%.
+#[test]
+fn test_cov_pragma_no_cover_excludes_block() {
+    let context = TestContext::with_file(
+        "test_pragma.py",
+        r"
+def covered():
+    return 1
+
+def uncovered():  # pragma: no cover
+    return 2
+
+def test_only_covered():
+    assert covered() == 1
+",
+    );
+
+    assert_cmd_snapshot!(
+        context.command_no_parallel()
+            .arg("--cov")
+            .arg("--status-level=none")
+            .arg("test_pragma.py"),
+        @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    Name             Stmts   Miss   Cover
+    [LONG-LINE]
+    test_pragma.py       4      0    100%
+    [LONG-LINE]
+    TOTAL                4      0    100%
+
+    ----- stderr -----
+    "
+    );
+}
+
 #[test]
 fn test_cov_includes_unimported_files_at_zero_percent() {
     let context = TestContext::with_files([
