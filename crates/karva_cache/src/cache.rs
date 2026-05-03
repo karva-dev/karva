@@ -55,6 +55,31 @@ impl RunCache {
         Ok(results)
     }
 
+    /// Path to the directory for a specific worker. Does not create it.
+    pub fn worker_dir(&self, worker_id: usize) -> Utf8PathBuf {
+        self.run_dir.join(worker_folder(worker_id))
+    }
+
+    /// Path to the per-worker coverage data file. The main process passes this
+    /// to a worker via `--cov-data-file`; the worker writes the file when its
+    /// coverage session ends.
+    pub fn coverage_data_file(&self, worker_id: usize) -> Utf8PathBuf {
+        CacheFile::Coverage.path_in(&self.worker_dir(worker_id))
+    }
+
+    /// Returns paths to every per-worker coverage file that exists for this
+    /// run, sorted by worker directory. Used to feed the coverage report.
+    pub fn coverage_files(&self) -> Result<Vec<Utf8PathBuf>> {
+        let mut files = Vec::new();
+        for worker_dir in list_worker_dirs(&self.run_dir)? {
+            let path = CacheFile::Coverage.path_in(&worker_dir);
+            if path.exists() {
+                files.push(path);
+            }
+        }
+        Ok(files)
+    }
+
     /// Persists a test run result (stats, diagnostics, durations, and failed tests) to disk.
     pub fn write_result(
         &self,
@@ -63,7 +88,7 @@ impl RunCache {
         resolver: &dyn FileResolver,
         config: &DisplayDiagnosticConfig,
     ) -> Result<()> {
-        let worker_dir = self.run_dir.join(worker_folder(worker_id));
+        let worker_dir = self.worker_dir(worker_id);
         fs::create_dir_all(&worker_dir)?;
 
         write_diagnostics(&worker_dir, result, resolver, config)?;

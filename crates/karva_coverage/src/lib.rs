@@ -18,5 +18,5 @@ pub mod executable;
 pub mod report;
 pub mod tracer;
 
-pub use report::{combine_and_report, prepare_data_dir, worker_data_file};
+pub use report::combine_and_report;
 pub use tracer::{CoverageConfig, CoverageSession};

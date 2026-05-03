@@ -84,7 +84,10 @@ pub fn test(args: TestCommand) -> Result<ExitStatus> {
 
     let start_time = Instant::now();
 
-    let result = karva_runner::run_parallel_tests(&project, &config, &sub_command, printer)?;
+    let karva_runner::RunOutput {
+        results: result,
+        coverage_files,
+    } = karva_runner::run_parallel_tests(&project, &config, &sub_command, printer)?;
 
     print_test_output(
         printer,
@@ -94,28 +97,32 @@ pub fn test(args: TestCommand) -> Result<ExitStatus> {
         durations,
     )?;
 
-    let mut coverage_below_threshold = false;
-    if !project.settings().coverage().sources.is_empty() {
-        let cache_dir = project.cwd().join(karva_cache::CACHE_DIR);
-        let coverage_dir = karva_runner::coverage_data_dir(&cache_dir);
+    let coverage_total = if coverage_files.is_empty() {
+        None
+    } else {
         let show_missing = matches!(project.settings().coverage().report, CovReport::TermMissing);
-        match karva_coverage::combine_and_report(project.cwd(), &coverage_dir, show_missing) {
-            Ok(Some(total)) => {
-                if let Some(threshold) = project.settings().coverage().fail_under
-                    && total < threshold
-                {
-                    let mut stdout = printer.stream_for_message().lock();
-                    writeln!(
-                        stdout,
-                        "\ncoverage failure: required total coverage of {threshold}% not reached, total coverage was {total:.2}%",
-                    )?;
-                    coverage_below_threshold = true;
-                }
+        match karva_coverage::combine_and_report(project.cwd(), &coverage_files, show_missing) {
+            Ok(total) => total,
+            Err(err) => {
+                tracing::error!("Coverage report failed: {err:#}");
+                None
             }
-            Ok(None) => {}
-            Err(err) => tracing::error!("Coverage report failed: {err:#}"),
         }
-    }
+    };
+
+    let coverage_below_threshold = if let Some(total) = coverage_total
+        && let Some(threshold) = project.settings().coverage().fail_under
+        && total < threshold
+    {
+        let mut stdout = printer.stream_for_message().lock();
+        writeln!(
+            stdout,
+            "\ncoverage failure: required total coverage of {threshold}% not reached, total coverage was {total:.2}%",
+        )?;
+        true
+    } else {
+        false
+    };
 
     if no_tests_collected(&result) {
         let has_filters = !sub_command.filter_expressions.is_empty();

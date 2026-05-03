@@ -1,51 +1,25 @@
 //! Combine per-worker JSON files and produce a terminal report.
 //!
-//! Pure Rust — runs in the main process, never touches Python. Reads the
-//! `karva-coverage.<worker_id>.json` files written by the [`tracer`](crate::tracer),
-//! unions the per-file line sets, and prints a `Name / Stmts / Miss / Cover`
-//! table sorted alphabetically with a `TOTAL` row.
+//! Pure Rust — runs in the main process, never touches Python. Reads each
+//! per-worker JSON file written by the [`tracer`](crate::tracer), unions the
+//! per-file line sets, and prints a `Name / Stmts / Miss / Cover` table
+//! sorted alphabetically with a `TOTAL` row.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::io::Write;
 
 use anyhow::{Context, Result};
-use camino::{Utf8Path, Utf8PathBuf};
+use camino::Utf8Path;
 use colored::Colorize;
 
-use crate::data::{WORKER_FILE_PREFIX, WORKER_FILE_SUFFIX, WorkerFile};
+use crate::data::WorkerFile;
 
-/// The data file path a worker should write to.
-pub fn worker_data_file(data_dir: &Utf8Path, worker_id: usize) -> Utf8PathBuf {
-    data_dir.join(format!(
-        "{WORKER_FILE_PREFIX}{worker_id}{WORKER_FILE_SUFFIX}"
-    ))
-}
-
-/// Prepare the coverage data directory by creating it (if missing) and
-/// removing any stale per-worker files left from a previous run.
-pub fn prepare_data_dir(data_dir: &Utf8Path) -> Result<()> {
-    if data_dir.exists() {
-        for entry in std::fs::read_dir(data_dir.as_std_path())
-            .with_context(|| format!("failed to read coverage dir {data_dir}"))?
-        {
-            let entry = entry?;
-            let path = entry.path();
-            if let Some(name) = path.file_name().and_then(|n| n.to_str())
-                && name.starts_with(WORKER_FILE_PREFIX)
-                && name.ends_with(WORKER_FILE_SUFFIX)
-            {
-                let _ = std::fs::remove_file(&path);
-            }
-        }
-    } else {
-        std::fs::create_dir_all(data_dir.as_std_path())
-            .with_context(|| format!("failed to create coverage dir {data_dir}"))?;
-    }
-    Ok(())
-}
-
-/// Combine per-worker data files in `data_dir` and print a terminal report
+/// Combine the per-worker data files in `files` and print a terminal report
 /// to stdout. No-ops if there is no data to report.
+///
+/// `files` is the list of per-worker `coverage.json` paths to merge. The
+/// caller (typically [`karva_cache::RunCache::coverage_files`]) is responsible
+/// for resolving the paths; this function only reads them.
 ///
 /// When `show_missing` is true, the report includes a final `Missing` column
 /// listing the uncovered line numbers per file (consecutive lines collapsed
@@ -56,10 +30,10 @@ pub fn prepare_data_dir(data_dir: &Utf8Path) -> Result<()> {
 /// executable lines do not contribute to the total.
 pub fn combine_and_report(
     cwd: &Utf8Path,
-    data_dir: &Utf8Path,
+    files: &[impl AsRef<Utf8Path>],
     show_missing: bool,
 ) -> Result<Option<f64>> {
-    let combined = combine(data_dir)?;
+    let combined = combine(files)?;
     if combined.is_empty() {
         return Ok(None);
     }
@@ -73,29 +47,15 @@ struct CombinedFile {
     executed: BTreeSet<u32>,
 }
 
-fn combine(data_dir: &Utf8Path) -> Result<BTreeMap<String, CombinedFile>> {
+fn combine(files: &[impl AsRef<Utf8Path>]) -> Result<BTreeMap<String, CombinedFile>> {
     let mut combined: BTreeMap<String, CombinedFile> = BTreeMap::new();
 
-    if !data_dir.exists() {
-        return Ok(combined);
-    }
-
-    for entry in std::fs::read_dir(data_dir.as_std_path())
-        .with_context(|| format!("failed to read coverage dir {data_dir}"))?
-    {
-        let entry = entry?;
-        let path = entry.path();
-        let Some(name) = path.file_name().and_then(|n| n.to_str()) else {
-            continue;
-        };
-        if !name.starts_with(WORKER_FILE_PREFIX) || !name.ends_with(WORKER_FILE_SUFFIX) {
-            continue;
-        }
-
-        let bytes = std::fs::read(&path)
-            .with_context(|| format!("failed to read coverage file {}", path.display()))?;
+    for path in files {
+        let path = path.as_ref();
+        let bytes = std::fs::read(path.as_std_path())
+            .with_context(|| format!("failed to read coverage file {path}"))?;
         let parsed: WorkerFile = serde_json::from_slice(&bytes)
-            .with_context(|| format!("failed to parse coverage file {}", path.display()))?;
+            .with_context(|| format!("failed to parse coverage file {path}"))?;
 
         for (filename, file_entry) in parsed.files {
             let bucket = combined.entry(filename).or_default();

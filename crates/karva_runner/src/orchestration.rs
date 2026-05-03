@@ -161,14 +161,15 @@ fn spawn_workers(
     project: &Project,
     partitions: &[Partition],
     cache_dir: &Utf8PathBuf,
+    cache: &RunCache,
     run_hash: &RunHash,
     args: &SubTestCommand,
 ) -> Result<WorkerManager> {
     let core_binary = find_karva_worker_binary(project.cwd())?;
     let mut worker_manager = WorkerManager::default();
 
-    let coverage_dir = coverage_data_dir(cache_dir);
     let run_id = uuid::Uuid::new_v4().to_string();
+    let coverage_enabled = !project.settings().coverage().sources.is_empty();
 
     for (worker_id, partition) in partitions.iter().enumerate() {
         if partition.tests().is_empty() {
@@ -197,8 +198,8 @@ fn spawn_workers(
 
         cmd.args(inner_cli_args(project.settings(), args));
 
-        if !project.settings().coverage().sources.is_empty() {
-            let data_file = karva_coverage::worker_data_file(&coverage_dir, worker_id);
+        if coverage_enabled {
+            let data_file = cache.coverage_data_file(worker_id);
             cmd.arg("--cov-data-file").arg(data_file.as_str());
         }
 
@@ -254,12 +255,23 @@ pub fn collect_tests(project: &Project) -> Result<CollectedPackage> {
     Ok(collected)
 }
 
+/// Aggregated outputs of a parallel test run.
+pub struct RunOutput {
+    /// Test results merged across all workers.
+    pub results: AggregatedResults,
+    /// Paths to per-worker coverage files written during the run. Empty when
+    /// coverage was disabled. The caller hands this to
+    /// [`karva_coverage::combine_and_report`] to render the coverage table at
+    /// the right point in its output sequence (after the test summary).
+    pub coverage_files: Vec<Utf8PathBuf>,
+}
+
 pub fn run_parallel_tests(
     project: &Project,
     config: &ParallelTestConfig,
     args: &SubTestCommand,
     printer: Printer,
-) -> Result<AggregatedResults> {
+) -> Result<RunOutput> {
     let collected = collect_tests(project)?;
 
     let total_tests = collected.test_count();
@@ -328,15 +340,12 @@ pub fn run_parallel_tests(
     );
 
     let run_hash = RunHash::current_time();
-
-    if !project.settings().coverage().sources.is_empty() {
-        let coverage_dir = coverage_data_dir(&cache_dir);
-        karva_coverage::prepare_data_dir(&coverage_dir)?;
-    }
+    let cache = RunCache::new(&cache_dir, &run_hash);
 
     tracing::info!("Spawning {} workers", partitions.len());
 
-    let mut worker_manager = spawn_workers(project, &partitions, &cache_dir, &run_hash, args)?;
+    let mut worker_manager =
+        spawn_workers(project, &partitions, &cache_dir, &cache, &run_hash, args)?;
 
     let shutdown_rx = if config.create_ctrlc_handler {
         Some(shutdown_receiver())
@@ -344,20 +353,27 @@ pub fn run_parallel_tests(
         None
     };
 
-    let cache = RunCache::new(&cache_dir, &run_hash);
-
     let max_fail_cache = project.settings().max_fail().has_limit().then_some(&cache);
 
     worker_manager.wait_for_completion(shutdown_rx, max_fail_cache);
     worker_manager.kill_remaining();
 
-    let result = cache.aggregate_results()?;
+    let results = cache.aggregate_results()?;
 
     if !config.no_cache {
-        let _ = write_last_failed(&cache_dir, &result.failed_tests);
+        let _ = write_last_failed(&cache_dir, &results.failed_tests);
     }
 
-    Ok(result)
+    let coverage_files = if project.settings().coverage().sources.is_empty() {
+        Vec::new()
+    } else {
+        cache.coverage_files()?
+    };
+
+    Ok(RunOutput {
+        results,
+        coverage_files,
+    })
 }
 
 /// Construct a platform-specific binary path within a virtual environment root directory.
@@ -471,8 +487,4 @@ fn inner_cli_args(settings: &ProjectSettings, args: &SubTestCommand) -> Vec<Stri
     }
 
     cli_args
-}
-
-pub fn coverage_data_dir(cache_dir: &Utf8PathBuf) -> Utf8PathBuf {
-    cache_dir.join("coverage")
 }
