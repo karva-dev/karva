@@ -1,26 +1,10 @@
 //! Cache artifact catalogue.
 //!
-//! The cache directory hierarchy contains a small, fixed set of files. Each
-//! file lives at a known path and has a known on-disk format (pretty-printed
-//! JSON or plain text). Centralising those pairings here means adding a new
-//! artifact requires changing exactly one file, and the read/write helpers
-//! cannot accidentally mismatch a filename with the wrong serializer.
-//!
-//! The hierarchy is:
-//!
-//! ```text
-//! .karva_cache/
-//! ├── last-failed.json                     <- LastFailed
-//! └── run-<hash>/
-//!     ├── fail-fast                        <- FailFastSignal
-//!     └── worker-<id>/
-//!         ├── stats.json                   <- Stats
-//!         ├── diagnostics.txt              <- Diagnostics
-//!         ├── discover_diagnostics.txt     <- DiscoveryDiagnostics
-//!         ├── durations.json               <- Durations
-//!         ├── failed_tests.json            <- FailedTests
-//!         └── flaky_tests.json             <- FlakyTests
-//! ```
+//! The cache hierarchy has three levels — cache root, per-run directory, and
+//! per-worker directory — and a small fixed set of files at each level. Each
+//! file has a known on-disk format (pretty-printed JSON or plain text), so
+//! pairing the filename with its serializer in one place means adding a new
+//! artifact is a single-place change and read/write helpers can't drift.
 
 use std::fs;
 
