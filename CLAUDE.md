@@ -18,3 +18,4 @@
 - ALWAYS add labels to PRs.
 - ALWAYS use the pull request template when writing PR descriptions.
 - ALWAYS write human-readable PR descriptions using paragraphs and code examples instead of bullet points.
+- CONSIDER whether a change needs a docs update under `docs/`. Not every change does — internal refactors, bug fixes, and tweaks to existing behavior usually don't — but new flags, new public APIs, removed features, or changed defaults almost always do. When in doubt, check whether an existing page describes the area you touched.

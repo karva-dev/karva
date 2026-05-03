@@ -1,26 +1,26 @@
-This tutorial will walk you through the basics of using Karva.
+# Tutorial
 
-## Getting started
+This tutorial walks through setting up a small project, writing a test, and running it.
 
-We will first create a new project using `uv`.
+## A new project
+
+Initialise a project with `uv` and add a `tests/` directory:
 
 ```bash
-uv init --lib .
+uv init --lib calculator
+cd calculator
 mkdir tests
 ```
-
-This will give us a project that looks like this:
 
 ```text
 .
 ├── pyproject.toml
 ├── README.md
 ├── src
-│   └── karva_test
-│       ├── __init__.py
-│       └── py.typed
+│   └── calculator
+│       ├── __init__.py
+│       └── py.typed
 └── tests
-
 ```
 
 ```python title="src/calculator/__init__.py"
@@ -37,14 +37,17 @@ def test_add():
     assert calculator.add(1, 2) == 3
 ```
 
-Then, we'll add karva to our project.
+Add Karva as a dev dependency and run the suite:
 
 ```bash
 uv add --dev karva
-```
-
-We can then run our tests with `uv run karva test`.
-
-```bash
 uv run karva test
 ```
+
+## Where to next
+
+- [Filtering Tests](usage/filtering.md) — pick which tests run with the `-E` filter DSL.
+- [Fixtures](usage/fixtures/fixtures.md) — share setup and teardown between tests.
+- [Snapshots](usage/snapshots.md) — pin large outputs to a file.
+- [Coverage](usage/coverage.md) — measure line coverage with `--cov`.
+- [Watch Mode](usage/watch.md) — re-run tests on save.

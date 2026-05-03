@@ -14,11 +14,27 @@ extra_css = ["stylesheets/extra.css"]
 
 nav = [
     { "Home" = "index.md"},
-    { "Installation" = "installation.md"},
-    { "Tutorial" = "tutorial.md"},
-    { "Using Karva" = [
-        { "Snapshots" = "usage/snapshots.md"},
-        { "Filtering Tests" = "usage/filtering.md"},
+    { "Get Started" = [
+        { "Installation" = "installation.md"},
+        { "Tutorial" = "tutorial.md"},
+    ]},
+    { "Usage" = [
+        { "Running Tests" = [
+            { "Filtering Tests" = "usage/filtering.md"},
+            { "Parallel Execution" = "usage/parallel.md"},
+            { "Watch Mode" = "usage/watch.md"},
+            { "Cache" = "usage/cache.md"},
+        ]},
+        { "Failure Handling" = [
+            { "Failing Fast" = "usage/fail-fast.md"},
+            { "Retries" = "usage/retries.md"},
+            { "Slow Tests" = "usage/slow-tests.md"},
+        ]},
+        { "Writing Tests" = [
+            { "Snapshots" = "usage/snapshots.md"},
+            { "Coverage" = "usage/coverage.md"},
+            { "Other Functions" = "usage/functions.md"},
+        ]},
         { "Fixtures" = [
             { "Fixtures" = "usage/fixtures/fixtures.md"},
             { "Built In" = "usage/fixtures/builtin.md"},
@@ -26,21 +42,29 @@ nav = [
         { "Tags" = [
             { "Parametrize" = "usage/tags/parametrize.md"},
             { "Skip" = "usage/tags/skip.md"},
-            { "Expect Fail" = "usage/tags/expect_fail.md"}
+            { "Expect Fail" = "usage/tags/expect_fail.md"},
+            { "Timeout" = "usage/tags/timeout.md"},
         ]},
-        { "Other Functions" = "usage/functions.md"},
     ]},
-    { "Configuration" = "configuration.md"},
-    { "Profiles" = "profiles.md"},
-    { "CLI" = "cli.md"},
-    { "Environment Variables" = "env-vars.md"},
+    { "Configuration" = [
+        { "Configuration" = "configuration.md"},
+        { "Profiles" = "profiles.md"},
+    ]},
+    { "Reference" = [
+        { "CLI" = "cli.md"},
+        { "Environment Variables" = "env-vars.md"},
+    ]},
 ]
 
 [project.theme]
 language = "en"
 features = [
     "navigation.instant",
-    "search.highlight"
+    "navigation.tabs",
+    "navigation.tabs.sticky",
+    "navigation.sections",
+    "navigation.top",
+    "search.highlight",
 ]
 
 [[project.theme.palette]]
