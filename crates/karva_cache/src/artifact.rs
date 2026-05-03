@@ -26,6 +26,8 @@ pub enum CacheFile {
     FailedTests,
     /// Per-worker JSON: list of `FlakyTest` records.
     FlakyTests,
+    /// Per-worker JSON: line-coverage data for sources tracked during the run.
+    Coverage,
     /// Per-run empty sentinel marking that fail-fast was triggered.
     FailFastSignal,
     /// Cache-root JSON: list of last-run failed test names.
@@ -41,6 +43,7 @@ impl CacheFile {
             Self::Durations => "durations.json",
             Self::FailedTests => "failed_tests.json",
             Self::FlakyTests => "flaky_tests.json",
+            Self::Coverage => "coverage.json",
             Self::FailFastSignal => "fail-fast",
             Self::LastFailed => "last-failed.json",
         }

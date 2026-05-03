@@ -51,9 +51,9 @@ pub fn run_karva(project: &Project) {
     };
 
     let printer = Printer::new(StatusLevel::None, FinalStatusLevel::None);
-    let result = karva_runner::run_parallel_tests(project, &config, &args, printer).unwrap();
+    let output = karva_runner::run_parallel_tests(project, &config, &args, printer).unwrap();
 
-    assert!(result.stats.total() > 0);
+    assert!(output.results.stats.total() > 0);
 }
 
 /// Divan bencher entry point: re-creates the project for each iteration so the

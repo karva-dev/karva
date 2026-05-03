@@ -5,9 +5,6 @@ use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
 
-pub const WORKER_FILE_PREFIX: &str = "karva-coverage.";
-pub const WORKER_FILE_SUFFIX: &str = ".json";
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct WorkerFile {
     pub files: BTreeMap<String, FileEntry>,
