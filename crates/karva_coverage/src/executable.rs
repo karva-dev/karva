@@ -11,6 +11,7 @@ use std::collections::HashSet;
 use std::path::Path;
 
 use ruff_python_ast::helpers::is_docstring_stmt;
+use ruff_python_ast::token::TokenKind;
 use ruff_python_ast::visitor::source_order::{
     SourceOrderVisitor, walk_decorator, walk_elif_else_clause, walk_except_handler,
     walk_match_case, walk_stmt,
@@ -36,17 +37,53 @@ pub fn executable_lines_for_source(source: &str) -> HashSet<u32> {
         return HashSet::new();
     };
     let line_index = LineIndex::from_source_text(source);
+    let pragma_lines = pragma_no_cover_lines(&parsed, source, &line_index);
     let module = parsed.into_syntax();
     let mut visitor = ExecutableLineVisitor {
         line_index: &line_index,
+        pragma_lines: &pragma_lines,
         lines: HashSet::new(),
     };
     visitor.visit_body(&module.body);
     visitor.lines
 }
 
+/// Collect the set of line numbers carrying a `# pragma: no cover` comment.
+/// Match is case-insensitive and tolerant of surrounding whitespace, mirroring
+/// coverage.py's default `exclude_lines` regex.
+fn pragma_no_cover_lines<T>(
+    parsed: &ruff_python_parser::Parsed<T>,
+    source: &str,
+    line_index: &LineIndex,
+) -> HashSet<u32> {
+    let mut lines = HashSet::new();
+    for token in parsed.tokens() {
+        if token.kind() != TokenKind::Comment {
+            continue;
+        }
+        let range = token.range();
+        let Some(text) = source.get(range.start().to_usize()..range.end().to_usize()) else {
+            continue;
+        };
+        if is_pragma_no_cover(text)
+            && let Ok(line) = u32::try_from(line_index.line_index(range.start()).get())
+        {
+            lines.insert(line);
+        }
+    }
+    lines
+}
+
+fn is_pragma_no_cover(comment: &str) -> bool {
+    // `comment` includes the leading `#`. Strip it and compare
+    // case-insensitively against the canonical `pragma: no cover` token.
+    let body = comment.strip_prefix('#').unwrap_or(comment).trim();
+    body.to_ascii_lowercase().contains("pragma: no cover")
+}
+
 struct ExecutableLineVisitor<'a> {
     line_index: &'a LineIndex,
+    pragma_lines: &'a HashSet<u32>,
     lines: HashSet<u32>,
 }
 
@@ -54,6 +91,16 @@ impl ExecutableLineVisitor<'_> {
     fn record(&mut self, offset: TextSize) {
         if let Ok(line) = u32::try_from(self.line_index.line_index(offset).get()) {
             self.lines.insert(line);
+        }
+    }
+
+    /// Whether `offset` falls on a line marked with `# pragma: no cover`.
+    /// Used to decide whether to skip a statement (or clause) outright.
+    fn line_has_pragma(&self, offset: TextSize) -> bool {
+        if let Ok(line) = u32::try_from(self.line_index.line_index(offset).get()) {
+            self.pragma_lines.contains(&line)
+        } else {
+            false
         }
     }
 }
@@ -73,18 +120,29 @@ impl<'a> SourceOrderVisitor<'a> for ExecutableLineVisitor<'_> {
     /// the name's range instead so the reported line is the `def` / `class`
     /// keyword line, matching coverage.py. The decorators themselves are
     /// recorded separately via `visit_decorator`.
+    ///
+    /// A `# pragma: no cover` on the statement's head line excludes both
+    /// the head and the entire body — we skip recording and stop walking
+    /// the subtree.
     fn visit_stmt(&mut self, stmt: &'a Stmt) {
         let offset = match stmt {
             Stmt::FunctionDef(s) => s.name.range().start(),
             Stmt::ClassDef(s) => s.name.range().start(),
             _ => stmt.range().start(),
         };
+        if self.line_has_pragma(offset) {
+            return;
+        }
         self.record(offset);
         walk_stmt(self, stmt);
     }
 
     fn visit_decorator(&mut self, decorator: &'a Decorator) {
-        self.record(decorator.range().start());
+        let offset = decorator.range().start();
+        if self.line_has_pragma(offset) {
+            return;
+        }
+        self.record(offset);
         walk_decorator(self, decorator);
     }
 
@@ -92,20 +150,35 @@ impl<'a> SourceOrderVisitor<'a> for ExecutableLineVisitor<'_> {
     /// bytecode, so it counts as an executable line. A bare `else:` has no
     /// bytecode of its own — coverage.py and `CPython`'s `co_lines()` skip
     /// it — so we skip it here too.
+    ///
+    /// A pragma on the clause's head line excludes the body of that branch
+    /// even when the head itself has no recorded line (bare `else:`).
     fn visit_elif_else_clause(&mut self, clause: &'a ElifElseClause) {
+        let offset = clause.range().start();
+        if self.line_has_pragma(offset) {
+            return;
+        }
         if clause.test.is_some() {
-            self.record(clause.range().start());
+            self.record(offset);
         }
         walk_elif_else_clause(self, clause);
     }
 
     fn visit_except_handler(&mut self, handler: &'a ExceptHandler) {
-        self.record(handler.range().start());
+        let offset = handler.range().start();
+        if self.line_has_pragma(offset) {
+            return;
+        }
+        self.record(offset);
         walk_except_handler(self, handler);
     }
 
     fn visit_match_case(&mut self, case: &'a MatchCase) {
-        self.record(case.range().start());
+        let offset = case.range().start();
+        if self.line_has_pragma(offset) {
+            return;
+        }
+        self.record(offset);
         walk_match_case(self, case);
     }
 }
@@ -431,5 +504,137 @@ type Alias = int
         [recorded]  90 | continue
         [recorded]  91 | type Alias = int
         "#);
+    }
+
+    #[test]
+    fn pragma_excludes_simple_statement_line() {
+        let src = "\
+x = 1
+y = 2  # pragma: no cover
+z = 3
+";
+        assert_eq!(lines(src), vec![1, 3]);
+    }
+
+    #[test]
+    fn pragma_on_function_head_excludes_body() {
+        let src = "\
+def kept():
+    return 1
+
+def excluded():  # pragma: no cover
+    a = 1
+    b = 2
+    return a + b
+";
+        // `def excluded():` and its whole body drop out.
+        assert_eq!(lines(src), vec![1, 2]);
+    }
+
+    #[test]
+    fn pragma_on_class_head_excludes_body() {
+        let src = "\
+class C:  # pragma: no cover
+    attr = 1
+    def m(self):
+        return self.attr
+";
+        assert_eq!(lines(src), Vec::<u32>::new());
+    }
+
+    #[test]
+    fn pragma_on_if_head_excludes_whole_if_elif_else() {
+        let src = "\
+x = 0
+if cond:  # pragma: no cover
+    a = 1
+elif other:
+    b = 2
+else:
+    c = 3
+y = 0
+";
+        // An `if` is a single compound statement that owns its `elif`/`else`
+        // clauses, so a pragma on the head drops the entire structure.
+        // Matches coverage.py's whole-block behaviour.
+        assert_eq!(lines(src), vec![1, 8]);
+    }
+
+    #[test]
+    fn pragma_on_elif_excludes_that_branch() {
+        let src = "\
+if a:
+    x = 1
+elif b:  # pragma: no cover
+    x = 2
+else:
+    x = 3
+";
+        assert_eq!(lines(src), vec![1, 2, 6]);
+    }
+
+    #[test]
+    fn pragma_on_else_excludes_body() {
+        let src = "\
+if a:
+    x = 1
+else:  # pragma: no cover
+    x = 2
+";
+        assert_eq!(lines(src), vec![1, 2]);
+    }
+
+    #[test]
+    fn pragma_on_except_handler_excludes_body() {
+        let src = "\
+try:
+    a = 1
+except ValueError:  # pragma: no cover
+    b = 2
+";
+        assert_eq!(lines(src), vec![1, 2]);
+    }
+
+    #[test]
+    fn pragma_on_match_case_excludes_body() {
+        let src = "\
+match x:
+    case 1:
+        a = 1
+    case _:  # pragma: no cover
+        a = 2
+";
+        assert_eq!(lines(src), vec![1, 2, 3]);
+    }
+
+    #[test]
+    fn pragma_on_decorator_excludes_only_decorator() {
+        let src = "\
+@deco  # pragma: no cover
+def f():
+    return 1
+";
+        // The decorator line drops; the function head and body remain.
+        assert_eq!(lines(src), vec![2, 3]);
+    }
+
+    #[test]
+    fn pragma_match_is_case_insensitive() {
+        let src = "\
+x = 1  # PRAGMA: NO COVER
+y = 2
+";
+        assert_eq!(lines(src), vec![2]);
+    }
+
+    #[test]
+    fn pragma_inside_string_is_not_a_directive() {
+        let src = "\
+msg = '# pragma: no cover'
+y = 2
+";
+        // The pragma-looking text lives inside a string literal, so it is not
+        // a comment and must not exclude line 1.
+        assert_eq!(lines(src), vec![1, 2]);
     }
 }
