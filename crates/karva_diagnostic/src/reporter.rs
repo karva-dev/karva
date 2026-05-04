@@ -96,8 +96,6 @@ impl Reporter for TestCaseReporter {
             return;
         }
 
-        let mut stdout = self.printer.stream_for_test_result().lock();
-
         let (label, colored_label) = match &result_kind {
             IndividualTestResultKind::Passed => ("PASS", "PASS".green().bold().to_string()),
             IndividualTestResultKind::Failed => ("FAIL", "FAIL".red().bold().to_string()),
@@ -105,16 +103,9 @@ impl Reporter for TestCaseReporter {
                 ("SKIP", "SKIP".yellow().bold().to_string())
             }
         };
-
-        let padding = " ".repeat(12usize.saturating_sub(label.len()));
+        let padding = label_padding(label.len());
         let duration_str = format_duration_bracketed(duration);
-
-        let module = test_name.function_name().module_path().module_name().cyan();
-        let fn_name = test_name.function_name().function_name().blue().bold();
-        let params = test_name
-            .params()
-            .map(|p| p.blue().bold().to_string())
-            .unwrap_or_default();
+        let test_path = format_test_path(test_name);
 
         let suffix = match &result_kind {
             IndividualTestResultKind::Skipped {
@@ -123,9 +114,10 @@ impl Reporter for TestCaseReporter {
             _ => String::new(),
         };
 
+        let mut stdout = self.printer.stream_for_test_result().lock();
         writeln!(
             stdout,
-            "{padding}{colored_label} {duration_str} {module}::{fn_name}{params}{suffix}"
+            "{padding}{colored_label} {duration_str} {test_path}{suffix}"
         )
         .ok();
     }
@@ -137,20 +129,14 @@ impl Reporter for TestCaseReporter {
 
         let label = "SLOW";
         let colored_label = label.yellow().bold().to_string();
-        let padding = " ".repeat(12usize.saturating_sub(label.len()));
+        let padding = label_padding(label.len());
         let duration_str = format_duration_bracketed(duration);
-
-        let module = test_name.function_name().module_path().module_name().cyan();
-        let fn_name = test_name.function_name().function_name().blue().bold();
-        let params = test_name
-            .params()
-            .map(|p| p.blue().bold().to_string())
-            .unwrap_or_default();
+        let test_path = format_test_path(test_name);
 
         let mut stdout = self.printer.stream_for_test_result().lock();
         writeln!(
             stdout,
-            "{padding}{colored_label} {duration_str} {module}::{fn_name}{params}"
+            "{padding}{colored_label} {duration_str} {test_path}"
         )
         .ok();
     }
@@ -177,33 +163,38 @@ impl Reporter for TestCaseReporter {
         };
 
         let label_len = "TRY ".len() + count_digits(attempt) + 1 + status_text.len();
-        let padding = " ".repeat(12usize.saturating_sub(label_len));
+        let padding = label_padding(label_len);
         let duration_str = format_duration_bracketed(duration);
-
-        let module = test_name.function_name().module_path().module_name().cyan();
-        let fn_name = test_name.function_name().function_name().blue().bold();
-        let params = test_name
-            .params()
-            .map(|p| p.blue().bold().to_string())
-            .unwrap_or_default();
+        let test_path = format_test_path(test_name);
 
         let mut stdout = self.printer.stream_for_test_result().lock();
         writeln!(
             stdout,
-            "{padding}TRY {attempt} {colored_status} {duration_str} {module}::{fn_name}{params}"
+            "{padding}TRY {attempt} {colored_status} {duration_str} {test_path}"
         )
         .ok();
     }
 }
 
-fn count_digits(mut n: u32) -> usize {
-    if n == 0 {
-        return 1;
-    }
-    let mut digits = 0;
-    while n > 0 {
-        digits += 1;
-        n /= 10;
-    }
-    digits
+/// The width that result labels (`PASS`, `FAIL`, `SKIP`, `SLOW`, `TRY N PASS`,
+/// etc.) are right-padded to so columns align.
+const LABEL_COLUMN_WIDTH: usize = 12;
+
+fn label_padding(label_len: usize) -> String {
+    " ".repeat(LABEL_COLUMN_WIDTH.saturating_sub(label_len))
+}
+
+/// Render the colored `module::function[params]` portion of a result line.
+fn format_test_path(test_name: &QualifiedTestName) -> String {
+    let module = test_name.function_name().module_path().module_name().cyan();
+    let fn_name = test_name.function_name().function_name().blue().bold();
+    let params = test_name
+        .params()
+        .map(|p| p.blue().bold().to_string())
+        .unwrap_or_default();
+    format!("{module}::{fn_name}{params}")
+}
+
+fn count_digits(n: u32) -> usize {
+    n.checked_ilog10().unwrap_or(0) as usize + 1
 }
