@@ -256,7 +256,7 @@ def test_pass():
     success: true
     exit_code: 0
     ----- stdout -----
-    No pending snapshots.
+    No pending snapshots found.
 
     ----- stderr -----
     ");

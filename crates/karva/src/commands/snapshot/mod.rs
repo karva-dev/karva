@@ -12,6 +12,7 @@ use camino::{Utf8Path, Utf8PathBuf};
 use karva_cli::{SnapshotAction, SnapshotCommand};
 use karva_logging::{Printer, Stdout};
 use karva_project::path::absolute;
+use karva_snapshot::storage::{PendingSnapshotInfo, find_pending_snapshots};
 
 use crate::ExitStatus;
 use crate::utils::cwd;
@@ -37,6 +38,25 @@ fn snapshot_setup(filter_paths: &[String]) -> Result<(Stdout, Utf8PathBuf, Vec<U
     let stdout = printer.stream_for_message().lock();
     let resolved = resolve_filter_paths(filter_paths, &cwd);
     Ok((stdout, cwd, resolved))
+}
+
+/// Setup for snapshot commands that operate on the set of pending snapshots
+/// (`accept`, `reject`, `pending`).
+///
+/// Returns `Ok(None)` (after writing the empty-state message) when no pending
+/// snapshots match the filter, otherwise `Ok(Some((stdout, filtered)))`.
+fn pending_setup(filter_paths: &[String]) -> Result<Option<(Stdout, Vec<PendingSnapshotInfo>)>> {
+    let (mut stdout, cwd, resolved) = snapshot_setup(filter_paths)?;
+    let pending = find_pending_snapshots(&cwd);
+    let filtered: Vec<_> = pending
+        .into_iter()
+        .filter(|info| matches_filter(&info.pending_path, &resolved))
+        .collect();
+    if filtered.is_empty() {
+        writeln!(stdout, "No pending snapshots found.")?;
+        return Ok(None);
+    }
+    Ok(Some((stdout, filtered)))
 }
 
 /// Filters items by resolved path prefixes and handles the empty case.
