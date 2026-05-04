@@ -98,6 +98,17 @@ env_vars! {
         /// The total number of attempts allowed for the currently running test
         /// (`retries + 1`). Always set.
         pub const KARVA_TOTAL_ATTEMPTS: &'static str = "KARVA_TOTAL_ATTEMPTS";
+
+        /// Name of the active configuration profile, e.g. `"default"` or
+        /// whatever was passed to `--profile` / `KARVA_PROFILE`.
+        pub const KARVA_PROFILE: &'static str = "KARVA_PROFILE";
+
+        /// Configured number of worker processes for this run. Mirrors
+        /// `--num-workers` (capped to the number of useful workers).
+        pub const KARVA_TEST_THREADS: &'static str = "KARVA_TEST_THREADS";
+
+        /// Version of the running karva CLI.
+        pub const KARVA_VERSION: &'static str = "KARVA_VERSION";
     }
 }
 

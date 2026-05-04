@@ -40,6 +40,7 @@ pub fn run_karva(project: &Project) {
         no_cache: false,
         create_ctrlc_handler: false,
         last_failed: false,
+        profile: None,
     };
 
     let args = SubTestCommand {

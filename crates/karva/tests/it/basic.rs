@@ -2339,10 +2339,11 @@ def test_always_fails(): assert False
     );
 }
 
-/// `KARVA`, `KARVA_WORKER_ID`, `KARVA_RUN_ID`, and `KARVA_WORKSPACE_ROOT` are
-/// exposed to the test process. The values come from the worker spawn (not
-/// from the test's own `os.environ` writes), so a single passing test is
-/// enough to exercise all four.
+/// `KARVA`, `KARVA_WORKER_ID`, `KARVA_RUN_ID`, `KARVA_WORKSPACE_ROOT`,
+/// `KARVA_PROFILE`, `KARVA_TEST_THREADS`, and `KARVA_VERSION` are exposed to
+/// the test process. The values come from the worker spawn (not from the
+/// test's own `os.environ` writes), so a single passing test is enough to
+/// exercise all of them.
 #[test]
 fn test_karva_static_env_vars() {
     let context = TestContext::with_file(
@@ -2359,6 +2360,10 @@ def test_static_env():
         os.environ["KARVA_RUN_ID"],
     ), os.environ["KARVA_RUN_ID"]
     assert os.environ["KARVA_WORKSPACE_ROOT"] == os.getcwd()
+    assert os.environ["KARVA_PROFILE"] == "default"
+    assert os.environ["KARVA_TEST_THREADS"] == "1"
+    assert re.fullmatch(r"\d+\.\d+\.\d+(-[A-Za-z0-9.]+)?", os.environ["KARVA_VERSION"]), \
+        os.environ["KARVA_VERSION"]
         "#,
     );
 
@@ -2368,6 +2373,42 @@ def test_static_env():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_static_env
+
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+/// `KARVA_PROFILE` reflects the active profile when `--profile` is passed,
+/// rather than always being `"default"`.
+#[test]
+fn test_karva_profile_env_reflects_active_profile() {
+    let context = TestContext::with_files([
+        (
+            "karva.toml",
+            r"
+[profile.fast.test]
+",
+        ),
+        (
+            "test.py",
+            r#"
+import os
+
+def test_profile_env():
+    assert os.environ["KARVA_PROFILE"] == "fast"
+        "#,
+        ),
+    ]);
+
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--profile=fast"), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_profile_env
 
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
