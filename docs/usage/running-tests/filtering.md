@@ -153,7 +153,7 @@ metacharacters round-trip without double-backslashing:
 - Bare identifiers have no escape syntax at all — if your tag or test
   name needs characters the identifier rules don't allow, quote it.
 - For literal glob metacharacters, use the bracket escape from
-  [globset]: `#[*]` matches a literal `*` character, `#[?]` matches a
+  [globset] — `#[*]` matches a literal `*` character, `#[?]` matches a
   literal `?`, and so on.
 
 ## Migration from `-t` and `-m`

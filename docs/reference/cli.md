@@ -33,7 +33,7 @@ karva test [OPTIONS] [PATH]...
 
 <h3 class="cli-reference">Arguments</h3>
 
-<dl class="cli-reference"><dt id="karva-test--paths"><a href="#karva-test--paths"><code>PATHS</code></a></dt><dd><p>List of files, directories, or test functions to test [default: the project root]</p>
+<dl class="cli-reference"><dt id="karva-test--paths"><a href="#karva-test--paths"><code>PATHS</code></a></dt><dd><p>List of files, directories, or test functions to test &#91;default: the project root&#93;</p>
 </dd></dl>
 
 <h3 class="cli-reference">Options</h3>
@@ -65,7 +65,7 @@ karva test [OPTIONS] [PATH]...
 <p>Operators: <code>&amp;</code> / <code>and</code>, <code>|</code> / <code>or</code>, <code>not</code> / <code>!</code>, and <code>-</code> as shorthand for &quot;and not&quot;. Use parentheses for grouping. <code>and</code> binds tighter than <code>or</code>.</p>
 <p>When specified multiple times, a test runs if it matches any of the expressions (OR semantics across flags).</p>
 <p>Examples: <code>-E 'tag(slow)'</code>, <code>-E 'test(/^mod::test_login$/)'</code>, <code>-E 'tag(slow) &amp; test(~login)'</code>, <code>-E '(tag(fast) | tag(unit)) - tag(flaky)'</code>.</p>
-</dd><dt id="karva-test--final-status-level"><a href="#karva-test--final-status-level"><code>--final-status-level</code></a> <i>level</i></dt><dd><p>Test summary information to display at the end of the run [default: pass]</p>
+</dd><dt id="karva-test--final-status-level"><a href="#karva-test--final-status-level"><code>--final-status-level</code></a> <i>level</i></dt><dd><p>Test summary information to display at the end of the run &#91;default: pass&#93;</p>
 <p>May also be set with the <code>KARVA_FINAL_STATUS_LEVEL</code> environment variable.</p><p>Possible values:</p>
 <ul>
 <li><code>none</code>:  Don't display the summary line or any diagnostic blocks</li>
@@ -83,12 +83,12 @@ karva test [OPTIONS] [PATH]...
 </dd><dt id="karva-test--no-capture"><a href="#karva-test--no-capture"><code>--no-capture</code></a></dt><dd><p>Disable output capture and run tests serially.</p>
 <p>Lets stdout/stderr from tests flow directly to the terminal, useful when debugging with print statements or interactive debuggers. Implies <code>--show-output</code> and forces a single worker so output from concurrent tests cannot interleave.</p>
 </dd><dt id="karva-test--no-cov"><a href="#karva-test--no-cov"><code>--no-cov</code></a></dt><dd><p>Disable coverage measurement for this run.</p>
-<p>Overrides any <code>--cov</code> flag and any <code>[coverage] sources</code> configured in <code>karva.toml</code> / <code>pyproject.toml</code>. Useful when iterating locally without editing config.</p>
+<p>Overrides any <code>--cov</code> flag and any <code>&#91;coverage&#93; sources</code> configured in <code>karva.toml</code> / <code>pyproject.toml</code>. Useful when iterating locally without editing config.</p>
 </dd><dt id="karva-test--no-fail-fast"><a href="#karva-test--no-fail-fast"><code>--no-fail-fast</code></a></dt><dd><p>Run every test regardless of how many fail.</p>
 <p>Clears any <code>fail-fast</code> or <code>max-fail</code> value set in configuration. When <code>--max-fail</code> is provided alongside <code>--no-fail-fast</code>, <code>--max-fail</code> takes precedence.</p>
 </dd><dt id="karva-test--no-ignore"><a href="#karva-test--no-ignore"><code>--no-ignore</code></a></dt><dd><p>When set, .gitignore files will not be respected</p>
 </dd><dt id="karva-test--no-parallel"><a href="#karva-test--no-parallel"><code>--no-parallel</code></a></dt><dd><p>Disable parallel execution (equivalent to <code>--num-workers 1</code>)</p>
-</dd><dt id="karva-test--no-tests"><a href="#karva-test--no-tests"><code>--no-tests</code></a> <i>action</i></dt><dd><p>Behavior when no tests are found to run [default: auto]</p>
+</dd><dt id="karva-test--no-tests"><a href="#karva-test--no-tests"><code>--no-tests</code></a> <i>action</i></dt><dd><p>Behavior when no tests are found to run &#91;default: auto&#93;</p>
 <p>May also be set with the <code>KARVA_NO_TESTS</code> environment variable.</p><p>Possible values:</p>
 <ul>
 <li><code>auto</code>:  Automatically determine behavior: fail if no filter expressions were given, pass silently if filters were given</li>
@@ -102,7 +102,7 @@ karva test [OPTIONS] [PATH]...
 <li><code>full</code>:  Print diagnostics verbosely, with context and helpful hints (default)</li>
 <li><code>concise</code>:  Print diagnostics concisely, one per line</li>
 </ul></dd><dt id="karva-test--profile"><a href="#karva-test--profile"><code>--profile</code></a>, <code>-P</code> <i>name</i></dt><dd><p>Configuration profile to use.</p>
-<p>Profiles are defined as <code>[profile.&lt;name&gt;]</code> sections in <code>karva.toml</code> (or <code>[tool.karva.profile.&lt;name&gt;]</code> in <code>pyproject.toml</code>) and may override any of the <code>[src]</code>, <code>[terminal]</code>, and <code>[test]</code> settings. The selected profile is layered on top of any <code>[profile.default]</code> overrides, which themselves layer on top of the top-level options.</p>
+<p>Profiles are defined as <code>&#91;profile.&lt;name&gt;&#93;</code> sections in <code>karva.toml</code> (or <code>&#91;tool.karva.profile.&lt;name&gt;&#93;</code> in <code>pyproject.toml</code>) and may override any of the <code>&#91;src&#93;</code>, <code>&#91;terminal&#93;</code>, and <code>&#91;test&#93;</code> settings. The selected profile is layered on top of any <code>&#91;profile.default&#93;</code> overrides, which themselves layer on top of the top-level options.</p>
 <p>Defaults to <code>default</code>.</p>
 <p>May also be set with the <code>KARVA_PROFILE</code> environment variable.</p></dd><dt id="karva-test--retry"><a href="#karva-test--retry"><code>--retry</code></a> <i>retry</i></dt><dd><p>When set, the test will retry failed tests up to this number of times</p>
 </dd><dt id="karva-test--run-ignored"><a href="#karva-test--run-ignored"><code>--run-ignored</code></a> <i>run-ignored</i></dt><dd><p>Run ignored tests</p>
@@ -115,7 +115,7 @@ karva test [OPTIONS] [PATH]...
 <p>When a test takes longer than this duration, it is reported with a <code>SLOW</code> status line (gated on <code>--status-level=slow</code> or higher) and counted in the run summary. Pass a positive number such as <code>--slow-timeout=60</code> or <code>--slow-timeout=0.5</code>.</p>
 </dd><dt id="karva-test--snapshot-update"><a href="#karva-test--snapshot-update"><code>--snapshot-update</code></a></dt><dd><p>Update snapshots directly instead of creating pending <code>.snap.new</code> files.</p>
 <p>When set, <code>karva.assert_snapshot()</code> will write directly to <code>.snap</code> files, accepting any changes automatically.</p>
-</dd><dt id="karva-test--status-level"><a href="#karva-test--status-level"><code>--status-level</code></a> <i>level</i></dt><dd><p>Test result statuses to display during the run [default: pass]</p>
+</dd><dt id="karva-test--status-level"><a href="#karva-test--status-level"><code>--status-level</code></a> <i>level</i></dt><dd><p>Test result statuses to display during the run &#91;default: pass&#93;</p>
 <p>May also be set with the <code>KARVA_STATUS_LEVEL</code> environment variable.</p><p>Possible values:</p>
 <ul>
 <li><code>none</code>:  Don't display any test result lines (or the &quot;Starting&quot; header)</li>

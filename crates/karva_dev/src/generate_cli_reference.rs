@@ -12,6 +12,12 @@ use crate::{Mode, REGENERATE_ALL_COMMAND, ROOT_DIR};
 
 const SHOW_HIDDEN_COMMANDS: &[&str] = &["generate-shell-completion"];
 
+fn render_html(markdown_text: &str) -> String {
+    markdown::to_html(markdown_text)
+        .replace('[', "&#91;")
+        .replace(']', "&#93;")
+}
+
 #[derive(clap::Args)]
 pub(crate) struct Args {
     #[arg(long, default_value_t, value_enum)]
@@ -152,10 +158,7 @@ fn generate_command<'a>(output: &mut String, command: &'a Command, parents: &mut
                 subcommand_name.replace(' ', "-")
             ));
             if let Some(about) = subcommand.get_about() {
-                output.push_str(&format!(
-                    "<dd>{}</dd>\n",
-                    markdown::to_html(&about.to_string())
-                ));
+                output.push_str(&format!("<dd>{}</dd>\n", render_html(&about.to_string())));
             }
         }
 
@@ -186,7 +189,7 @@ fn generate_command<'a>(output: &mut String, command: &'a Command, parents: &mut
                 output.push_str("</dt>");
                 if let Some(help) = arg.get_long_help().or_else(|| arg.get_help()) {
                     output.push_str("<dd>");
-                    output.push_str(&format!("{}\n", markdown::to_html(&help.to_string())));
+                    output.push_str(&format!("{}\n", render_html(&help.to_string())));
                     output.push_str("</dd>");
                 }
             }
@@ -238,7 +241,7 @@ fn generate_command<'a>(output: &mut String, command: &'a Command, parents: &mut
                 output.push_str("</dt>");
                 if let Some(help) = opt.get_long_help().or_else(|| opt.get_help()) {
                     output.push_str("<dd>");
-                    output.push_str(&format!("{}\n", markdown::to_html(&help.to_string())));
+                    output.push_str(&format!("{}\n", render_html(&help.to_string())));
                     emit_env_option(opt, output);
                     emit_default_option(opt, output);
                     emit_possible_options(opt, output);
@@ -267,7 +270,7 @@ fn emit_env_option(opt: &clap::Arg, output: &mut String) {
         return;
     }
     if let Some(env) = opt.get_env() {
-        output.push_str(&markdown::to_html(&format!(
+        output.push_str(&render_html(&format!(
             "May also be set with the `{}` environment variable.",
             env.to_string_lossy()
         )));
@@ -293,7 +296,7 @@ fn emit_default_option(opt: &clap::Arg, output: &mut String) {
                 .map(|s| s.to_string_lossy())
                 .join(",")
         );
-        output.push_str(&markdown::to_html(&value));
+        output.push_str(&render_html(&value));
     }
 }
 
@@ -319,7 +322,7 @@ fn emit_possible_options(opt: &clap::Arg, output: &mut String) {
                 .collect_vec()
                 .join("\n"),
         );
-        output.push_str(&markdown::to_html(&value));
+        output.push_str(&render_html(&value));
     }
 }
 

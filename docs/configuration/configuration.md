@@ -122,7 +122,7 @@ respect-ignore-files = false
 Test summary information to display at the end of the run.
 
 Modeled after `cargo-nextest`'s `--final-status-level`. Levels are
-cumulative in the same way as [`status_level`](#terminal_status-level).
+cumulative in the same way as [`status_level`](#status-level).
 
 Defaults to `pass`.
 
@@ -207,7 +207,7 @@ status-level = "fail"
 
 Whether to stop at the first test failure.
 
-This is a legacy alias for [`max_fail`](#test_max-fail): `true`
+This is a legacy alias for [`max_fail`](#max-fail): `true`
 corresponds to `max-fail = 1` and `false` leaves the limit unset.
 When both are set, `max-fail` takes precedence.
 
@@ -234,7 +234,7 @@ Accepts a positive integer. Omitting the field (the default) lets
 every test run regardless of how many fail. Setting `max-fail = 1`
 is equivalent to the legacy `fail-fast = true`.
 
-When both [`fail_fast`](#test_fail-fast) and `max-fail` are set,
+When both [`fail_fast`](#fail-fast) and `max-fail` are set,
 `max-fail` takes precedence.
 
 **Default value**: `unlimited`
