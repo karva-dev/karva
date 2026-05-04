@@ -6,8 +6,7 @@ use super::pending_setup;
 use crate::ExitStatus;
 
 pub fn accept(filter_paths: &[String]) -> Result<ExitStatus> {
-    let Some((mut stdout, filtered)) = pending_setup(filter_paths, "No pending snapshots found.")?
-    else {
+    let Some((mut stdout, filtered)) = pending_setup(filter_paths)? else {
         return Ok(ExitStatus::Success);
     };
     let refs: Vec<_> = filtered.iter().collect();

@@ -6,7 +6,7 @@ use super::pending_setup;
 use crate::ExitStatus;
 
 pub fn pending(filter_paths: &[String]) -> Result<ExitStatus> {
-    let Some((mut stdout, filtered)) = pending_setup(filter_paths, "No pending snapshots.")? else {
+    let Some((mut stdout, filtered)) = pending_setup(filter_paths)? else {
         return Ok(ExitStatus::Success);
     };
     for info in &filtered {
