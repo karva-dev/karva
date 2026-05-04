@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::io;
 
 use camino::{Utf8Path, Utf8PathBuf};
@@ -129,16 +130,14 @@ fn extract_function_name(source: Option<&str>) -> Option<&str> {
 /// rewrites the source file in-place and deletes the `.snap.new` file.
 /// For file-based snapshots, renames `.snap.new` to `.snap`.
 pub fn accept_pending(pending_path: &Utf8Path) -> io::Result<()> {
-    if let Some(snapshot) = read_snapshot(pending_path) {
-        if let (Some(source_file), Some(line)) = (
-            &snapshot.metadata.inline_source,
-            snapshot.metadata.inline_line,
-        ) {
-            let content = snapshot.content.trim_end();
-            let function_name = extract_function_name(snapshot.metadata.source.as_deref());
-            crate::inline::rewrite_inline_snapshot(source_file, line, content, function_name)?;
-            return std::fs::remove_file(pending_path);
-        }
+    if let Some(snapshot) = read_snapshot(pending_path)
+        && let Some(source_file) = &snapshot.metadata.inline_source
+        && let Some(line) = snapshot.metadata.inline_line
+    {
+        let content = snapshot.content.trim_end();
+        let function_name = extract_function_name(snapshot.metadata.source.as_deref());
+        crate::inline::rewrite_inline_snapshot(source_file, line, content, function_name)?;
+        return std::fs::remove_file(pending_path);
     }
 
     let snap_path = pending_path
@@ -151,7 +150,6 @@ pub fn accept_pending(pending_path: &Utf8Path) -> io::Result<()> {
 
 struct InlineInfo<'a> {
     pending_path: &'a Utf8Path,
-    source_file: String,
     line: u32,
     content: String,
     function_name: Option<String>,
@@ -160,34 +158,27 @@ struct InlineInfo<'a> {
 /// Classify pending snapshots into inline (grouped by source file) and file-based.
 fn classify_pending_snapshots<'a>(
     pending: &'a [&PendingSnapshotInfo],
-) -> (
-    std::collections::HashMap<String, Vec<InlineInfo<'a>>>,
-    Vec<&'a Utf8Path>,
-) {
-    let mut inline_by_source: std::collections::HashMap<String, Vec<InlineInfo<'_>>> =
-        std::collections::HashMap::new();
+) -> (HashMap<String, Vec<InlineInfo<'a>>>, Vec<&'a Utf8Path>) {
+    let mut inline_by_source: HashMap<String, Vec<InlineInfo<'_>>> = HashMap::new();
     let mut file_based: Vec<&Utf8Path> = Vec::new();
 
     for info in pending {
-        if let Some(snapshot) = read_snapshot(&info.pending_path) {
-            if let (Some(source_file), Some(line)) = (
-                &snapshot.metadata.inline_source,
-                snapshot.metadata.inline_line,
-            ) {
-                let function_name =
-                    extract_function_name(snapshot.metadata.source.as_deref()).map(String::from);
-                inline_by_source
-                    .entry(source_file.clone())
-                    .or_default()
-                    .push(InlineInfo {
-                        pending_path: &info.pending_path,
-                        source_file: source_file.clone(),
-                        line,
-                        content: snapshot.content,
-                        function_name,
-                    });
-                continue;
-            }
+        if let Some(snapshot) = read_snapshot(&info.pending_path)
+            && let Some(source_file) = snapshot.metadata.inline_source.clone()
+            && let Some(line) = snapshot.metadata.inline_line
+        {
+            let function_name =
+                extract_function_name(snapshot.metadata.source.as_deref()).map(String::from);
+            inline_by_source
+                .entry(source_file)
+                .or_default()
+                .push(InlineInfo {
+                    pending_path: &info.pending_path,
+                    line,
+                    content: snapshot.content,
+                    function_name,
+                });
+            continue;
         }
         file_based.push(&info.pending_path);
     }
@@ -200,14 +191,14 @@ fn classify_pending_snapshots<'a>(
 /// Processing bottom-to-top ensures that multiline expansions at higher lines
 /// don't shift line numbers for edits above them.
 fn process_inline_snapshots(
-    inline_by_source: &mut std::collections::HashMap<String, Vec<InlineInfo<'_>>>,
+    inline_by_source: &mut HashMap<String, Vec<InlineInfo<'_>>>,
 ) -> io::Result<()> {
-    for group in inline_by_source.values_mut() {
+    for (source_file, group) in inline_by_source.iter_mut() {
         group.sort_by(|a, b| b.line.cmp(&a.line));
         for item in group.iter() {
             let content = item.content.trim_end();
             crate::inline::rewrite_inline_snapshot(
-                &item.source_file,
+                source_file,
                 item.line,
                 content,
                 item.function_name.as_deref(),

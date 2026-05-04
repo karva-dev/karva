@@ -136,16 +136,15 @@ pub fn find_inline_argument(
 
         // If a function name was provided, verify this call is in the correct function.
         // Skip calls in wrong functions to avoid corrupting intervening inlines.
-        if let Some(expected_fn) = function_name {
-            if let Some(actual_fn) = containing_function_name(source, abs_call_start) {
-                if actual_fn != expected_fn {
-                    search_offset = call_end + 1;
-                    if search_offset >= source.len() {
-                        return None;
-                    }
-                    continue;
-                }
+        if let Some(expected_fn) = function_name
+            && let Some(actual_fn) = containing_function_name(source, abs_call_start)
+            && actual_fn != expected_fn
+        {
+            search_offset = call_end + 1;
+            if search_offset >= source.len() {
+                return None;
             }
+            continue;
         }
 
         // Search for `inline=` only within the call bounds, skipping string literals
