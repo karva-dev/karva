@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 use std::fmt::Write;
-use std::process::{Child, Command, Stdio};
+use std::process::{Child, Stdio};
 use std::time::{Duration, Instant};
 
 use anyhow::{Context, Result};
@@ -17,12 +17,12 @@ use karva_cli::SubTestCommand;
 use karva_collector::{CollectedPackage, CollectionSettings};
 use karva_logging::Printer;
 use karva_logging::time::format_duration;
-use karva_metadata::ProjectSettings;
 use karva_project::Project;
-use karva_static::WorkerEnvVars;
 
+use crate::binary::find_karva_worker_binary;
 use crate::collection::ParallelCollector;
 use crate::partition::{Partition, partition_collected_tests};
+use crate::worker_args::{WorkerSpawn, worker_command};
 
 #[derive(Debug)]
 struct Worker {
@@ -154,60 +154,6 @@ pub struct ParallelTestConfig {
     /// Active configuration profile name. Propagated to workers as
     /// `KARVA_PROFILE`; falls back to `"default"` when `None`.
     pub profile: Option<String>,
-}
-
-/// Inputs shared by every worker spawned in a single run.
-struct WorkerSpawn<'a> {
-    project: &'a Project,
-    cache_dir: &'a Utf8PathBuf,
-    cache: &'a RunCache,
-    run_hash: &'a RunHash,
-    args: &'a SubTestCommand,
-    num_workers: usize,
-    profile: &'a str,
-    run_id: &'a str,
-    worker_binary: &'a Utf8PathBuf,
-    coverage_enabled: bool,
-}
-
-/// Build the `Command` for a single worker.
-fn worker_command(spawn: &WorkerSpawn, worker_id: usize, partition: &Partition) -> Command {
-    let mut cmd = Command::new(spawn.worker_binary);
-    cmd.arg("--cache-dir")
-        .arg(spawn.cache_dir)
-        .arg("--run-hash")
-        .arg(spawn.run_hash.inner())
-        .arg("--worker-id")
-        .arg(worker_id.to_string())
-        .current_dir(spawn.project.cwd())
-        // Ensure python does not buffer output
-        .env("PYTHONUNBUFFERED", "1")
-        .env(WorkerEnvVars::KARVA, "1")
-        .env(WorkerEnvVars::KARVA_WORKER_ID, worker_id.to_string())
-        .env(WorkerEnvVars::KARVA_RUN_ID, spawn.run_id)
-        .env(
-            WorkerEnvVars::KARVA_WORKSPACE_ROOT,
-            spawn.project.cwd().as_str(),
-        )
-        .env(WorkerEnvVars::KARVA_PROFILE, spawn.profile)
-        .env(
-            WorkerEnvVars::KARVA_TEST_THREADS,
-            spawn.num_workers.to_string(),
-        )
-        .env(WorkerEnvVars::KARVA_VERSION, karva_version::version());
-
-    for path in partition.tests() {
-        cmd.arg(path);
-    }
-
-    cmd.args(inner_cli_args(spawn.project.settings(), spawn.args));
-
-    if spawn.coverage_enabled {
-        let data_file = spawn.cache.coverage_data_file(worker_id);
-        cmd.arg("--cov-data-file").arg(data_file.as_str());
-    }
-
-    cmd
 }
 
 /// Spawn worker processes for each partition
@@ -408,115 +354,5 @@ pub fn run_parallel_tests(
     })
 }
 
-/// Construct a platform-specific binary path within a virtual environment root directory.
-fn construct_binary_path(venv_root: &Utf8PathBuf, binary_name: &str) -> Utf8PathBuf {
-    let binary_dir = if cfg!(target_os = "windows") {
-        venv_root.join("Scripts")
-    } else {
-        venv_root.join("bin")
-    };
-
-    if cfg!(target_os = "windows") {
-        binary_dir.join(format!("{binary_name}.exe"))
-    } else {
-        binary_dir.join(binary_name)
-    }
-}
-
-/// Check if a binary exists within a virtual environment root and return its path.
-fn venv_binary_at(venv_root: &Utf8PathBuf, binary_name: &str) -> Option<Utf8PathBuf> {
-    let binary_path = construct_binary_path(venv_root, binary_name);
-    binary_path.exists().then_some(binary_path)
-}
-
-fn venv_binary(binary_name: &str, directory: &Utf8PathBuf) -> Option<Utf8PathBuf> {
-    venv_binary_at(&directory.join(".venv"), binary_name)
-}
-
-fn venv_binary_from_active_env(binary_name: &str) -> Option<Utf8PathBuf> {
-    let venv_root = std::env::var_os("VIRTUAL_ENV")?;
-    let venv_root = Utf8PathBuf::from_path_buf(venv_root.into()).ok()?;
-    venv_binary_at(&venv_root, binary_name)
-}
-
 const MIN_TESTS_PER_WORKER: usize = 5;
-const KARVA_WORKER_BINARY_NAME: &str = "karva-worker";
 const WORKER_POLL_INTERVAL: Duration = Duration::from_millis(10);
-
-/// Find the `karva-worker` binary by checking PATH, the project venv, and the active venv.
-fn find_karva_worker_binary(current_dir: &Utf8PathBuf) -> Result<Utf8PathBuf> {
-    which::which(KARVA_WORKER_BINARY_NAME)
-        .ok()
-        .and_then(|path| Utf8PathBuf::try_from(path).ok())
-        .inspect(|path| tracing::debug!(path = %path, "Found binary in PATH"))
-        .or_else(|| venv_binary(KARVA_WORKER_BINARY_NAME, current_dir))
-        .or_else(|| venv_binary_from_active_env(KARVA_WORKER_BINARY_NAME))
-        .context("Could not find karva-worker binary")
-}
-
-fn inner_cli_args(settings: &ProjectSettings, args: &SubTestCommand) -> Vec<String> {
-    let mut cli_args: Vec<String> = Vec::new();
-
-    if let Some(arg) = args.verbosity.level().cli_arg() {
-        cli_args.push(arg.to_string());
-    }
-
-    // Forward the resolved max-fail limit to workers. Omitting the flag
-    // means "no limit", which matches the default when the user supplies
-    // neither `--max-fail` nor a `max-fail` entry in `karva.toml`.
-    if let Some(limit) = settings.test().max_fail.limit() {
-        cli_args.push(format!("--max-fail={limit}"));
-    }
-
-    if settings.terminal().show_python_output {
-        cli_args.push("-s".to_string());
-    }
-
-    cli_args.push("--output-format".to_string());
-    cli_args.push(settings.terminal().output_format.as_str().to_string());
-
-    cli_args.push("--status-level".to_string());
-    cli_args.push(settings.terminal().status_level.as_str().to_string());
-
-    cli_args.push("--final-status-level".to_string());
-    cli_args.push(settings.terminal().final_status_level.as_str().to_string());
-
-    if let Some(color) = args.color {
-        cli_args.push("--color".to_string());
-        cli_args.push(color.as_str().to_string());
-    }
-
-    if settings.test().try_import_fixtures {
-        cli_args.push("--try-import-fixtures".to_string());
-    }
-
-    if args.snapshot_update.unwrap_or(false) {
-        cli_args.push("--snapshot-update".to_string());
-    }
-
-    if let Some(retry) = args.retry {
-        cli_args.push("--retry".to_string());
-        cli_args.push(retry.to_string());
-    }
-
-    if let Some(threshold) = settings.test().slow_timeout {
-        cli_args.push("--slow-timeout".to_string());
-        cli_args.push(format!("{}", threshold.as_secs_f64()));
-    }
-
-    for expr in &args.filter_expressions {
-        cli_args.push("--filter".to_string());
-        cli_args.push(expr.clone());
-    }
-
-    if let Some(mode) = args.run_ignored {
-        cli_args.push("--run-ignored".to_string());
-        cli_args.push(mode.as_str().to_string());
-    }
-
-    for source in &settings.coverage().sources {
-        cli_args.push(format!("--cov={source}"));
-    }
-
-    cli_args
-}
