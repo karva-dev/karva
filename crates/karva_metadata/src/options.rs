@@ -260,7 +260,7 @@ pub struct TerminalOptions {
     /// Test summary information to display at the end of the run.
     ///
     /// Modeled after `cargo-nextest`'s `--final-status-level`. Levels are
-    /// cumulative in the same way as [`status_level`](#terminal_status-level).
+    /// cumulative in the same way as [`status_level`](#status-level).
     ///
     /// Defaults to `pass`.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -305,7 +305,7 @@ pub struct TestOptions {
 
     /// Whether to stop at the first test failure.
     ///
-    /// This is a legacy alias for [`max_fail`](#test_max-fail): `true`
+    /// This is a legacy alias for [`max_fail`](#max-fail): `true`
     /// corresponds to `max-fail = 1` and `false` leaves the limit unset.
     /// When both are set, `max-fail` takes precedence.
     ///
@@ -326,7 +326,7 @@ pub struct TestOptions {
     /// every test run regardless of how many fail. Setting `max-fail = 1`
     /// is equivalent to the legacy `fail-fast = true`.
     ///
-    /// When both [`fail_fast`](#test_fail-fast) and `max-fail` are set,
+    /// When both [`fail_fast`](#fail-fast) and `max-fail` are set,
     /// `max-fail` takes precedence.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[option(
