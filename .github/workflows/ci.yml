@@ -293,3 +293,4 @@ jobs:
         with:
           run: cargo codspeed run --bench karva_benchmark_walltime
           mode: walltime
+          status-level: none
