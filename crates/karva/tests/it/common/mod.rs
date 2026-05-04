@@ -7,7 +7,6 @@ use std::time::Instant;
 use anyhow::Context;
 use camino::{Utf8Path, Utf8PathBuf};
 use directories::ProjectDirs;
-use fs4::fs_std::FileExt;
 use insta::Settings;
 use insta::internals::SettingsBindDropGuard;
 use tempfile::TempDir;
@@ -297,7 +296,7 @@ fn get_or_create_shared_venv(
 
         // Acquire exclusive lock (blocks until available)
         lock_file
-            .lock_exclusive()
+            .lock()
             .expect("Failed to acquire lock on venv lock file");
 
         // Check if the shared venv already exists and is valid (after acquiring lock)
