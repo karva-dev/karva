@@ -1,14 +1,12 @@
 //! Generate a Markdown-compatible reference for the karva command-line interface.
 use std::cmp::max;
 
-use anyhow::{Result, bail};
-use camino::Utf8PathBuf;
+use anyhow::Result;
 use clap::{Command, CommandFactory};
 use itertools::Itertools;
 use karva_cli::Args as Cli;
-use pretty_assertions::StrComparison;
 
-use crate::{Mode, REGENERATE_ALL_COMMAND, ROOT_DIR};
+use crate::{Mode, apply_mode};
 
 const SHOW_HIDDEN_COMMANDS: &[&str] = &["generate-shell-completion"];
 
@@ -25,54 +23,7 @@ pub(crate) struct Args {
 }
 
 pub(crate) fn main(args: &Args) -> Result<()> {
-    let reference_string = generate();
-    let filename = "docs/reference/cli.md";
-    let reference_path = Utf8PathBuf::from(ROOT_DIR).join(filename);
-
-    match args.mode {
-        Mode::DryRun => {
-            println!("{reference_string}");
-        }
-        Mode::Check => match std::fs::read_to_string(reference_path) {
-            Ok(current) => {
-                if current == reference_string {
-                    println!("Up-to-date: {filename}");
-                } else {
-                    let comparison = StrComparison::new(&current, &reference_string);
-                    bail!(
-                        "{filename} changed, please run `{REGENERATE_ALL_COMMAND}`:\n{comparison}"
-                    );
-                }
-            }
-            Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
-                bail!("{filename} not found, please run `{REGENERATE_ALL_COMMAND}`");
-            }
-            Err(err) => {
-                bail!("{filename} changed, please run `{REGENERATE_ALL_COMMAND}`:\n{err}");
-            }
-        },
-        Mode::Write => match std::fs::read_to_string(&reference_path) {
-            Ok(current) => {
-                if current == reference_string {
-                    println!("Up-to-date: {filename}");
-                } else {
-                    println!("Updating: {filename}");
-                    std::fs::write(reference_path, reference_string.as_bytes())?;
-                }
-            }
-            Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
-                println!("Updating: {filename}");
-                std::fs::write(reference_path, reference_string.as_bytes())?;
-            }
-            Err(err) => {
-                bail!(
-                    "{filename} changed, please run `cargo run -p karva_dev generate-cli-reference`:\n{err}"
-                );
-            }
-        },
-    }
-
-    Ok(())
+    apply_mode(args.mode, "docs/reference/cli.md", &generate())
 }
 
 fn generate() -> String {

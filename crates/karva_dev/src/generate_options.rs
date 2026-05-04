@@ -1,15 +1,12 @@
 //! Generate a Markdown-compatible listing of configuration options for `pyproject.toml`.
 
 use std::fmt::Write;
-use std::path::PathBuf;
 
-use anyhow::bail;
 use itertools::Itertools;
 use karva_metadata::Options;
-use pretty_assertions::StrComparison;
 use ruff_options_metadata::{OptionField, OptionSet, OptionsMetadata, Visit};
 
-use crate::{Mode, REGENERATE_ALL_COMMAND, ROOT_DIR};
+use crate::{Mode, apply_mode};
 
 #[derive(clap::Args)]
 pub(crate) struct Args {
@@ -20,12 +17,6 @@ pub(crate) struct Args {
 
 pub(crate) fn main(args: &Args) -> anyhow::Result<()> {
     let mut output = String::new();
-    let file_name = "docs/configuration/configuration.md";
-    let markdown_path = PathBuf::from(ROOT_DIR).join(file_name);
-
-    if !markdown_path.exists() {
-        std::fs::File::create(&markdown_path)?;
-    }
 
     output.push_str(
         "<!-- WARNING: This file is auto-generated (cargo dev generate-all). Update the doc comments on the 'Options' struct in 'crates/karva_project/src/metadata/options.rs' if you want to change anything here. -->\n\n",
@@ -37,31 +28,7 @@ pub(crate) fn main(args: &Args) -> anyhow::Result<()> {
         &mut Vec::new(),
     );
 
-    match args.mode {
-        Mode::DryRun => {
-            println!("{output}");
-        }
-        Mode::Check => {
-            let current = std::fs::read_to_string(&markdown_path)?;
-            if output == current {
-                println!("Up-to-date: {file_name}",);
-            } else {
-                let comparison = StrComparison::new(&current, &output);
-                bail!("{file_name} changed, please run `{REGENERATE_ALL_COMMAND}`:\n{comparison}",);
-            }
-        }
-        Mode::Write => {
-            let current = std::fs::read_to_string(&markdown_path)?;
-            if current == output {
-                println!("Up-to-date: {file_name}",);
-            } else {
-                println!("Updating: {file_name}",);
-                std::fs::write(markdown_path, output.as_bytes())?;
-            }
-        }
-    }
-
-    Ok(())
+    apply_mode(args.mode, "docs/configuration/configuration.md", &output)
 }
 
 fn generate_set(output: &mut String, set: Set, parents: &mut Vec<Set>) {

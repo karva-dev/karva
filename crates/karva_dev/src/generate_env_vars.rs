@@ -2,13 +2,10 @@
 //! produced by Karva.
 
 use std::fmt::Write;
-use std::path::PathBuf;
 
-use anyhow::bail;
 use karva_static::{EnvVarDoc, EnvVars, WorkerEnvVars};
-use pretty_assertions::StrComparison;
 
-use crate::{Mode, REGENERATE_ALL_COMMAND, ROOT_DIR};
+use crate::{Mode, apply_mode};
 
 #[derive(clap::Args)]
 pub(crate) struct Args {
@@ -23,34 +20,7 @@ const HEADER: &str = "<!-- WARNING: This file is auto-generated (cargo run -p ka
 environment, plus the variables the worker exposes to running tests.\n\n";
 
 pub(crate) fn main(args: &Args) -> anyhow::Result<()> {
-    let output = generate();
-    let markdown_path = PathBuf::from(ROOT_DIR).join(FILE_NAME);
-
-    match args.mode {
-        Mode::DryRun => {
-            println!("{output}");
-        }
-        Mode::Check => {
-            let current = std::fs::read_to_string(&markdown_path)?;
-            if output == current {
-                println!("Up-to-date: {FILE_NAME}");
-            } else {
-                let comparison = StrComparison::new(&current, &output);
-                bail!("{FILE_NAME} changed, please run `{REGENERATE_ALL_COMMAND}`:\n{comparison}");
-            }
-        }
-        Mode::Write => {
-            let current = std::fs::read_to_string(&markdown_path).unwrap_or_default();
-            if current == output {
-                println!("Up-to-date: {FILE_NAME}");
-            } else {
-                println!("Updating: {FILE_NAME}");
-                std::fs::write(markdown_path, output.as_bytes())?;
-            }
-        }
-    }
-
-    Ok(())
+    apply_mode(args.mode, FILE_NAME, &generate())
 }
 
 fn generate() -> String {
