@@ -103,6 +103,17 @@ impl ExecutableLineVisitor<'_> {
             false
         }
     }
+
+    /// Record `offset` unless its line is marked `# pragma: no cover`.
+    /// Returns `false` when the pragma applies, signalling the caller to
+    /// stop walking the subtree rooted at this node.
+    fn record_unless_pragma(&mut self, offset: TextSize) -> bool {
+        if self.line_has_pragma(offset) {
+            return false;
+        }
+        self.record(offset);
+        true
+    }
 }
 
 impl<'a> SourceOrderVisitor<'a> for ExecutableLineVisitor<'_> {
@@ -130,20 +141,15 @@ impl<'a> SourceOrderVisitor<'a> for ExecutableLineVisitor<'_> {
             Stmt::ClassDef(s) => s.name.range().start(),
             _ => stmt.range().start(),
         };
-        if self.line_has_pragma(offset) {
-            return;
+        if self.record_unless_pragma(offset) {
+            walk_stmt(self, stmt);
         }
-        self.record(offset);
-        walk_stmt(self, stmt);
     }
 
     fn visit_decorator(&mut self, decorator: &'a Decorator) {
-        let offset = decorator.range().start();
-        if self.line_has_pragma(offset) {
-            return;
+        if self.record_unless_pragma(decorator.range().start()) {
+            walk_decorator(self, decorator);
         }
-        self.record(offset);
-        walk_decorator(self, decorator);
     }
 
     /// `elif <expr>:` evaluates a test expression and emits its own
@@ -165,21 +171,15 @@ impl<'a> SourceOrderVisitor<'a> for ExecutableLineVisitor<'_> {
     }
 
     fn visit_except_handler(&mut self, handler: &'a ExceptHandler) {
-        let offset = handler.range().start();
-        if self.line_has_pragma(offset) {
-            return;
+        if self.record_unless_pragma(handler.range().start()) {
+            walk_except_handler(self, handler);
         }
-        self.record(offset);
-        walk_except_handler(self, handler);
     }
 
     fn visit_match_case(&mut self, case: &'a MatchCase) {
-        let offset = case.range().start();
-        if self.line_has_pragma(offset) {
-            return;
+        if self.record_unless_pragma(case.range().start()) {
+            walk_match_case(self, case);
         }
-        self.record(offset);
-        walk_match_case(self, case);
     }
 }
 
