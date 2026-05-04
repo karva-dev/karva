@@ -21,7 +21,7 @@ use crate::diagnostic::{
 };
 use crate::discovery::{DiscoveredModule, DiscoveredPackage};
 use crate::extensions::fixtures::{
-    Finalizer, FixtureScope, NormalizedFixture, missing_arguments_from_error,
+    Finalizer, FixtureScope, HasFixtures, NormalizedFixture, missing_arguments_from_error,
 };
 use crate::extensions::tags::expect_fail::ExpectFailTag;
 use crate::extensions::tags::skip::{extract_skip_reason, is_skip_exception};
@@ -108,17 +108,30 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
         // the user conftest at the session root and the framework module. No
         // `if let Some(...)` gate: the session always exists, and if neither
         // slot contributes any autouse fixtures the walk returns an empty vec.
-        let mut resolver = RuntimeFixtureResolver::new(&[], session);
-        let session_auto_use_fixtures =
-            resolver.get_normalized_auto_use_fixtures(py, FixtureScope::Session);
-        let auto_use_errors = self.run_fixtures(py, &session_auto_use_fixtures);
-        for error in auto_use_errors {
-            report_fixture_failure(self.context, py, error);
-        }
+        self.run_auto_use_fixtures(py, &[], session, FixtureScope::Session);
 
         self.execute_package(py, session, &[]);
 
         self.clean_up_scope(py, FixtureScope::Session);
+    }
+
+    /// Resolve and run auto-use fixtures for `scope`, reporting any failures
+    /// through the standard fixture-failure diagnostic. The `current` source
+    /// is whichever `HasFixtures` provider applies for this scope (the
+    /// session package, a module, or a package configuration module).
+    fn run_auto_use_fixtures<'b>(
+        &self,
+        py: Python<'_>,
+        parents: &'b [&'b DiscoveredPackage],
+        current: &'b (dyn HasFixtures<'b> + 'b),
+        scope: FixtureScope,
+    ) {
+        let mut resolver = RuntimeFixtureResolver::new(parents, current);
+        let auto_use_fixtures = resolver.get_normalized_auto_use_fixtures(py, scope);
+        let auto_use_errors = self.run_fixtures(py, &auto_use_fixtures);
+        for error in auto_use_errors {
+            report_fixture_failure(self.context, py, error);
+        }
     }
 
     /// Execute a module.
@@ -132,16 +145,7 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
         module: &DiscoveredModule,
         parents: &[&DiscoveredPackage],
     ) -> bool {
-        let mut resolver = RuntimeFixtureResolver::new(parents, module);
-
-        // Run module-scoped auto-use fixtures
-        let module_auto_use_fixtures =
-            resolver.get_normalized_auto_use_fixtures(py, FixtureScope::Module);
-        let auto_use_errors = self.run_fixtures(py, &module_auto_use_fixtures);
-
-        for error in auto_use_errors {
-            report_fixture_failure(self.context, py, error);
-        }
+        self.run_auto_use_fixtures(py, parents, module, FixtureScope::Module);
 
         let mut passed = true;
 
@@ -184,15 +188,8 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
         let mut new_parents = parents.to_vec();
         new_parents.push(package);
 
-        // Run package-scoped auto-use fixtures
         if let Some(config_module) = package.configuration_module_impl() {
-            let mut resolver = RuntimeFixtureResolver::new(parents, config_module);
-            let package_auto_use_fixtures =
-                resolver.get_normalized_auto_use_fixtures(py, FixtureScope::Package);
-            let auto_use_errors = self.run_fixtures(py, &package_auto_use_fixtures);
-            for error in auto_use_errors {
-                report_fixture_failure(self.context, py, error);
-            }
+            self.run_auto_use_fixtures(py, parents, config_module, FixtureScope::Package);
         }
 
         let mut passed = true;
@@ -394,6 +391,78 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
         register(IndividualTestResultKind::Failed)
     }
 
+    /// Drive the test closure with the configured retry budget.
+    ///
+    /// Emits a per-attempt report after every failed retry and, when at
+    /// least one retry occurred, after the final attempt as well, so the
+    /// reporter sees the same `TRY N PASS|FAIL` ordering as nextest.
+    fn run_with_retries(
+        &self,
+        py: Python<'_>,
+        qualified_test_name: &QualifiedTestName,
+        configured_retries: u32,
+        mut run_test: impl FnMut() -> PyResult<Py<PyAny>>,
+    ) -> RetryOutcome {
+        let max_attempts = configured_retries.saturating_add(1);
+
+        let mut attempt: u32 = 1;
+        let _ = set_attempt_env(py, attempt, max_attempts);
+        let mut attempt_start = std::time::Instant::now();
+        let mut test_result = run_test();
+
+        let mut retry_count = configured_retries;
+        let mut was_retried = false;
+        let mut final_attempt_duration = attempt_start.elapsed();
+
+        while retry_count > 0 {
+            if test_result.is_ok() {
+                break;
+            }
+            let attempt_duration = attempt_start.elapsed();
+            self.context.report_test_attempt(
+                qualified_test_name,
+                attempt,
+                IndividualTestResultKind::Failed,
+                attempt_duration,
+            );
+            was_retried = true;
+
+            tracing::debug!("Retrying test `{}`", qualified_test_name);
+            retry_count -= 1;
+            attempt += 1;
+            let _ = set_attempt_env(py, attempt, max_attempts);
+            attempt_start = std::time::Instant::now();
+            test_result = run_test();
+            final_attempt_duration = attempt_start.elapsed();
+        }
+
+        if was_retried {
+            // Emit the per-attempt line for the final attempt so output
+            // ordering matches nextest:
+            //   TRY 1 FAIL ...
+            //   TRY 2 PASS ...   (or TRY 2 FAIL for an exhausted retry)
+            // The diagnostic for the final attempt (if any) is collected by
+            // `classify_test_result` and shown in the end-of-run block.
+            let final_kind = match &test_result {
+                Ok(_) => IndividualTestResultKind::Passed,
+                Err(_) => IndividualTestResultKind::Failed,
+            };
+            self.context.report_test_attempt(
+                qualified_test_name,
+                attempt,
+                final_kind,
+                final_attempt_duration,
+            );
+        }
+
+        RetryOutcome {
+            test_result,
+            attempt,
+            max_attempts,
+            was_retried,
+        }
+    }
+
     /// Run a test variant (a specific combination of parametrize values and fixtures).
     fn execute_test_variant(&self, py: Python<'_>, variant: TestVariant<'_>) -> bool {
         let tags = variant.resolved_tags();
@@ -476,38 +545,12 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
         };
 
         let configured_retries = self.context.settings().test().retry;
-        let max_attempts = configured_retries.saturating_add(1);
-
-        let mut attempt: u32 = 1;
-        let _ = set_attempt_env(py, attempt, max_attempts);
-        let mut attempt_start = std::time::Instant::now();
-        let mut test_result = run_test();
-
-        let mut retry_count = configured_retries;
-        let mut was_retried = false;
-        let mut final_attempt_duration = attempt_start.elapsed();
-
-        while retry_count > 0 {
-            if test_result.is_ok() {
-                break;
-            }
-            let attempt_duration = attempt_start.elapsed();
-            self.context.report_test_attempt(
-                &qualified_test_name,
-                attempt,
-                IndividualTestResultKind::Failed,
-                attempt_duration,
-            );
-            was_retried = true;
-
-            tracing::debug!("Retrying test `{}`", qualified_test_name);
-            retry_count -= 1;
-            attempt += 1;
-            let _ = set_attempt_env(py, attempt, max_attempts);
-            attempt_start = std::time::Instant::now();
-            test_result = run_test();
-            final_attempt_duration = attempt_start.elapsed();
-        }
+        let RetryOutcome {
+            test_result,
+            attempt,
+            max_attempts,
+            was_retried,
+        } = self.run_with_retries(py, &qualified_test_name, configured_retries, run_test);
 
         let report_ctx = VariantReportCtx {
             name: &name,
@@ -517,6 +560,9 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
             expect_fail_tag,
         };
 
+        let total_duration = start_time.elapsed();
+        self.maybe_register_slow(&qualified_test_name, total_duration);
+
         let passed = if was_retried {
             let passed_on = attempt;
             // `total_attempts` mirrors nextest: the maximum number of attempts
@@ -524,25 +570,6 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
             // ran. This keeps `FLAKY M/T` readable as "passed on attempt M
             // out of an allowed T."
             let total_attempts = max_attempts;
-            // Emit the per-attempt line for the final attempt before
-            // classifying so output ordering matches nextest:
-            //   TRY 1 FAIL ...
-            //   TRY 2 PASS ...   (or TRY 2 FAIL for an exhausted retry)
-            // The diagnostic for the final attempt (if any) is collected by
-            // `classify_test_result` and shown in the end-of-run block.
-            let final_kind = match &test_result {
-                Ok(_) => IndividualTestResultKind::Passed,
-                Err(_) => IndividualTestResultKind::Failed,
-            };
-            self.context.report_test_attempt(
-                &qualified_test_name,
-                attempt,
-                final_kind,
-                final_attempt_duration,
-            );
-
-            let total_duration = start_time.elapsed();
-            self.maybe_register_slow(&qualified_test_name, total_duration);
             self.classify_test_result(py, test_result, fixture_call_errors, &report_ctx, |kind| {
                 self.context.register_retried_result(
                     &qualified_test_name,
@@ -553,8 +580,6 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
                 )
             })
         } else {
-            let total_duration = start_time.elapsed();
-            self.maybe_register_slow(&qualified_test_name, total_duration);
             self.classify_test_result(py, test_result, fixture_call_errors, &report_ctx, |kind| {
                 self.context
                     .register_test_case_result(&qualified_test_name, kind, total_duration)
@@ -734,6 +759,17 @@ fn get_value_and_finalizer(
     } else {
         Ok((fixture_call_result, None))
     }
+}
+
+/// Outcome of driving a test through the configured retry budget.
+struct RetryOutcome {
+    test_result: PyResult<Py<PyAny>>,
+    /// The attempt number on which the test produced its final result.
+    attempt: u32,
+    /// The maximum number of attempts the test was allowed (`retries + 1`).
+    max_attempts: u32,
+    /// `true` if at least one retry occurred.
+    was_retried: bool,
 }
 
 /// Immutable per-variant state threaded into [`PackageRunner::classify_test_result`].
