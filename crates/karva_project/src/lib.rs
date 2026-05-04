@@ -23,16 +23,14 @@ pub fn find_karva_wheel() -> anyhow::Result<Utf8PathBuf> {
     for entry in entries {
         let entry = entry?;
         let file_name = entry.file_name();
-        if let Some(name) = file_name.to_str() {
-            if name.starts_with("karva-")
-                && Utf8Path::new(name)
-                    .extension()
-                    .is_some_and(|ext| ext.eq_ignore_ascii_case("whl"))
-            {
-                return Ok(
-                    Utf8PathBuf::from_path_buf(entry.path()).expect("Path is not valid UTF-8")
-                );
-            }
+        if let Some(name) = file_name.to_str()
+            && name.starts_with("karva-")
+            && Utf8Path::new(name)
+                .extension()
+                .is_some_and(|ext| ext.eq_ignore_ascii_case("whl"))
+        {
+            return Utf8PathBuf::from_path_buf(entry.path())
+                .map_err(|p| anyhow::anyhow!("Wheel path is not valid UTF-8: {}", p.display()));
         }
     }
 

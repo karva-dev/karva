@@ -26,39 +26,39 @@ pub struct TestPathFunction {
     pub function_name: String,
 }
 
-impl TryFrom<&str> for TestPathFunction {
-    type Error = Option<TestPathError>;
+/// Parse a `path::function` specification.
+///
+/// Returns `Ok(None)` when `value` does not contain a `::` separator (callers
+/// can then fall back to file/directory parsing). Any other failure—including
+/// an empty function name or a non-Python target file—is returned as `Err`.
+fn parse_function_spec(value: &str) -> Result<Option<TestPathFunction>, TestPathError> {
+    let Some(separator_pos) = value.rfind("::") else {
+        return Ok(None);
+    };
 
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
-        if let Some(separator_pos) = value.rfind("::") {
-            let file_part = &value[..separator_pos];
-            let function_name = &value[separator_pos + 2..];
+    let file_part = &value[..separator_pos];
+    let function_name = &value[separator_pos + 2..];
 
-            if function_name.is_empty() {
-                return Err(Some(TestPathError::MissingFunctionName(Utf8PathBuf::from(
-                    file_part,
-                ))));
-            }
-
-            let file_path = Utf8PathBuf::from(file_part);
-            let path = try_convert_to_py_path(&file_path)?;
-
-            if !path.is_file() {
-                return Err(Some(TestPathError::InvalidUtf8Path(path)));
-            }
-
-            if !is_python_file(&path) {
-                return Err(Some(TestPathError::WrongFileExtension(path)));
-            }
-
-            Ok(Self {
-                path,
-                function_name: function_name.to_string(),
-            })
-        } else {
-            Err(None)
-        }
+    if function_name.is_empty() {
+        return Err(TestPathError::MissingFunctionName(Utf8PathBuf::from(
+            file_part,
+        )));
     }
+
+    let path = try_convert_to_py_path(&Utf8PathBuf::from(file_part))?;
+
+    if !path.is_file() {
+        return Err(TestPathError::InvalidUtf8Path(path));
+    }
+
+    if !is_python_file(&path) {
+        return Err(TestPathError::WrongFileExtension(path));
+    }
+
+    Ok(Some(TestPathFunction {
+        path,
+        function_name: function_name.to_string(),
+    }))
 }
 
 #[derive(Eq, PartialEq, Clone, Hash, PartialOrd, Ord, Debug)]
@@ -86,12 +86,8 @@ pub enum TestPath {
 
 impl TestPath {
     pub fn new(value: &str) -> Result<Self, TestPathError> {
-        let try_function = TestPathFunction::try_from(value);
-
-        match try_function {
-            Ok(function) => return Ok(Self::Function(function)),
-            Err(Some(error)) => return Err(error),
-            Err(None) => {}
+        if let Some(function) = parse_function_spec(value)? {
+            return Ok(Self::Function(function));
         }
 
         let value = Utf8PathBuf::from(value);
