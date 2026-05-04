@@ -96,25 +96,11 @@ impl Reporter for TestCaseReporter {
             return;
         }
 
-        let mut stdout = self.printer.stream_for_test_result().lock();
-
-        let (label, colored_label) = match &result_kind {
-            IndividualTestResultKind::Passed => ("PASS", "PASS".green().bold().to_string()),
-            IndividualTestResultKind::Failed => ("FAIL", "FAIL".red().bold().to_string()),
-            IndividualTestResultKind::Skipped { .. } => {
-                ("SKIP", "SKIP".yellow().bold().to_string())
-            }
-        };
-
-        let padding = " ".repeat(12usize.saturating_sub(label.len()));
+        let label = ResultLabel::from(&result_kind);
+        let padding = label_padding(label.text().len());
+        let colored_label = label.colored();
         let duration_str = format_duration_bracketed(duration);
-
-        let module = test_name.function_name().module_path().module_name().cyan();
-        let fn_name = test_name.function_name().function_name().blue().bold();
-        let params = test_name
-            .params()
-            .map(|p| p.blue().bold().to_string())
-            .unwrap_or_default();
+        let test_path = format_test_path(test_name);
 
         let suffix = match &result_kind {
             IndividualTestResultKind::Skipped {
@@ -123,9 +109,10 @@ impl Reporter for TestCaseReporter {
             _ => String::new(),
         };
 
+        let mut stdout = self.printer.stream_for_test_result().lock();
         writeln!(
             stdout,
-            "{padding}{colored_label} {duration_str} {module}::{fn_name}{params}{suffix}"
+            "{padding}{colored_label} {duration_str} {test_path}{suffix}"
         )
         .ok();
     }
@@ -135,22 +122,16 @@ impl Reporter for TestCaseReporter {
             return;
         }
 
-        let label = "SLOW";
-        let colored_label = label.yellow().bold().to_string();
-        let padding = " ".repeat(12usize.saturating_sub(label.len()));
+        let label = ResultLabel::Slow;
+        let padding = label_padding(label.text().len());
+        let colored_label = label.colored();
         let duration_str = format_duration_bracketed(duration);
-
-        let module = test_name.function_name().module_path().module_name().cyan();
-        let fn_name = test_name.function_name().function_name().blue().bold();
-        let params = test_name
-            .params()
-            .map(|p| p.blue().bold().to_string())
-            .unwrap_or_default();
+        let test_path = format_test_path(test_name);
 
         let mut stdout = self.printer.stream_for_test_result().lock();
         writeln!(
             stdout,
-            "{padding}{colored_label} {duration_str} {module}::{fn_name}{params}"
+            "{padding}{colored_label} {duration_str} {test_path}"
         )
         .ok();
     }
@@ -166,44 +147,81 @@ impl Reporter for TestCaseReporter {
             return;
         }
 
-        let (status_text, colored_status) = match &result_kind {
-            IndividualTestResultKind::Passed => ("PASS", "PASS".green().bold().to_string()),
-            IndividualTestResultKind::Failed => ("FAIL", "FAIL".red().bold().to_string()),
-            // Skips don't go through the retry loop; render them as a normal
-            // SKIP attempt for completeness so the trait remains total.
-            IndividualTestResultKind::Skipped { .. } => {
-                ("SKIP", "SKIP".yellow().bold().to_string())
-            }
-        };
-
-        let label_len = "TRY ".len() + count_digits(attempt) + 1 + status_text.len();
-        let padding = " ".repeat(12usize.saturating_sub(label_len));
+        // Skips don't go through the retry loop; we still render them so the
+        // From impl and trait remain total.
+        let label = ResultLabel::from(&result_kind);
+        let label_len = "TRY ".len() + count_digits(attempt) + 1 + label.text().len();
+        let padding = label_padding(label_len);
+        let colored_status = label.colored();
         let duration_str = format_duration_bracketed(duration);
-
-        let module = test_name.function_name().module_path().module_name().cyan();
-        let fn_name = test_name.function_name().function_name().blue().bold();
-        let params = test_name
-            .params()
-            .map(|p| p.blue().bold().to_string())
-            .unwrap_or_default();
+        let test_path = format_test_path(test_name);
 
         let mut stdout = self.printer.stream_for_test_result().lock();
         writeln!(
             stdout,
-            "{padding}TRY {attempt} {colored_status} {duration_str} {module}::{fn_name}{params}"
+            "{padding}TRY {attempt} {colored_status} {duration_str} {test_path}"
         )
         .ok();
     }
 }
 
-fn count_digits(mut n: u32) -> usize {
-    if n == 0 {
-        return 1;
+/// The width that result labels (`PASS`, `FAIL`, `SKIP`, `SLOW`, `TRY N PASS`,
+/// etc.) are right-padded to so columns align.
+const LABEL_COLUMN_WIDTH: usize = 12;
+
+fn label_padding(label_len: usize) -> String {
+    " ".repeat(LABEL_COLUMN_WIDTH.saturating_sub(label_len))
+}
+
+/// Render the colored `module::function[params]` portion of a result line.
+fn format_test_path(test_name: &QualifiedTestName) -> String {
+    let module = test_name.function_name().module_path().module_name().cyan();
+    let fn_name = test_name.function_name().function_name().blue().bold();
+    let params = test_name
+        .params()
+        .map(|p| p.blue().bold().to_string())
+        .unwrap_or_default();
+    format!("{module}::{fn_name}{params}")
+}
+
+fn count_digits(n: u32) -> usize {
+    n.checked_ilog10().unwrap_or(0) as usize + 1
+}
+
+#[derive(Clone, Copy)]
+enum ResultLabel {
+    Pass,
+    Fail,
+    Skip,
+    Slow,
+}
+
+impl ResultLabel {
+    fn text(self) -> &'static str {
+        match self {
+            Self::Pass => "PASS",
+            Self::Fail => "FAIL",
+            Self::Skip => "SKIP",
+            Self::Slow => "SLOW",
+        }
     }
-    let mut digits = 0;
-    while n > 0 {
-        digits += 1;
-        n /= 10;
+
+    fn colored(self) -> String {
+        let text = self.text();
+        match self {
+            Self::Pass => text.green().bold().to_string(),
+            Self::Fail => text.red().bold().to_string(),
+            Self::Skip | Self::Slow => text.yellow().bold().to_string(),
+        }
     }
-    digits
+}
+
+impl From<&IndividualTestResultKind> for ResultLabel {
+    fn from(kind: &IndividualTestResultKind) -> Self {
+        match kind {
+            IndividualTestResultKind::Passed => Self::Pass,
+            IndividualTestResultKind::Failed => Self::Fail,
+            IndividualTestResultKind::Skipped { .. } => Self::Skip,
+        }
+    }
 }
