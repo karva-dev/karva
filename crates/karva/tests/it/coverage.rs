@@ -921,6 +921,62 @@ def test_one():
     );
 }
 
+/// Regression test for <https://github.com/MatthewMckee4/karva/issues/760>.
+///
+/// On Python 3.12+ the `sys.monitoring` LINE callback (and on older versions
+/// the `sys.settrace` callback) can fire on threads other than the one that
+/// installed the tracer. The `PyO3` `#[pyclass]` must therefore be safe to
+/// access cross-thread; otherwise `unsendable` triggers a panic of the form
+/// `CoverageTracer is unsendable, but sent to another thread`.
+#[test]
+fn test_cov_traces_python_threads() {
+    let context = TestContext::with_file(
+        "test_threaded.py",
+        r"
+import threading
+
+def in_thread():
+    x = 1
+    y = x + 1
+    return y
+
+def test_thread_runs():
+    results = []
+    threads = [
+        threading.Thread(target=lambda: results.append(in_thread()))
+        for _ in range(4)
+    ]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert results == [2, 2, 2, 2]
+",
+    );
+
+    assert_cmd_snapshot!(
+        context.command_no_parallel()
+            .arg("--cov")
+            .arg("--status-level=none")
+            .arg("test_threaded.py"),
+        @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    Name               Stmts   Miss   Cover
+    [LONG-LINE]
+    test_threaded.py      13      0    100%
+    [LONG-LINE]
+    TOTAL                 13      0    100%
+
+    ----- stderr -----
+    "
+    );
+}
+
 #[test]
 fn test_cov_report_term_missing_from_config() {
     let context = TestContext::with_files([

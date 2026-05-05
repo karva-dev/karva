@@ -5,9 +5,9 @@
 //! touched file and writes a per-worker JSON file at
 //! [`CoverageConfig::data_file`].
 
-use std::cell::{Cell, RefCell};
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::path::{Path, PathBuf};
+use std::sync::{Mutex, OnceLock};
 
 use camino::{Utf8Path, Utf8PathBuf};
 use pyo3::prelude::*;
@@ -57,9 +57,9 @@ impl CoverageSession {
             py,
             CoverageTracer {
                 roots,
-                state: RefCell::new(TracerState::default()),
-                monitoring_tool_id: Cell::new(None),
-                monitoring_disable: RefCell::new(None),
+                state: Mutex::new(TracerState::default()),
+                monitoring_tool_id: OnceLock::new(),
+                monitoring_disable: OnceLock::new(),
             },
         )?;
 
@@ -78,7 +78,7 @@ impl CoverageSession {
     pub fn stop_and_save(self, py: Python<'_>) -> PyResult<()> {
         let Self { tracer, data_file } = self;
         let bound = tracer.bind(py);
-        let tool_id = bound.borrow().monitoring_tool_id.get();
+        let tool_id = bound.borrow().monitoring_tool_id.get().copied();
 
         if let Some(tool_id) = tool_id {
             let mon = py.import("sys")?.getattr("monitoring")?;
@@ -90,8 +90,13 @@ impl CoverageSession {
             py.import("sys")?.call_method1("settrace", (py.None(),))?;
         }
 
-        let executed = std::mem::take(&mut bound.borrow_mut().state.borrow_mut().executed);
-        let roots = bound.borrow().roots.clone();
+        let borrowed = bound.borrow();
+        let executed = match borrowed.state.lock() {
+            Ok(mut state) => std::mem::take(&mut state.executed),
+            Err(poisoned) => std::mem::take(&mut poisoned.into_inner().executed),
+        };
+        let roots = borrowed.roots.clone();
+        drop(borrowed);
         save_data(&data_file, executed, &roots).map_err(|err| {
             pyo3::exceptions::PyOSError::new_err(format!(
                 "failed to write coverage data to {data_file}: {err}"
@@ -109,17 +114,23 @@ struct TracerState {
     track_cache: HashMap<String, Option<PathBuf>>,
 }
 
-#[pyclass(module = "karva_coverage", unsendable)]
+/// Thread-safe because the trace callbacks fire on whichever Python thread
+/// happens to be executing tracked code: `sys.monitoring` LINE events are
+/// global to the registered tool id, and `sys.settrace` propagates to threads
+/// that opt in via `threading.settrace`. Marking the pyclass `unsendable`
+/// panics in `borrow()` as soon as a Python thread other than the installer
+/// invokes a callback (issue #760).
+#[pyclass(module = "karva_coverage")]
 struct CoverageTracer {
     roots: Vec<PathBuf>,
-    state: RefCell<TracerState>,
-    monitoring_tool_id: Cell<Option<u8>>,
+    state: Mutex<TracerState>,
+    monitoring_tool_id: OnceLock<u8>,
     /// Cached `sys.monitoring.DISABLE` sentinel. Populated when the
     /// `sys.monitoring` backend is installed; never accessed for the
     /// `sys.settrace` backend. Caching avoids importing `sys` inside the
     /// hot callback, which can re-enter the import system while `CPython`
     /// is mid-import and surface as `KeyError('__import__')`.
-    monitoring_disable: RefCell<Option<Py<PyAny>>>,
+    monitoring_disable: OnceLock<Py<PyAny>>,
 }
 
 #[pymethods]
@@ -134,19 +145,12 @@ impl CoverageTracer {
         lineno: u32,
     ) -> PyResult<Option<Py<PyAny>>> {
         let filename: String = code.getattr("co_filename")?.extract()?;
-        if let Some(path) = self.tracked_path(&filename) {
-            self.state
-                .borrow_mut()
-                .executed
-                .entry(path)
-                .or_default()
-                .insert(lineno);
+        if let Some(path) = self.tracked_path(&filename)
+            && let Ok(mut state) = self.state.lock()
+        {
+            state.executed.entry(path).or_default().insert(lineno);
         }
-        Ok(self
-            .monitoring_disable
-            .borrow()
-            .as_ref()
-            .map(|d| d.clone_ref(py)))
+        Ok(self.monitoring_disable.get().map(|d| d.clone_ref(py)))
     }
 
     /// `sys.settrace` global trace function. Returns the per-frame
@@ -187,13 +191,9 @@ impl CoverageTracer {
             let path = slf.borrow().tracked_path(&filename);
             if let Some(path) = path {
                 let lineno: u32 = frame.getattr("f_lineno")?.extract()?;
-                slf.borrow()
-                    .state
-                    .borrow_mut()
-                    .executed
-                    .entry(path)
-                    .or_default()
-                    .insert(lineno);
+                if let Ok(mut state) = slf.borrow().state.lock() {
+                    state.executed.entry(path).or_default().insert(lineno);
+                }
             }
         }
         Ok(slf.getattr("local_trace")?.unbind())
@@ -205,14 +205,17 @@ impl CoverageTracer {
     /// path if the file should be tracked, or `None` otherwise. Memoized
     /// per filename string.
     fn tracked_path(&self, filename: &str) -> Option<PathBuf> {
-        if let Some(cached) = self.state.borrow().track_cache.get(filename) {
+        if let Ok(state) = self.state.lock()
+            && let Some(cached) = state.track_cache.get(filename)
+        {
             return cached.clone();
         }
         let resolved = compute_tracked_path(filename, &self.roots);
-        self.state
-            .borrow_mut()
-            .track_cache
-            .insert(filename.to_string(), resolved.clone());
+        if let Ok(mut state) = self.state.lock() {
+            state
+                .track_cache
+                .insert(filename.to_string(), resolved.clone());
+        }
         resolved
     }
 }
@@ -261,8 +264,8 @@ fn install_monitoring(py: Python<'_>, tracer: &Py<CoverageTracer>) -> PyResult<(
     mon.call_method1("set_events", (tool_id, line_event))?;
     {
         let bound = tracer.bind(py).borrow();
-        bound.monitoring_tool_id.set(Some(tool_id));
-        *bound.monitoring_disable.borrow_mut() = Some(disable);
+        let _ = bound.monitoring_tool_id.set(tool_id);
+        let _ = bound.monitoring_disable.set(disable);
     }
     Ok(())
 }
