@@ -1110,7 +1110,6 @@ def test_f():
             PASS [TIME] test::test_d
             PASS [TIME] test::test_e
             PASS [TIME] test::test_f
-
     ────────────
          Summary [TIME] 6 tests run: 6 passed, 0 skipped
 

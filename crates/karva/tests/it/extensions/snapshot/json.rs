@@ -122,7 +122,6 @@ def test_json():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_json
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
