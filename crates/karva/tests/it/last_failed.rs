@@ -103,7 +103,6 @@ fn last_failed_with_no_previous_failures_runs_all() {
         Starting 2 tests across 1 worker
             PASS [TIME] test_a::test_one
             PASS [TIME] test_a::test_two
-
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -128,7 +127,6 @@ fn last_failed_without_previous_run_runs_all() {
         Starting 2 tests across 1 worker
             PASS [TIME] test_a::test_one
             PASS [TIME] test_a::test_two
-
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -372,7 +370,6 @@ def test_fail(): assert True
     ----- stdout -----
         Starting 2 tests across 1 worker
             PASS [TIME] test_a::test_fail
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 

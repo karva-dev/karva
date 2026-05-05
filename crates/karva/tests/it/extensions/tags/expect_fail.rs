@@ -35,7 +35,6 @@ def test_1():
         ----- stdout -----
             Starting 1 test across 1 worker
                 PASS [TIME] test::test_1
-
         ────────────
              Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -145,7 +144,6 @@ def test_1():
         ----- stdout -----
             Starting 1 test across 1 worker
                 PASS [TIME] test::test_1
-
         ────────────
              Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -177,7 +175,6 @@ def test_1():
         ----- stdout -----
             Starting 1 test across 1 worker
                 PASS [TIME] test::test_1
-
         ────────────
              Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -209,7 +206,6 @@ def test_1():
         ----- stdout -----
             Starting 1 test across 1 worker
                 PASS [TIME] test::test_1
-
         ────────────
              Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -241,7 +237,6 @@ def test_1():
         ----- stdout -----
             Starting 1 test across 1 worker
                 PASS [TIME] test::test_1
-
         ────────────
              Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -274,7 +269,6 @@ def test_1():
         ----- stdout -----
             Starting 1 test across 1 worker
                 PASS [TIME] test::test_1
-
         ────────────
              Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -306,7 +300,6 @@ def test_1():
         ----- stdout -----
             Starting 1 test across 1 worker
                 PASS [TIME] test::test_1
-
         ────────────
              Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -338,7 +331,6 @@ def test_1():
         ----- stdout -----
             Starting 1 test across 1 worker
                 PASS [TIME] test::test_1
-
         ────────────
              Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -366,7 +358,6 @@ def test_1():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_1
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -393,7 +384,6 @@ def test_1():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_1
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -514,7 +504,6 @@ def test_1():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_1
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -541,7 +530,6 @@ def test_1():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_1
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -569,7 +557,6 @@ def test_1():
     exit_code: 0
     ----- stdout -----
         Starting 1 test across 1 worker
-
     ────────────
          Summary [TIME] 1 test run: 0 passed, 1 skipped
 
@@ -645,7 +632,6 @@ def test_param(x):
                 PASS [TIME] test::test_param(x=1)
                 PASS [TIME] test::test_param(x=2)
                 PASS [TIME] test::test_param(x=3)
-
         ────────────
              Summary [TIME] 3 tests run: 3 passed, 0 skipped
 

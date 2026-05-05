@@ -20,7 +20,6 @@ def test_hello():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_hello
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -59,7 +58,6 @@ def test_hello():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_hello
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -148,7 +146,6 @@ def test_page():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_page
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -191,7 +188,6 @@ def test_mixed():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_mixed
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -367,7 +363,6 @@ def test_translate(lang):
         Starting 1 test across 1 worker
             PASS [TIME] test::test_translate(lang=en)
             PASS [TIME] test::test_translate(lang=fr)
-
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 

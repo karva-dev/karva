@@ -24,7 +24,6 @@ fn filterset_test_substring() {
     ----- stdout -----
         Starting 2 tests across 1 worker
             PASS [TIME] test::test_alpha
-
     ────────────
          Summary [TIME] 2 tests run: 1 passed, 1 skipped
 
@@ -41,7 +40,6 @@ fn filterset_test_regex_anchored() {
     ----- stdout -----
         Starting 2 tests across 1 worker
             PASS [TIME] test::test_beta
-
     ────────────
          Summary [TIME] 2 tests run: 1 passed, 1 skipped
 
@@ -66,7 +64,6 @@ fn filterset_test_multiple_flags_or_semantics() {
         Starting 2 tests across 1 worker
             PASS [TIME] test::test_alpha
             PASS [TIME] test::test_beta
-
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -83,7 +80,6 @@ fn filterset_test_no_matches() {
     exit_code: 0
     ----- stdout -----
         Starting 2 tests across 1 worker
-
     ────────────
          Summary [TIME] 2 tests run: 0 passed, 2 skipped
 
@@ -202,7 +198,6 @@ def test_other():
             PASS [TIME] test::test_param(x=1)
             PASS [TIME] test::test_param(x=2)
             PASS [TIME] test::test_param(x=3)
-
     ────────────
          Summary [TIME] 4 tests run: 3 passed, 1 skipped
 
@@ -221,7 +216,6 @@ fn filterset_test_regex_match_all() {
         Starting 2 tests across 1 worker
             PASS [TIME] test::test_alpha
             PASS [TIME] test::test_beta
-
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -252,7 +246,6 @@ def test_signup():
         Starting 3 tests across 1 worker
             PASS [TIME] test::test_login
             PASS [TIME] test::test_signup
-
     ────────────
          Summary [TIME] 3 tests run: 2 passed, 1 skipped
 
@@ -283,7 +276,6 @@ def test_v10():
         Starting 3 tests across 1 worker
             PASS [TIME] test::test_v1
             PASS [TIME] test::test_v2
-
     ────────────
          Summary [TIME] 3 tests run: 2 passed, 1 skipped
 
@@ -314,7 +306,6 @@ def test_abb():
         Starting 3 tests across 1 worker
             PASS [TIME] test::test_ab
             PASS [TIME] test::test_abb
-
     ────────────
          Summary [TIME] 3 tests run: 2 passed, 1 skipped
 
@@ -345,7 +336,6 @@ def test_signup():
         Starting 3 tests across 1 worker
             PASS [TIME] test::test_login
             PASS [TIME] test::test_logout
-
     ────────────
          Summary [TIME] 3 tests run: 2 passed, 1 skipped
 
@@ -372,7 +362,6 @@ def test_alpha():
     ----- stdout -----
         Starting 2 tests across 1 worker
             PASS [TIME] test::test_Alpha
-
     ────────────
          Summary [TIME] 2 tests run: 1 passed, 1 skipped
 
@@ -400,7 +389,6 @@ def test_alpha():
         Starting 2 tests across 1 worker
             PASS [TIME] test::test_Alpha
             PASS [TIME] test::test_alpha
-
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -431,7 +419,6 @@ def test_ab():
         Starting 3 tests across 1 worker
             PASS [TIME] test::test_a1
             PASS [TIME] test::test_a2
-
     ────────────
          Summary [TIME] 3 tests run: 2 passed, 1 skipped
 
@@ -450,7 +437,6 @@ fn filterset_test_exact_matcher() {
     ----- stdout -----
         Starting 2 tests across 1 worker
             PASS [TIME] test::test_alpha
-
     ────────────
          Summary [TIME] 2 tests run: 1 passed, 1 skipped
 
@@ -483,7 +469,6 @@ def test_signup():
         Starting 3 tests across 1 worker
             PASS [TIME] test::test_login
             PASS [TIME] test::test_logout
-
     ────────────
          Summary [TIME] 3 tests run: 2 passed, 1 skipped
 
@@ -514,7 +499,6 @@ def test_fast():
     ----- stdout -----
         Starting 2 tests across 1 worker
             PASS [TIME] test::test_slow
-
     ────────────
          Summary [TIME] 2 tests run: 1 passed, 1 skipped
 
@@ -544,7 +528,6 @@ def test_fast():
     ----- stdout -----
         Starting 2 tests across 1 worker
             PASS [TIME] test::test_fast
-
     ────────────
          Summary [TIME] 2 tests run: 1 passed, 1 skipped
 
@@ -582,7 +565,6 @@ def test_integration_only():
     ----- stdout -----
         Starting 3 tests across 1 worker
             PASS [TIME] test::test_slow_integration
-
     ────────────
          Summary [TIME] 3 tests run: 1 passed, 2 skipped
 
@@ -620,7 +602,6 @@ def test_untagged():
         Starting 3 tests across 1 worker
             PASS [TIME] test::test_slow
             PASS [TIME] test::test_integration
-
     ────────────
          Summary [TIME] 3 tests run: 2 passed, 1 skipped
 
@@ -666,7 +647,6 @@ def test_integration_only():
             PASS [TIME] test::test_both
             PASS [TIME] test::test_slow_only
             PASS [TIME] test::test_integration_only
-
     ────────────
          Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
@@ -696,7 +676,6 @@ def test_fast():
     exit_code: 0
     ----- stdout -----
         Starting 2 tests across 1 worker
-
     ────────────
          Summary [TIME] 2 tests run: 0 passed, 2 skipped
 
@@ -728,7 +707,6 @@ def test_untagged():
         Starting 2 tests across 1 worker
             PASS [TIME] test::test_param(x=1)
             PASS [TIME] test::test_param(x=2)
-
     ────────────
          Summary [TIME] 3 tests run: 2 passed, 1 skipped
 
@@ -765,7 +743,6 @@ def test_untagged():
     ----- stdout -----
         Starting 3 tests across 1 worker
             PASS [TIME] test::test_slow_stable
-
     ────────────
          Summary [TIME] 3 tests run: 1 passed, 2 skipped
 
@@ -810,7 +787,6 @@ def test_linux_only():
         Starting 4 tests across 1 worker
             PASS [TIME] test::test_slow_linux
             PASS [TIME] test::test_fast_linux
-
     ────────────
          Summary [TIME] 4 tests run: 2 passed, 2 skipped
 
@@ -846,7 +822,6 @@ def test_untagged():
         Starting 3 tests across 1 worker
             PASS [TIME] test::test_slow
             PASS [TIME] test::test_slow_with_args
-
     ────────────
          Summary [TIME] 3 tests run: 2 passed, 1 skipped
 
@@ -881,7 +856,6 @@ def test_untagged():
     ----- stdout -----
         Starting 3 tests across 1 worker
             PASS [TIME] test::test_slow_runs
-
     ────────────
          Summary [TIME] 3 tests run: 1 passed, 2 skipped
 
@@ -913,7 +887,6 @@ def test_with_custom_marks(x):
         Starting 1 test across 1 worker
             PASS [TIME] test::test_with_custom_marks(x=2)
             PASS [TIME] test::test_with_custom_marks(x=3)
-
     ────────────
          Summary [TIME] 3 tests run: 2 passed, 1 skipped
 
@@ -969,7 +942,6 @@ def test_fast_alpha():
     ----- stdout -----
         Starting 3 tests across 1 worker
             PASS [TIME] test::test_slow_alpha
-
     ────────────
          Summary [TIME] 3 tests run: 1 passed, 2 skipped
 
@@ -992,7 +964,6 @@ fn filterset_parenthesized_or_with_and() {
     ----- stdout -----
         Starting 4 tests across 1 worker
             PASS [TIME] test::test_slow_integration_login
-
     ────────────
          Summary [TIME] 4 tests run: 1 passed, 3 skipped
 

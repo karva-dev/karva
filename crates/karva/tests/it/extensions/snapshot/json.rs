@@ -20,7 +20,6 @@ def test_data():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_data
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -58,7 +57,6 @@ def test_nested():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_nested
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -104,7 +102,6 @@ def test_json():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_json
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -151,7 +148,6 @@ def test_inline_json():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_inline_json
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -180,7 +176,6 @@ def test_json_filtered():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_json_filtered
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -217,7 +212,6 @@ def test_inline_json():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_inline_json
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -281,7 +275,6 @@ def test_fn():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_fn
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -424,7 +417,6 @@ def test_list():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_list
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 

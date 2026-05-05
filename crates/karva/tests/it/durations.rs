@@ -90,7 +90,6 @@ def test_a():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test_durations::test_a
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 

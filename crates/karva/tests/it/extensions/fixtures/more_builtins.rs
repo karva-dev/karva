@@ -40,13 +40,12 @@ def test_uses_user_tmp_path(tmp_path):
         ),
     ]);
 
-    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: true
     exit_code: 0
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test_shadow::test_uses_user_tmp_path(tmp_path=/shadow/path)
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -80,13 +79,12 @@ def test_uses_user_monkeypatch(monkeypatch):
         ),
     ]);
 
-    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: true
     exit_code: 0
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test_shadow::test_uses_user_monkeypatch(monkeypatch=<user fake monkeypatch>)
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -112,7 +110,6 @@ def test_tmp_path_still_works(tmp_path):
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -152,7 +149,6 @@ def test_second_sees_restored_levels():
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -185,7 +181,6 @@ def test_at_level_nested(caplog):
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -211,7 +206,6 @@ def test_child_logger_propagates(caplog):
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -244,7 +238,6 @@ def test_exc_info(caplog):
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -280,7 +273,6 @@ def test_readouterr_segments(capsys):
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -308,7 +300,6 @@ def test_streams_are_separate(capsys):
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -331,7 +322,6 @@ def test_unicode(capsys):
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -356,7 +346,6 @@ def test_named_tuple(capsys):
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -391,7 +380,6 @@ def test_filter_category(recwarn):
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -421,7 +409,6 @@ def test_message_attrs(recwarn):
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -453,7 +440,6 @@ def test_pop_subclass(recwarn):
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -485,7 +471,6 @@ def test_numbered_unique(tmp_path_factory):
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -509,7 +494,6 @@ def test_unnumbered(tmp_path_factory):
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -534,7 +518,6 @@ def test_escaping(tmp_path_factory):
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -561,7 +544,6 @@ def test_basetemp(tmp_path_factory):
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -590,7 +572,6 @@ def test_b(tmp_path_factory):
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -628,7 +609,6 @@ def test_mockenv_with():
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -663,7 +643,6 @@ def test_double_undo():
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -702,7 +681,6 @@ def test_staticmethod_restore():
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -737,7 +715,6 @@ def test_classmethod_restore():
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -772,7 +749,6 @@ def test_chdir_pathlib(tmp_path):
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -809,7 +785,6 @@ def test_prepend():
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -842,7 +817,6 @@ def test_setattr_missing_then_undo():
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -874,7 +848,6 @@ def test_delitem_missing():
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -957,7 +930,6 @@ def test_ran():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test_session::test_ran
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -996,7 +968,6 @@ def test_delattr_resolves_submodule_attr():
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 

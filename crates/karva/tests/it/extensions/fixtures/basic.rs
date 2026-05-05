@@ -42,7 +42,6 @@ def z(x, y):
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_1(z=1)
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -71,7 +70,6 @@ def x():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_1(x=1)
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -100,7 +98,6 @@ def test_fixture_with_name_parameter(fixture_name):
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_fixture_with_name_parameter(fixture_name=1)
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -139,7 +136,6 @@ def test_fixture_2(fixture):
         Starting 2 tests across 1 worker
             PASS [TIME] test::test_fixture(fixture=<test.Testcontext object at...)
             PASS [TIME] test::test_fixture_2(fixture=<test.Testcontext object at...)
-
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -169,7 +165,6 @@ def x():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] tests.test::test_1(x=1)
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -198,7 +193,6 @@ def x():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] tests.test::test_1(x=1)
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -243,7 +237,6 @@ def test_2(x):
         Starting 2 tests across 1 worker
             PASS [TIME] tests.test::test_1(x=1)
             PASS [TIME] tests.test::test_2(x=1)
-
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -288,7 +281,6 @@ def test_2(x):
         Starting 2 tests across 1 worker
             PASS [TIME] tests.test::test_1(x=1)
             PASS [TIME] tests.test::test_2(x=1)
-
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -318,7 +310,6 @@ def x():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] tests.test::test_1(x=1)
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -362,7 +353,6 @@ def test_2(x_session):
             Starting 2 tests across 1 worker
                 PASS [TIME] test::test_1(x_session=[])
                 PASS [TIME] test::test_2(x_session=[1])
-
         ────────────
              Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -407,7 +397,6 @@ def test_2(x_function):
             Starting 2 tests across 1 worker
                 PASS [TIME] test::test_1(x_function=[])
                 PASS [TIME] test::test_2(x_function=[])
-
         ────────────
              Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -461,7 +450,6 @@ def test_username(username):
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -524,7 +512,6 @@ fn test_fixture_initialization_order(#[values("pytest", "karva")] framework: &st
         ----- stdout -----
             Starting 1 test across 1 worker
                 PASS [TIME] test::test_all_scopes(function_fixture=4, module_fixture=2, package_fixture=3, session_fixture=1)
-
         ────────────
              Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -565,7 +552,6 @@ fn test_nested_generator_fixture(#[values("pytest", "karva")] framework: &str) {
         ----- stdout -----
             Starting 1 test across 1 worker
                 PASS [TIME] test::test_calculator(calculator=<test.Calculator object at ...)
-
         ────────────
              Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -606,7 +592,6 @@ fn test_fixture_order_respects_scope(#[values("pytest", "karva")] framework: &st
         ----- stdout -----
             Starting 1 test across 1 worker
                 PASS [TIME] test::test_value(clean_data=None)
-
         ────────────
              Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -644,7 +629,6 @@ def test_z(y):
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test_file::test_z(y=0)
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -674,7 +658,6 @@ def test_named_fixture(custom_name):
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_named_fixture(custom_name=42)
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -716,7 +699,6 @@ def test_third(make_subdir):
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
@@ -751,7 +733,6 @@ def invoke():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test_invoke::test_invoke(invoke=invoked)
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 

@@ -23,7 +23,6 @@ def test_fast():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_fast
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -125,14 +124,13 @@ def test_slow_then_fast():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--retry=2"), @r"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--retry=2"), @"
     success: true
     exit_code: 0
     ----- stdout -----
         Starting 1 test across 1 worker
       TRY 1 FAIL [TIME] test::test_slow_then_fast
       TRY 2 PASS [TIME] test::test_slow_then_fast
-
     ────────────
          Summary [TIME] 1 test run: 1 passed (1 flaky), 0 skipped
        FLAKY 2/3 [TIME] test::test_slow_then_fast
@@ -239,7 +237,6 @@ def test_1():
     exit_code: 0
     ----- stdout -----
         Starting 1 test across 1 worker
-
     ────────────
          Summary [TIME] 1 test run: 0 passed, 1 skipped
 

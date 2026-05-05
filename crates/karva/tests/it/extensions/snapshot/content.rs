@@ -316,7 +316,6 @@ def test_roundtrip():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_roundtrip
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -350,7 +349,6 @@ def test_long():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_long
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 

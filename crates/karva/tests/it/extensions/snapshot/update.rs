@@ -23,7 +23,6 @@ def test_hello():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_hello
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -223,7 +222,6 @@ def test_user_data():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_user_data
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -278,7 +276,6 @@ def test_hello():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_hello
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 

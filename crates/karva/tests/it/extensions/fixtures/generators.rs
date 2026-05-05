@@ -26,7 +26,6 @@ def test_fixture_generator(fixture_generator):
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_fixture_generator(fixture_generator=1)
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -56,7 +55,6 @@ async def test_async_fixture(async_fixture):
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_async_fixture(async_fixture=42)
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -94,7 +92,6 @@ async def test_after_cleanup(async_resource):
         Starting 2 tests across 1 worker
             PASS [TIME] test::test_resource(async_resource=resource)
             PASS [TIME] test::test_after_cleanup(async_resource=resource)
-
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -211,7 +208,6 @@ def test_fixture_generator(fixture_generator):
         ----- stdout -----
             Starting 1 test across 1 worker
                 PASS [TIME] test::test_fixture_generator(fixture_generator=1)
-
         ────────────
              Summary [TIME] 1 test run: 1 passed, 0 skipped
 

@@ -21,7 +21,6 @@ def test_1():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_1
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -48,7 +47,6 @@ def test_1():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_1
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -75,7 +73,6 @@ def test_1():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_1
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -102,7 +99,6 @@ def test_1():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_1
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -131,7 +127,6 @@ def test_1():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_1
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -163,7 +158,6 @@ def test_runs():
     ----- stdout -----
         Starting 2 tests across 1 worker
             PASS [TIME] test::test_runs
-
     ────────────
          Summary [TIME] 2 tests run: 1 passed, 1 skipped
 
