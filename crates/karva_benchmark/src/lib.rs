@@ -13,7 +13,7 @@ use camino::Utf8PathBuf;
 use divan::Bencher;
 use karva_cli::{OutputFormat, SubTestCommand};
 use karva_logging::{FinalStatusLevel, Printer, StatusLevel};
-use karva_metadata::ProjectMetadata;
+use karva_metadata::{Options, ProjectMetadata, TerminalOptions};
 use karva_project::Project;
 use ruff_python_ast::PythonVersion;
 
@@ -30,7 +30,21 @@ pub fn setup_project() -> Project {
     let project_root = ensure_checkout().expect("Failed to checkout benchmark project");
     install_dependencies(&project_root).expect("Failed to install dependencies");
 
-    Project::from_metadata(ProjectMetadata::new(project_root, PYTHON_VERSION))
+    // Worker subprocesses derive their `--status-level` and
+    // `--final-status-level` from project settings, not from the
+    // `SubTestCommand` we hand to `run_parallel_tests`. Suppress them at the
+    // settings level so the bench output isn't drowned in per-test PASS lines.
+    let mut metadata = ProjectMetadata::new(project_root, PYTHON_VERSION);
+    metadata.options = Options {
+        terminal: Some(TerminalOptions {
+            status_level: Some(StatusLevel::None),
+            final_status_level: Some(FinalStatusLevel::None),
+            ..TerminalOptions::default()
+        }),
+        ..Options::default()
+    };
+
+    Project::from_metadata(metadata)
 }
 
 /// Run karva tests against the prepared project once.
