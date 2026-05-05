@@ -26,16 +26,12 @@ def test_hello():
     error[test-failure]: Test `test_hello` failed
      --> test.py:4:5
       |
-    2 | import karva
-    3 |
     4 | def test_hello():
       |     ^^^^^^^^^^
-    5 |     karva.assert_snapshot('hello world')
       |
     info: Test failed here
      --> test.py:5:5
       |
-    4 | def test_hello():
     5 |     karva.assert_snapshot('hello world')
       |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
       |
@@ -162,16 +158,12 @@ def test_hello():
     error[test-failure]: Test `test_hello` failed
      --> test.py:4:5
       |
-    2 | import karva
-    3 |
     4 | def test_hello():
       |     ^^^^^^^^^^
-    5 |     karva.assert_snapshot('goodbye world')
       |
     info: Test failed here
      --> test.py:5:5
       |
-    4 | def test_hello():
     5 |     karva.assert_snapshot('goodbye world')
       |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
       |
@@ -381,16 +373,12 @@ def test_two():
     error[test-failure]: Test `test_two` failed
      --> test.py:7:5
       |
-    5 |     karva.assert_snapshot('first')
-    6 |
     7 | def test_two():
       |     ^^^^^^^^
-    8 |     karva.assert_snapshot('changed')
       |
     info: Test failed here
      --> test.py:8:5
       |
-    7 | def test_two():
     8 |     karva.assert_snapshot('changed')
       |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
       |
@@ -528,18 +516,12 @@ def test_multi():
     error[test-failure]: Test `test_multi` failed
      --> test.py:4:5
       |
-    2 | import karva
-    3 |
     4 | def test_multi():
       |     ^^^^^^^^^^
-    5 |     karva.assert_snapshot('first')
-    6 |     karva.assert_snapshot('second')
       |
     info: Test failed here
      --> test.py:6:5
       |
-    4 | def test_multi():
-    5 |     karva.assert_snapshot('first')
     6 |     karva.assert_snapshot('second')
       |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
       |

@@ -141,18 +141,12 @@ def test_bad_regex():
     error[test-failure]: Test `test_bad_regex` failed
      --> test.py:4:5
       |
-    2 | import karva
-    3 |
     4 | def test_bad_regex():
       |     ^^^^^^^^^^^^^^
-    5 |     with karva.snapshot_settings(filters=[
-    6 |         (r"(unclosed", "[bad]"),
       |
     info: Test failed here
      --> test.py:8:9
       |
-    6 |         (r"(unclosed", "[bad]"),
-    7 |     ]):
     8 |         karva.assert_snapshot("hello")
       |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
       |

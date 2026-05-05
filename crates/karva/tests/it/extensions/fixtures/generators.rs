@@ -130,11 +130,8 @@ async def test_bad(bad_fixture):
     error[invalid-fixture-finalizer]: Discovered an invalid fixture finalizer `bad_fixture`
      --> test.py:4:11
       |
-    3 | @karva.fixture
     4 | async def bad_fixture():
       |           ^^^^^^^^^^^
-    5 |     yield 1
-    6 |     yield 2
       |
     info: Fixture had more than one yield statement
 
@@ -161,7 +158,7 @@ async def test_error(error_fixture):
 "#,
     );
 
-    assert_cmd_snapshot!(test_context.command(), @r#"
+    assert_cmd_snapshot!(test_context.command(), @"
     success: false
     exit_code: 1
     ----- stdout -----
@@ -173,11 +170,8 @@ async def test_error(error_fixture):
     error[invalid-fixture-finalizer]: Discovered an invalid fixture finalizer `error_fixture`
      --> test.py:4:11
       |
-    3 | @karva.fixture
     4 | async def error_fixture():
       |           ^^^^^^^^^^^^^
-    5 |     yield 1
-    6 |     raise RuntimeError("teardown failed")
       |
     info: Failed to reset fixture: teardown failed
 
@@ -185,7 +179,7 @@ async def test_error(error_fixture):
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
-    "#);
+    ");
 }
 
 #[rstest]

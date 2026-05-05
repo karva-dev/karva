@@ -248,7 +248,7 @@ def test_something():
 "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel(), @r#"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: false
     exit_code: 1
     ----- stdout -----
@@ -260,11 +260,8 @@ def test_something():
     error[invalid-fixture-finalizer]: Discovered an invalid fixture finalizer `failing_teardown_fixture`
      --> test.py:5:5
       |
-    4 | @karva.fixture(auto_use=True)
     5 | def failing_teardown_fixture():
       |     ^^^^^^^^^^^^^^^^^^^^^^^^
-    6 |     yield
-    7 |     raise RuntimeError("Teardown failed!")
       |
     info: Failed to reset fixture: Teardown failed!
 
@@ -272,7 +269,7 @@ def test_something():
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
-    "#);
+    ");
 }
 
 #[test]
@@ -341,20 +338,14 @@ def test_second():
     error[fixture-failure]: Fixture `failing_scoped_fixture` failed
      --> test.py:5:5
       |
-    4 | @karva.fixture(scope="module", auto_use=True)
     5 | def failing_scoped_fixture():
       |     ^^^^^^^^^^^^^^^^^^^^^^
-    6 |     raise RuntimeError("Scoped fixture failed!")
       |
     info: Fixture failed here
      --> test.py:6:5
       |
-    4 | @karva.fixture(scope="module", auto_use=True)
-    5 | def failing_scoped_fixture():
     6 |     raise RuntimeError("Scoped fixture failed!")
       |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    7 |
-    8 | def test_first():
       |
     info: Scoped fixture failed!
 

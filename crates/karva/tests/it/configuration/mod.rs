@@ -469,7 +469,7 @@ def test_c():
         ),
     ]);
 
-    assert_cmd_snapshot!(context.command_no_parallel(), @r#"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: false
     exit_code: 1
     ----- stdout -----
@@ -484,42 +484,32 @@ def test_c():
       |
     2 | def test_a():
       |     ^^^^^^
-    3 |     assert False
       |
     info: Test failed here
      --> test.py:3:5
       |
-    2 | def test_a():
     3 |     assert False
       |     ^^^^^^^^^^^^
-    4 |
-    5 | def test_b():
       |
 
     error[test-failure]: Test `test_b` failed
      --> test.py:5:5
       |
-    3 |     assert False
-    4 |
     5 | def test_b():
       |     ^^^^^^
-    6 |     assert False
       |
     info: Test failed here
      --> test.py:6:5
       |
-    5 | def test_b():
     6 |     assert False
       |     ^^^^^^^^^^^^
-    7 |
-    8 | def test_c():
       |
 
     ────────────
          Summary [TIME] 2 tests run: 0 passed, 2 failed, 0 skipped
 
     ----- stderr -----
-    "#);
+    ");
 }
 
 #[test]
@@ -559,16 +549,12 @@ def test_second():
       |
     2 | def test_first():
       |     ^^^^^^^^^^
-    3 |     assert False
       |
     info: Test failed here
      --> test.py:3:5
       |
-    2 | def test_first():
     3 |     assert False
       |     ^^^^^^^^^^^^
-    4 |
-    5 | def test_second():
       |
 
     ────────────
@@ -620,31 +606,23 @@ def test_third():
       |
     2 | def test_first():
       |     ^^^^^^^^^^
-    3 |     assert False
       |
     info: Test failed here
      --> test.py:3:5
       |
-    2 | def test_first():
     3 |     assert False
       |     ^^^^^^^^^^^^
-    4 |
-    5 | def test_second():
       |
 
     error[test-failure]: Test `test_third` failed
      --> test.py:8:5
       |
-    6 |     pass
-    7 |
     8 | def test_third():
       |     ^^^^^^^^^^
-    9 |     assert False
       |
     info: Test failed here
      --> test.py:9:5
       |
-    8 | def test_third():
     9 |     assert False
       |     ^^^^^^^^^^^^
       |
@@ -1212,16 +1190,12 @@ def test_second():
       |
     2 | def test_first():
       |     ^^^^^^^^^^
-    3 |     assert False
       |
     info: Test failed here
      --> test.py:3:5
       |
-    2 | def test_first():
     3 |     assert False
       |     ^^^^^^^^^^^^
-    4 |
-    5 | def test_second():
       |
 
     ────────────

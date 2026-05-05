@@ -155,18 +155,12 @@ fn durations_with_failing_tests() {
     error[test-failure]: Test `test_fail` failed
      --> test_durations.py:6:5
       |
-    4 |     pass
-    5 |
     6 | def test_fail():
       |     ^^^^^^^^^
-    7 |     time.sleep(0.05)
-    8 |     assert False
       |
     info: Test failed here
      --> test_durations.py:8:5
       |
-    6 | def test_fail():
-    7 |     time.sleep(0.05)
     8 |     assert False
       |     ^^^^^^^^^^^^
       |

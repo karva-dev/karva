@@ -37,55 +37,39 @@ def test_with_fail_with_keyword_reason():
     error[test-failure]: Test `test_with_fail_with_reason` failed
      --> test.py:4:5
       |
-    2 | import karva
-    3 |
     4 | def test_with_fail_with_reason():
       |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
-    5 |     karva.fail('This is a custom failure message')
       |
     info: Test failed here
      --> test.py:5:5
       |
-    4 | def test_with_fail_with_reason():
     5 |     karva.fail('This is a custom failure message')
       |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    6 |
-    7 | def test_with_fail_with_no_reason():
       |
     info: This is a custom failure message
 
     error[test-failure]: Test `test_with_fail_with_no_reason` failed
      --> test.py:7:5
       |
-    5 |     karva.fail('This is a custom failure message')
-    6 |
     7 | def test_with_fail_with_no_reason():
       |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    8 |     karva.fail()
       |
     info: Test failed here
-      --> test.py:8:5
-       |
-     7 | def test_with_fail_with_no_reason():
-     8 |     karva.fail()
-       |     ^^^^^^^^^^^^
-     9 |
-    10 | def test_with_fail_with_keyword_reason():
-       |
+     --> test.py:8:5
+      |
+    8 |     karva.fail()
+      |     ^^^^^^^^^^^^
+      |
 
     error[test-failure]: Test `test_with_fail_with_keyword_reason` failed
       --> test.py:10:5
        |
-     8 |     karva.fail()
-     9 |
     10 | def test_with_fail_with_keyword_reason():
        |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    11 |     karva.fail(reason='This is a custom failure message')
        |
     info: Test failed here
       --> test.py:11:5
        |
-    10 | def test_with_fail_with_keyword_reason():
     11 |     karva.fail(reason='This is a custom failure message')
        |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
        |
@@ -125,21 +109,14 @@ def test_conditional_fail():
     error[test-failure]: Test `test_conditional_fail` failed
      --> test.py:4:5
       |
-    2 | import karva
-    3 |
     4 | def test_conditional_fail():
       |     ^^^^^^^^^^^^^^^^^^^^^
-    5 |     condition = True
-    6 |     if condition:
       |
     info: Test failed here
      --> test.py:7:9
       |
-    5 |     condition = True
-    6 |     if condition:
     7 |         karva.fail('failing test')
       |         ^^^^^^^^^^^^^^^^^^^^^^^^^^
-    8 |     assert True
       |
     info: failing test
 
@@ -174,16 +151,12 @@ def test_raise_fail_error():
     error[test-failure]: Test `test_raise_fail_error` failed
      --> test.py:4:5
       |
-    2 | import karva
-    3 |
     4 | def test_raise_fail_error():
       |     ^^^^^^^^^^^^^^^^^^^^^
-    5 |     raise karva.FailError('Manually raised FailError')
       |
     info: Test failed here
      --> test.py:5:5
       |
-    4 | def test_raise_fail_error():
     5 |     raise karva.FailError('Manually raised FailError')
       |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
       |
@@ -348,20 +321,14 @@ def test_raises_no_exception():
     error[test-failure]: Test `test_raises_no_exception` failed
      --> test.py:4:5
       |
-    2 | import karva
-    3 |
     4 | def test_raises_no_exception():
       |     ^^^^^^^^^^^^^^^^^^^^^^^^
-    5 |     with karva.raises(ValueError):
-    6 |         pass
       |
     info: Test failed here
      --> test.py:5:5
       |
-    4 | def test_raises_no_exception():
     5 |     with karva.raises(ValueError):
       |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    6 |         pass
       |
     info: DID NOT RAISE <class 'ValueError'>
 
@@ -424,20 +391,14 @@ def test_raises_match_fails():
     error[test-failure]: Test `test_raises_match_fails` failed
      --> test.py:4:5
       |
-    2 | import karva
-    3 |
     4 | def test_raises_match_fails():
       |     ^^^^^^^^^^^^^^^^^^^^^^^
-    5 |     with karva.raises(ValueError, match='xyz'):
-    6 |         raise ValueError('oops')
       |
     info: Test failed here
      --> test.py:5:5
       |
-    4 | def test_raises_match_fails():
     5 |     with karva.raises(ValueError, match='xyz'):
       |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    6 |         raise ValueError('oops')
       |
     info: Raised exception did not match pattern 'xyz'
 
@@ -473,18 +434,12 @@ def test_raises_wrong_type():
     error[test-failure]: Test `test_raises_wrong_type` failed
      --> test.py:4:5
       |
-    2 | import karva
-    3 |
     4 | def test_raises_wrong_type():
       |     ^^^^^^^^^^^^^^^^^^^^^^
-    5 |     with karva.raises(ValueError):
-    6 |         raise TypeError('wrong type')
       |
     info: Test failed here
      --> test.py:6:9
       |
-    4 | def test_raises_wrong_type():
-    5 |     with karva.raises(ValueError):
     6 |         raise TypeError('wrong type')
       |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
       |

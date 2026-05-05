@@ -20,7 +20,7 @@ fn test_invalid_pytest_fixture_scope() {
                 "#,
     );
 
-    assert_cmd_snapshot!(context.command(), @r#"
+    assert_cmd_snapshot!(context.command(), @"
     success: false
     exit_code: 1
     ----- stdout -----
@@ -32,30 +32,24 @@ fn test_invalid_pytest_fixture_scope() {
     error[invalid-fixture]: Discovered an invalid fixture `some_fixture`
      --> test.py:5:5
       |
-    4 | @pytest.fixture(scope="sessionss")
     5 | def some_fixture() -> int:
       |     ^^^^^^^^^^^^
-    6 |     return 1
       |
     info: 'FixtureFunctionDefinition' object is not an instance of 'FixtureFunctionDefinition'
 
     error[missing-fixtures]: Test `test_all_scopes` has missing fixtures
-      --> test.py:8:5
-       |
-     6 |     return 1
-     7 |
-     8 | def test_all_scopes(
-       |     ^^^^^^^^^^^^^^^
-     9 |     some_fixture: int,
-    10 | ) -> None:
-       |
+     --> test.py:8:5
+      |
+    8 | def test_all_scopes(
+      |     ^^^^^^^^^^^^^^^
+      |
     info: Missing fixtures: `some_fixture`
 
     ────────────
          Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
-    "#);
+    ");
 }
 
 #[test]
@@ -73,7 +67,7 @@ def test_all_scopes(some_fixture: int) -> None:
 "#,
     );
 
-    assert_cmd_snapshot!(context.command(), @r#"
+    assert_cmd_snapshot!(context.command(), @"
     success: false
     exit_code: 1
     ----- stdout -----
@@ -85,21 +79,16 @@ def test_all_scopes(some_fixture: int) -> None:
     error[invalid-fixture]: Discovered an invalid fixture `some_fixture`
      --> test.py:4:5
       |
-    3 | @karva.fixture(scope="sessionss")
     4 | def some_fixture() -> int:
       |     ^^^^^^^^^^^^
-    5 |     return 1
       |
     info: Invalid fixture scope: sessionss
 
     error[missing-fixtures]: Test `test_all_scopes` has missing fixtures
      --> test.py:7:5
       |
-    5 |     return 1
-    6 |
     7 | def test_all_scopes(some_fixture: int) -> None:
       |     ^^^^^^^^^^^^^^^
-    8 |     assert some_fixture == 1
       |
     info: Missing fixtures: `some_fixture`
 
@@ -107,7 +96,7 @@ def test_all_scopes(some_fixture: int) -> None:
          Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
-    "#);
+    ");
 }
 
 #[test]
@@ -136,8 +125,6 @@ fn test_missing_fixture() {
       |
     2 | def test_all_scopes(
       |     ^^^^^^^^^^^^^^^
-    3 |     missing_fixture: int,
-    4 | ) -> None:
       |
     info: Missing fixtures: `missing_fixture`
 
@@ -176,22 +163,15 @@ fn test_fixture_fails_to_run() {
     error[missing-fixtures]: Test `test_failing_fixture` has missing fixtures
      --> test.py:8:5
       |
-    6 |     raise Exception('Fixture failed')
-    7 |
     8 | def test_failing_fixture(failing_fixture):
       |     ^^^^^^^^^^^^^^^^^^^^
-    9 |     pass
       |
     info: Missing fixtures: `failing_fixture`
     info: Fixture `failing_fixture` failed here
      --> test.py:6:5
       |
-    4 | @fixture
-    5 | def failing_fixture():
     6 |     raise Exception('Fixture failed')
       |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    7 |
-    8 | def test_failing_fixture(failing_fixture):
       |
     info: Fixture failed
 
@@ -230,11 +210,8 @@ fn test_fixture_missing_fixtures() {
     error[missing-fixtures]: Test `test_failing_fixture` has missing fixtures
      --> test.py:8:5
       |
-    6 |     return 1
-    7 |
     8 | def test_failing_fixture(failing_fixture):
       |     ^^^^^^^^^^^^^^^^^^^^
-    9 |     pass
       |
     info: Missing fixtures: `failing_fixture`
     info: failing_fixture() missing 1 required positional argument: 'missing_fixture'
@@ -273,14 +250,10 @@ fn missing_arguments_in_nested_function() {
       |
     2 | def test_failing_fixture():
       |     ^^^^^^^^^^^^^^^^^^^^
-    3 |
-    4 |     def inner(missing_fixture): ...
       |
     info: Test failed here
      --> test.py:6:5
       |
-    4 |     def inner(missing_fixture): ...
-    5 |
     6 |     inner()
       |     ^^^^^^^
       |
@@ -323,21 +296,15 @@ fn test_failing_yield_fixture() {
     error[missing-fixtures]: Test `test_failing_fixture` has missing fixtures
       --> test.py:10:5
        |
-     8 |     yield foo()
-     9 |
     10 | def test_failing_fixture(fixture):
        |     ^^^^^^^^^^^^^^^^^^^^
-    11 |     assert True
        |
     info: Missing fixtures: `fixture`
     info: Fixture `fixture` failed here
      --> test.py:7:9
       |
-    5 | def fixture():
-    6 |     def foo():
     7 |         raise ValueError('foo')
       |         ^^^^^^^^^^^^^^^^^^^^^^^
-    8 |     yield foo()
       |
     info: foo
 
@@ -377,11 +344,8 @@ fn test_fixture_generator_two_yields() {
     error[invalid-fixture-finalizer]: Discovered an invalid fixture finalizer `fixture_generator`
      --> test.py:5:5
       |
-    4 | @karva.fixture
     5 | def fixture_generator():
       |     ^^^^^^^^^^^^^^^^^
-    6 |     yield 1
-    7 |     yield 2
       |
     info: Fixture had more than one yield statement
 
@@ -409,7 +373,7 @@ fn test_fixture_generator_fail_in_teardown() {
                 "#,
     );
 
-    assert_cmd_snapshot!(context.command(), @r#"
+    assert_cmd_snapshot!(context.command(), @"
     success: false
     exit_code: 1
     ----- stdout -----
@@ -421,11 +385,8 @@ fn test_fixture_generator_fail_in_teardown() {
     error[invalid-fixture-finalizer]: Discovered an invalid fixture finalizer `fixture_generator`
      --> test.py:5:5
       |
-    4 | @karva.fixture
     5 | def fixture_generator():
       |     ^^^^^^^^^^^^^^^^^
-    6 |     yield 1
-    7 |     raise ValueError("fixture-error")
       |
     info: Failed to reset fixture: fixture-error
 
@@ -433,7 +394,7 @@ fn test_fixture_generator_fail_in_teardown() {
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
-    "#);
+    ");
 }
 
 #[test]
@@ -472,38 +433,27 @@ fn test_fixture_dependency_chain_failure() {
     error[missing-fixtures]: Test `test_with_db` has missing fixtures
       --> test.py:16:5
        |
-    14 |     return connection
-    15 |
     16 | def test_with_db(db):
        |     ^^^^^^^^^^^^
-    17 |     pass
        |
     info: Missing fixtures: `db`
     info: Fixture `db` requires `connection`
       --> test.py:13:5
        |
-    12 | @fixture
     13 | def db(connection):
        |     ^^
-    14 |     return connection
        |
     info: Fixture `connection` requires `config`
-      --> test.py:9:5
-       |
-     8 | @fixture
-     9 | def connection(config):
-       |     ^^^^^^^^^^
-    10 |     return config
-       |
+     --> test.py:9:5
+      |
+    9 | def connection(config):
+      |     ^^^^^^^^^^
+      |
     info: Fixture `config` failed here
      --> test.py:6:5
       |
-    4 | @fixture
-    5 | def config():
     6 |     raise Exception('config failed')
       |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    7 |
-    8 | @fixture
       |
     info: config failed
 
@@ -541,21 +491,16 @@ def test_with_fixture(my_fixture):
     error[invalid-fixture]: Discovered an invalid fixture `my_fixture`
      --> test.py:4:5
       |
-    3 | @karva.fixture(scope=123)
     4 | def my_fixture():
       |     ^^^^^^^^^^
-    5 |     return 42
       |
     info: Scope must be either a string or a callable
 
     error[missing-fixtures]: Test `test_with_fixture` has missing fixtures
      --> test.py:7:5
       |
-    5 |     return 42
-    6 |
     7 | def test_with_fixture(my_fixture):
       |     ^^^^^^^^^^^^^^^^^
-    8 |     assert my_fixture == 42
       |
     info: Missing fixtures: `my_fixture`
 
