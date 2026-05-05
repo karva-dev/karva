@@ -24,7 +24,6 @@ def test_real(): pass
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test_real::test_real
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -56,7 +55,6 @@ def test_at_root(): pass
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -90,7 +88,6 @@ def test_kept(): pass
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test_kept::test_kept
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -120,7 +117,6 @@ def test_kept(): pass
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -155,7 +151,6 @@ def test_one(): pass
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test_real::test_one
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -177,7 +172,6 @@ fn test_empty_subdirectory_is_ignored() {
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test_a::test_a
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 

@@ -47,7 +47,6 @@ def test_something_else():
             Starting 2 tests across 1 worker
                 PASS [TIME] test::test_something
                 PASS [TIME] test::test_something_else
-
         ────────────
              Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -93,7 +92,6 @@ def test_something_else():
             Starting 2 tests across 1 worker
                 PASS [TIME] test::test_something
                 PASS [TIME] test::test_something_else
-
         ────────────
              Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -141,7 +139,6 @@ fn test_auto_use_fixture(#[values("pytest", "karva")] framework: &str) {
             Starting 2 tests across 1 worker
                 PASS [TIME] test::test_string_only(first_entry=a, order=['a'])
                 PASS [TIME] test::test_string_and_int(first_entry=a, order=['a'])
-
         ────────────
              Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -187,7 +184,6 @@ fn test_auto_use_fixture_in_parent_module() {
         Starting 2 tests across 1 worker
             PASS [TIME] foo.inner.test_file2::test_function1
             PASS [TIME] foo.inner.test_file2::test_function2
-
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -221,7 +217,6 @@ def test_something_else():
         Starting 2 tests across 1 worker
             PASS [TIME] test::test_something
             PASS [TIME] test::test_something_else
-
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -298,7 +293,6 @@ def test_something():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_something
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -411,7 +405,6 @@ def test_both_autouse_ran():
         ----- stdout -----
             Starting 1 test across 1 worker
                 PASS [TIME] unit_test.main_tests.test_something::test_both_autouse_ran
-
         ────────────
              Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -453,7 +446,6 @@ def test_both_fixtures_run():
         ----- stdout -----
             Starting 1 test across 1 worker
                 PASS [TIME] test::test_both_fixtures_run
-
         ────────────
              Summary [TIME] 1 test run: 1 passed, 0 skipped
 

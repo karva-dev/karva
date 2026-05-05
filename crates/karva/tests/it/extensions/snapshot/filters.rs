@@ -23,7 +23,6 @@ def test_filtered():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_filtered
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -61,7 +60,6 @@ def test_multi_filter():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_multi_filter
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -98,7 +96,6 @@ def test_no_match():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_no_match
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -179,7 +176,6 @@ def test_nested():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_nested
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -214,7 +210,6 @@ def test_inline_filtered():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_inline_filtered
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -265,7 +260,6 @@ def test_update_filtered():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_update_filtered
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -292,7 +286,6 @@ def test_empty_filters():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_empty_filters
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 

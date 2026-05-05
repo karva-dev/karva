@@ -58,13 +58,12 @@ def test_setattr():
 "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: true
     exit_code: 0
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_setattr
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -118,7 +117,7 @@ def test_delattr_import_path(monkeypatch):
 "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: true
     exit_code: 0
     ----- stdout -----
@@ -129,7 +128,6 @@ def test_delattr_import_path(monkeypatch):
             PASS [TIME] test::test_unknown_attr(monkeypatch=<MockEnv object>)
             PASS [TIME] test::test_unknown_attr_non_raising(monkeypatch=<MockEnv object>)
             PASS [TIME] test::test_delattr_import_path(monkeypatch=<MockEnv object>)
-
     ────────────
          Summary [TIME] 6 tests run: 6 passed, 0 skipped
 
@@ -167,13 +165,12 @@ def test_delattr():
 "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: true
     exit_code: 0
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_delattr
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -235,7 +232,7 @@ def test_delitem():
 "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: true
     exit_code: 0
     ----- stdout -----
@@ -243,7 +240,6 @@ def test_delitem():
             PASS [TIME] test::test_setitem
             PASS [TIME] test::test_setitem_deleted_meanwhile
             PASS [TIME] test::test_delitem
-
     ────────────
          Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
@@ -309,7 +305,7 @@ def test_setenv_prepend():
 "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: true
     exit_code: 0
     ----- stdout -----
@@ -318,7 +314,6 @@ def test_setenv_prepend():
             PASS [TIME] test::test_setenv_deleted_meanwhile(before=False)
             PASS [TIME] test::test_delenv
             PASS [TIME] test::test_setenv_prepend
-
     ────────────
          Summary [TIME] 4 tests run: 4 passed, 0 skipped
 
@@ -354,13 +349,12 @@ import os
 "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: true
     exit_code: 0
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_setenv_non_str_warning
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -413,14 +407,13 @@ def test_syspath_prepend_double_undo(mp):
 "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: true
     exit_code: 0
     ----- stdout -----
         Starting 2 tests across 1 worker
             PASS [TIME] test::test_syspath_prepend(mp=<MockEnv object>)
             PASS [TIME] test::test_syspath_prepend_double_undo(mp=<MockEnv object>)
-
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -481,7 +474,7 @@ def test_chdir_double_undo(mp):
 ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: true
     exit_code: 0
     ----- stdout -----
@@ -490,7 +483,6 @@ def test_chdir_double_undo(mp):
             PASS [TIME] test::test_chdir_with_str(mp=<MockEnv object>)
             PASS [TIME] test::test_chdir_undo(mp=<MockEnv object>)
             PASS [TIME] test::test_chdir_double_undo(mp=<MockEnv object>)
-
     ────────────
          Summary [TIME] 4 tests run: 4 passed, 0 skipped
 
@@ -528,14 +520,13 @@ def test_issue156_undo_staticmethod(SampleClass):
 "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: true
     exit_code: 0
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_issue156_undo_staticmethod(SampleClass=<class 'test.Sample'>)
             PASS [TIME] test::test_issue156_undo_staticmethod(SampleClass=<class 'test.SampleInherit'>)
-
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -579,13 +570,12 @@ def test_undo_class_descriptors_delattr():
 "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: true
     exit_code: 0
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_undo_class_descriptors_delattr
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -624,14 +614,13 @@ def test_context_classmethod():
 "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: true
     exit_code: 0
     ----- stdout -----
         Starting 2 tests across 1 worker
             PASS [TIME] test::test_context
             PASS [TIME] test::test_context_classmethod
-
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 

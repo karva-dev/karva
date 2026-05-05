@@ -6,7 +6,7 @@ use std::time::{Duration, Instant};
 
 use anyhow::{Context as _, Result};
 use karva_cache::{AggregatedResults, DisplayFlakyTests};
-use karva_cli::{OutputFormat, TestCommand};
+use karva_cli::TestCommand;
 use karva_logging::{Printer, Stdout, set_colored_override, setup_tracing};
 use karva_metadata::filter::FiltersetSet;
 use karva_metadata::{CovReport, NoTestsMode, ProjectMetadata, ProjectOptionsOverrides};
@@ -90,13 +90,7 @@ pub fn test(args: TestCommand) -> Result<ExitStatus> {
         coverage_files,
     } = karva_runner::run_parallel_tests(&project, &config, &sub_command, printer)?;
 
-    print_test_output(
-        printer,
-        start_time,
-        &result,
-        sub_command.output_format.as_ref(),
-        durations,
-    )?;
+    print_test_output(printer, start_time, &result, durations)?;
 
     let coverage_total = if coverage_files.is_empty() {
         None
@@ -160,31 +154,19 @@ pub fn print_test_output(
     printer: Printer,
     start_time: Instant,
     result: &AggregatedResults,
-    output_format: Option<&OutputFormat>,
     durations: Option<usize>,
 ) -> Result<()> {
     let mut details = printer.stream_for_details().lock();
-    let is_concise = matches!(output_format, Some(OutputFormat::Concise));
 
     let has_diagnostics = !result.diagnostics.is_empty();
-    let has_durations = durations.is_some_and(|n| n > 0) && !result.durations.is_empty();
     let has_preceding_test_lines = result.stats.total() > 0;
 
-    write_diagnostics_block(
-        &mut details,
-        result,
-        is_concise,
-        /* needs_leading_blank = */ has_preceding_test_lines,
-    )?;
+    write_diagnostics_block(&mut details, result, has_preceding_test_lines)?;
 
     write_durations_block(
         &mut details,
         &result.durations,
         durations,
-        // Both diagnostics blocks (concise and non-concise) end on a blank
-        // line, so we only need a leading blank when nothing came between
-        // the test result lines and us.
-        /* needs_leading_blank = */
         has_preceding_test_lines && !has_diagnostics,
     )?;
 
@@ -193,12 +175,7 @@ pub fn print_test_output(
     let mut summary = printer
         .stream_for_summary(result.stats.is_success(), result.stats.flaky() > 0)
         .lock();
-    // The summary only needs an explicit leading blank when nothing in the
-    // details stream provided one — i.e. there were test lines above but
-    // neither diagnostics nor durations.
-    if has_preceding_test_lines && !has_diagnostics && !has_durations && summary.is_enabled() {
-        writeln!(summary)?;
-    }
+
     write!(summary, "{}", result.stats.display(start_time))?;
     write!(summary, "{}", DisplayFlakyTests::new(&result.flaky_tests))?;
 
@@ -208,7 +185,6 @@ pub fn print_test_output(
 fn write_diagnostics_block(
     stdout: &mut Stdout,
     result: &AggregatedResults,
-    is_concise: bool,
     needs_leading_blank: bool,
 ) -> Result<()> {
     if result.diagnostics.is_empty() {
@@ -221,11 +197,7 @@ fn write_diagnostics_block(
     writeln!(stdout, "diagnostics:")?;
     writeln!(stdout)?;
     write!(stdout, "{}", result.diagnostics)?;
-    // Non-concise diagnostic content ends with a trailing blank line of its
-    // own; concise mode needs an explicit one to match.
-    if is_concise {
-        writeln!(stdout)?;
-    }
+
     Ok(())
 }
 

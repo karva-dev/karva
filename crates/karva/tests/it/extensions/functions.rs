@@ -200,7 +200,6 @@ def test_conditional_skip():
         exit_code: 0
         ----- stdout -----
             Starting 3 tests across 1 worker
-
         ────────────
              Summary [TIME] 3 tests run: 0 passed, 3 skipped
 
@@ -235,7 +234,6 @@ def test_another_pass():
         Starting 3 tests across 1 worker
             PASS [TIME] test::test_pass
             PASS [TIME] test::test_another_pass
-
     ────────────
          Summary [TIME] 3 tests run: 2 passed, 1 skipped
 
@@ -261,7 +259,6 @@ def test_raise_skip_error():
     exit_code: 0
     ----- stdout -----
         Starting 1 test across 1 worker
-
     ────────────
          Summary [TIME] 1 test run: 0 passed, 1 skipped
 
@@ -288,7 +285,6 @@ def test_raises_value_error():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_raises_value_error
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -358,7 +354,6 @@ def test_raises_match_passes():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_raises_match_passes
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -474,7 +469,6 @@ def test_raises_exc_info():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_raises_exc_info
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -504,7 +498,6 @@ def test_raises_subclass():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_raises_subclass
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 

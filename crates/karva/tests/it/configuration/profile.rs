@@ -30,7 +30,6 @@ def test_should_not_run_under_ci_profile(): pass
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::check_example
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -63,7 +62,6 @@ def test_normal(): pass
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::check_quick
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -96,7 +94,6 @@ def test_not_run(): pass
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::check_example
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -132,7 +129,6 @@ def test_not_run(): pass
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::check_example
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -192,7 +188,6 @@ def test_not_run(): pass
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::check_example
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -234,7 +229,6 @@ def test_not_run(): pass
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::verify_b
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -272,7 +266,6 @@ def verify_b(): pass
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::verify_b
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -306,7 +299,6 @@ def test_not_run(): pass
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::check_example
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 

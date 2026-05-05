@@ -72,7 +72,6 @@ def test_hello():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_hello
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -111,7 +110,6 @@ def test_hello():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_hello
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -202,7 +200,6 @@ def test_multi():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_multi
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -254,7 +251,6 @@ def test_param(x):
         Starting 1 test across 1 worker
             PASS [TIME] test::test_param(x=1)
             PASS [TIME] test::test_param(x=2)
-
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -311,7 +307,6 @@ def test_overwrite():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_overwrite
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -417,7 +412,6 @@ def test_mixed():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_mixed
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -554,7 +548,6 @@ def test_multi():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_multi
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -597,7 +590,6 @@ def test_in_sub():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] sub.test_nested::test_in_sub
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 

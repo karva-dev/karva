@@ -37,7 +37,6 @@ def test_parametrize_with_fixture(a, fixture_value):
             PASS [TIME] test::test_parametrize_with_fixture(a=1, fixture_value=42)
             PASS [TIME] test::test_parametrize_with_fixture(a=2, fixture_value=42)
             PASS [TIME] test::test_parametrize_with_fixture(a=3, fixture_value=42)
-
     ────────────
          Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
@@ -68,7 +67,6 @@ def test_parametrize_with_fixture(a):
             PASS [TIME] test::test_parametrize_with_fixture(a=1)
             PASS [TIME] test::test_parametrize_with_fixture(a=2)
             PASS [TIME] test::test_parametrize_with_fixture(a=3)
-
     ────────────
          Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
@@ -98,7 +96,6 @@ def test_function(a: int, b: int):
             PASS [TIME] test::test_function(a=2, b=1)
             PASS [TIME] test::test_function(a=1, b=2)
             PASS [TIME] test::test_function(a=2, b=2)
-
     ────────────
          Summary [TIME] 4 tests run: 4 passed, 0 skipped
 
@@ -134,7 +131,6 @@ def test_function(a: int, b: int, c: int):
             PASS [TIME] test::test_function(a=2, b=1, c=2)
             PASS [TIME] test::test_function(a=1, b=2, c=2)
             PASS [TIME] test::test_function(a=2, b=2, c=2)
-
     ────────────
          Summary [TIME] 8 tests run: 8 passed, 0 skipped
 
@@ -170,7 +166,6 @@ fn test_parametrize_multiple_args_single_string(#[values("pytest", "karva")] fra
             Starting 1 test across 1 worker
                 PASS [TIME] test::test_square(expected=4, input=2)
                 PASS [TIME] test::test_square(expected=9, input=3)
-
         ────────────
              Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -204,7 +199,6 @@ def test_single_arg(a):
             PASS [TIME] test::test_single_arg(a=1)
             PASS [TIME] test::test_single_arg(a=2)
             PASS [TIME] test::test_single_arg(a=3)
-
     ────────────
          Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
@@ -237,7 +231,6 @@ def test_square(input, expected):
             PASS [TIME] test::test_square(expected=4, input=2)
             PASS [TIME] test::test_square(expected=9, input=3)
             PASS [TIME] test::test_square(expected=16, input=4)
-
     ────────────
          Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
@@ -270,7 +263,6 @@ def test_square(input, expected):
             PASS [TIME] test::test_square(expected=4, input=2)
             PASS [TIME] test::test_square(expected=9, input=3)
             PASS [TIME] test::test_square(expected=16, input=4)
-
     ────────────
          Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
@@ -303,7 +295,6 @@ def test_square(input, expected):
             PASS [TIME] test::test_square(expected=4, input=2)
             PASS [TIME] test::test_square(expected=9, input=3)
             PASS [TIME] test::test_square(expected=16, input=4)
-
     ────────────
          Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
@@ -342,7 +333,6 @@ def test_markup_mode_bullets_single_newline(length: int | None, nums: list[int])
             PASS [TIME] test::test_markup_mode_bullets_single_newline(length=1, nums=[1])
             PASS [TIME] test::test_markup_mode_bullets_single_newline(length=2, nums=[1, 2])
             PASS [TIME] test::test_markup_mode_bullets_single_newline(length=None, nums=[])
-
     ────────────
          Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
@@ -374,7 +364,6 @@ def test_square(input, expected):
         Starting 1 test across 1 worker
             PASS [TIME] test::test_square(expected=4, input=2)
             PASS [TIME] test::test_square(expected=26, input=5)
-
     ────────────
          Summary [TIME] 3 tests run: 2 passed, 1 skipped
 
@@ -407,7 +396,6 @@ def test_single_arg(a):
             PASS [TIME] test::test_single_arg(a=1)
             PASS [TIME] test::test_single_arg(a=2)
             PASS [TIME] test::test_single_arg(a=3)
-
     ────────────
          Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
@@ -440,7 +428,6 @@ def test_square(input, expected):
             PASS [TIME] test::test_square(expected=4, input=2)
             PASS [TIME] test::test_square(expected=9, input=3)
             PASS [TIME] test::test_square(expected=16, input=4)
-
     ────────────
          Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
@@ -473,7 +460,6 @@ def test_square(input, expected):
             PASS [TIME] test::test_square(expected=4, input=2)
             PASS [TIME] test::test_square(expected=9, input=3)
             PASS [TIME] test::test_square(expected=16, input=4)
-
     ────────────
          Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
@@ -506,7 +492,6 @@ def test_square(input, expected):
             PASS [TIME] test::test_square(expected=4, input=2)
             PASS [TIME] test::test_square(expected=9, input=3)
             PASS [TIME] test::test_square(expected=16, input=4)
-
     ────────────
          Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
@@ -545,7 +530,6 @@ def test_markup_mode_bullets_single_newline(length: int | None, nums: list[int])
             PASS [TIME] test::test_markup_mode_bullets_single_newline(length=1, nums=[1])
             PASS [TIME] test::test_markup_mode_bullets_single_newline(length=2, nums=[1, 2])
             PASS [TIME] test::test_markup_mode_bullets_single_newline(length=None, nums=[])
-
     ────────────
          Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
@@ -580,7 +564,6 @@ def test_square(input, expected):
             PASS [TIME] test::test_square(expected=4, input=2)
             PASS [TIME] test::test_square(expected=26, input=5)
             PASS [TIME] test::test_square(expected=50, input=7)
-
     ────────────
          Summary [TIME] 5 tests run: 3 passed, 2 skipped
 
@@ -612,7 +595,6 @@ def test_marks_list(x):
         Starting 1 test across 1 worker
             PASS [TIME] test::test_marks_list(x=1)
             PASS [TIME] test::test_marks_list(x=3)
-
     ────────────
          Summary [TIME] 3 tests run: 2 passed, 1 skipped
 
@@ -642,7 +624,6 @@ def test_with_skip_reason(x):
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_with_skip_reason(x=1)
-
     ────────────
          Summary [TIME] 2 tests run: 1 passed, 1 skipped
 
@@ -682,7 +663,6 @@ def test2(input, expected):
             PASS [TIME] test::test1(expected=16, input=4)
             PASS [TIME] test::test2(expected=4, input=2)
             PASS [TIME] test::test2(expected=16, input=4)
-
     ────────────
          Summary [TIME] 4 tests run: 4 passed, 0 skipped
 

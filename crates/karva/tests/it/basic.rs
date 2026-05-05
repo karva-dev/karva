@@ -26,7 +26,6 @@ def test_4(): pass",
         Starting 2 tests across 1 worker
             PASS [TIME] test_file1::test_1
             PASS [TIME] test_file1::test_2
-
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -83,7 +82,6 @@ fn test_single_function() {
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_1
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -107,7 +105,6 @@ def test_2(): pass",
         Starting 2 tests across 1 worker
             PASS [TIME] test::test_1
             PASS [TIME] test::test_2
-
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -131,7 +128,6 @@ def test_2(): pass",
         Starting 2 tests across 1 worker
             PASS [TIME] test::test_1
             PASS [TIME] test::test_2
-
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -172,7 +168,6 @@ fn test_one_test_passes() {
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test_pass::test_pass
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -261,7 +256,6 @@ fn test_fail_concise_output() {
     test_fail.py:9:5: error[test-failure] Test `test_1` failed
     test_fail.py:16:5: error[missing-fixtures] Test `test_2` has missing fixtures: `fixture_2`
     test_fail.py:19:5: error[test-failure] Test `test_3` failed
-
     ────────────
          Summary [TIME] 3 tests run: 0 passed, 3 failed, 0 skipped
 
@@ -396,7 +390,6 @@ fn test_stdout() {
         Starting 1 test across 1 worker
     Hello, world!
             PASS [TIME] test_std_out_redirected::test_std_out_redirected
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -410,7 +403,6 @@ fn test_stdout() {
         Starting 1 test across 1 worker
     Hello, world!
             PASS [TIME] test_std_out_redirected::test_std_out_redirected
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -423,7 +415,6 @@ fn test_stdout() {
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test_std_out_redirected::test_std_out_redirected
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -475,7 +466,6 @@ fn test_text_file_in_directory() {
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test_sample::test_sample
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -514,7 +504,6 @@ fn test_quiet_output_passing() {
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -905,7 +894,6 @@ def tests_1(): ...
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test_fail::tests_1
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -932,7 +920,6 @@ def test_1():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test_fail::test_1
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -964,7 +951,6 @@ def test_1():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test_fail::test_1
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -1042,7 +1028,6 @@ def test_1():
         Starting 2 tests across 1 worker
             PASS [TIME] test::test_setenv(monkeypatch=<MockEnv object>)
             PASS [TIME] test::test_1
-
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -1064,7 +1049,6 @@ def test_1():
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -1106,7 +1090,6 @@ def test_2(y): pass
         Starting 2 tests across 1 worker
             PASS [TIME] test_file::test_1(x=1)
             PASS [TIME] test_file::test_2(y=1)
-
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -1199,7 +1182,6 @@ def test_1():
       TRY 2 FAIL [TIME] test::test_1
       TRY 3 FAIL [TIME] test::test_1
       TRY 4 PASS [TIME] test::test_1
-
     ────────────
          Summary [TIME] 1 test run: 1 passed (1 flaky), 0 skipped
        FLAKY 4/6 [TIME] test::test_1
@@ -1228,7 +1210,6 @@ def test_3(): pass",
             PASS [TIME] test_a::test_1
             PASS [TIME] test_a::test_2
             PASS [TIME] test_a::test_3
-
     ────────────
          Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
@@ -1267,7 +1248,6 @@ def test_fail():
     diagnostics:
 
     test.py:5:5: error[test-failure] Test `test_fail` failed
-
     ────────────
          Summary [TIME] 2 tests run: 1 passed, 1 failed, 0 skipped
 
@@ -1295,7 +1275,6 @@ def test_pass():
     diagnostics:
 
     error[failed-to-import-module] Failed to import python module `test`: No module named 'nonexistent_module_xyz'
-
     ────────────
          Summary [TIME] 0 tests run: 0 passed, 0 skipped
 
@@ -1538,7 +1517,6 @@ def test_with_print():
         Starting 1 test across 1 worker
     hello from test
             PASS [TIME] test::test_with_print
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -1564,7 +1542,6 @@ def test_with_print():
         Starting 1 test across 1 worker
     hello from test
             PASS [TIME] test::test_with_print
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -1593,7 +1570,6 @@ def test_flaky():
         Starting 1 test across 1 worker
       TRY 1 FAIL [TIME] test::test_flaky
       TRY 2 PASS [TIME] test::test_flaky
-
     ────────────
          Summary [TIME] 1 test run: 1 passed (1 flaky), 0 skipped
        FLAKY 2/3 [TIME] test::test_flaky
@@ -1619,7 +1595,6 @@ def test_2(): pass
         Starting 2 tests across 1 worker
             PASS [TIME] test::test_1
             PASS [TIME] test::test_2
-
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -1668,7 +1643,6 @@ def test_1(): pass
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_1
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -1715,7 +1689,6 @@ def test_2(): pass
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -1754,7 +1727,6 @@ fn test_color_never_strips_ansi() {
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_1
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -1797,7 +1769,6 @@ def test_2(): pass
         Starting 2 tests across 1 worker
             PASS [TIME] test::test_1
             PASS [TIME] test::test_2
-
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -1820,7 +1791,6 @@ def test_3(): pass
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
@@ -1971,7 +1941,6 @@ def test_flaky():
     exit_code: 0
     ----- stdout -----
         Starting 1 test across 1 worker
-
     ────────────
          Summary [TIME] 1 test run: 1 passed (1 flaky), 0 skipped
        FLAKY 2/3 [TIME] test::test_flaky
@@ -2007,7 +1976,6 @@ def test_flaky():
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed (1 flaky), 0 skipped
        FLAKY 2/3 [TIME] test::test_flaky
@@ -2080,7 +2048,6 @@ def test_flaky_b():
       TRY 2 PASS [TIME] test::test_flaky_a
       TRY 1 FAIL [TIME] test::test_flaky_b
       TRY 2 PASS [TIME] test::test_flaky_b
-
     ────────────
          Summary [TIME] 2 tests run: 2 passed (2 flaky), 0 skipped
        FLAKY 2/3 [TIME] test::test_flaky_a
@@ -2165,7 +2132,6 @@ fn test_no_retry_run_unchanged_output() {
         Starting 2 tests across 1 worker
             PASS [TIME] test::test_a
             PASS [TIME] test::test_b
-
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -2197,7 +2163,6 @@ def test_flaky():
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed (1 flaky), 0 skipped
        FLAKY 2/3 [TIME] test::test_flaky
@@ -2285,7 +2250,6 @@ def test_static_env():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_static_env
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -2321,7 +2285,6 @@ def test_profile_env():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_profile_env
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -2356,7 +2319,6 @@ def test_param(value):
             PASS [TIME] test::test_plain
             PASS [TIME] test::test_param(value=1)
             PASS [TIME] test::test_param(value=2)
-
     ────────────
          Summary [TIME] 3 tests run: 3 passed, 0 skipped
 
@@ -2385,7 +2347,6 @@ def test_default_attempt():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_default_attempt
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -2417,7 +2378,6 @@ def test_attempt_env():
       TRY 1 FAIL [TIME] test::test_attempt_env
       TRY 2 FAIL [TIME] test::test_attempt_env
       TRY 3 PASS [TIME] test::test_attempt_env
-
     ────────────
          Summary [TIME] 1 test run: 1 passed (1 flaky), 0 skipped
        FLAKY 3/5 [TIME] test::test_attempt_env
@@ -2478,7 +2438,6 @@ def test_2(): pass
         Starting 2 tests across 1 worker
             PASS [TIME] test::test_1
             PASS [TIME] test::test_2
-
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -2770,13 +2729,12 @@ def test_fast():
             "--slow-timeout=0.001",
             "--status-level=slow",
         ]),
-        @r"
+        @"
     success: true
     exit_code: 0
     ----- stdout -----
         Starting 2 tests across 1 worker
             SLOW [TIME] test::test_slow
-
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped, 1 slow
 
@@ -2805,12 +2763,11 @@ def test_slow():
             "--slow-timeout=0.001",
             "--status-level=fail",
         ]),
-        @r"
+        @"
     success: true
     exit_code: 0
     ----- stdout -----
         Starting 1 test across 1 worker
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped, 1 slow
 
@@ -2835,12 +2792,11 @@ def test_fast(): pass
             "--slow-timeout=60",
             "--status-level=slow",
         ]),
-        @r"
+        @"
     success: true
     exit_code: 0
     ----- stdout -----
         Starting 1 test across 1 worker
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 

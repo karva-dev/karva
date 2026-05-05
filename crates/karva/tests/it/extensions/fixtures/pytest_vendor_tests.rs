@@ -63,7 +63,6 @@ def test_recording():
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -98,7 +97,6 @@ def test_invalid_enter_exit():
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -125,7 +123,6 @@ def test_captures_deprecation_warning(recwarn):
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -165,7 +162,6 @@ def test_make_numbered(tmp_path):
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -196,7 +192,6 @@ def test_cleanup_lock_create(tmp_path):
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -254,7 +249,6 @@ def test_cleanup_keeps_zero(tmp_path):
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -291,7 +285,6 @@ def test_ensure_deletable(tmp_path):
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -323,7 +316,6 @@ def test_maybe_delete_respects_lock(tmp_path):
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -366,7 +358,6 @@ def test_rm_rf_nested(tmp_path):
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -407,7 +398,6 @@ def test_rm_rf_read_only_file(tmp_path):
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -447,7 +437,6 @@ def test_mktemp_naming(tmp_path):
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -480,7 +469,6 @@ def test_reused_basetemp_is_wiped(tmp_path):
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 

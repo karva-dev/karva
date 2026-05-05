@@ -29,7 +29,6 @@ def test_fixtures_given_by_decorator(a):
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_fixtures_given_by_decorator
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -70,7 +69,6 @@ def test_func(a, b):
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_func(b=1)
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -109,7 +107,6 @@ def test_func(a, b):
         Starting 1 test across 1 worker
             PASS [TIME] test::test_func(b=1)
             PASS [TIME] test::test_func(b=2)
-
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -153,7 +150,6 @@ def test_func(a, b, c):
         Starting 1 test across 1 worker
             PASS [TIME] test::test_func(b=1, c=1)
             PASS [TIME] test::test_func(b=2, c=1)
-
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 

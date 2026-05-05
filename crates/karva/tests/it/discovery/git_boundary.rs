@@ -57,7 +57,6 @@ def test_inner(): pass
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test_inner::test_inner
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -108,7 +107,6 @@ def test_should_not_run(): pass
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] tests.test_feature::spec_feature
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 

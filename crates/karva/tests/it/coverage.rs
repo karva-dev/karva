@@ -20,7 +20,6 @@ def test_one():
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -67,7 +66,6 @@ def test_pos():
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -152,7 +150,6 @@ def test_all():
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -190,7 +187,6 @@ def test_add():
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -230,7 +226,6 @@ def test_only_covered():
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -276,7 +271,6 @@ def test_only_covered():
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -317,7 +311,6 @@ def test_only_covered():
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -359,7 +352,6 @@ def test_nothing():
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -400,7 +392,6 @@ def test_method():
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -443,7 +434,6 @@ def test_b():
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -491,7 +481,6 @@ def test_add():
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -544,7 +533,6 @@ def test_add():
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -587,7 +575,6 @@ def test_one():
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -618,7 +605,6 @@ def test_one():
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -656,7 +642,6 @@ def test_only_covered():
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -714,7 +699,6 @@ def test_used():
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -752,11 +736,10 @@ def test_only_covered():
             .arg("--cov-fail-under=90")
             .arg("--status-level=none")
             .arg("test_partial.py"),
-        @r"
+        @"
     success: false
     exit_code: 1
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -796,7 +779,6 @@ def test_add():
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -841,11 +823,10 @@ def test_only_covered():
         context.command_no_parallel()
             .arg("--status-level=none")
             .arg("test_partial.py"),
-        @r"
+        @"
     success: false
     exit_code: 1
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -898,7 +879,6 @@ def test_only_covered():
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -975,7 +955,6 @@ def test_only_covered():
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 

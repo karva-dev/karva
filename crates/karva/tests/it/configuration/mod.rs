@@ -34,7 +34,6 @@ def test_main(): pass
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -74,7 +73,6 @@ def test_main(): pass
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test_main::test_main
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -117,7 +115,6 @@ def test_in_other(): pass
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -156,7 +153,6 @@ def test_other(): pass
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test_specific::test_specific
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -188,7 +184,6 @@ def test_example(): pass
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_example
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -220,7 +215,6 @@ def test_example(): pass
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_example
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -255,7 +249,6 @@ def test_with_print():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_with_print
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -291,7 +284,6 @@ def test_with_print():
         Starting 1 test across 1 worker
     This should be visible
             PASS [TIME] test::test_with_print
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -316,7 +308,6 @@ status-level = "none"
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -367,7 +358,6 @@ status-level = "none"
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_pass
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -401,7 +391,6 @@ def test_should_not_run(): pass
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::check_example
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -435,7 +424,6 @@ def check_should_not_run(): pass
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_example
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -676,7 +664,6 @@ def check_other(): pass
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] tests.test::check_example
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -719,7 +706,6 @@ def verify_in_tests(): pass
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] src.module::verify_in_src
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -767,7 +753,6 @@ def test_other(): pass
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -805,7 +790,6 @@ def test_example():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_example
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -842,7 +826,6 @@ def test_should_not_run(): pass
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::spec_example
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -899,7 +882,6 @@ def it_should_not_run(): pass
     Output visible
             PASS [TIME] tests.spec::it_works
             PASS [TIME] tests.spec::it_also_works
-
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -943,7 +925,6 @@ def pyproject_test(): pass
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::karva_test
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -971,7 +952,6 @@ def test_default(): pass
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_default
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -1004,7 +984,6 @@ def custom_test(): pass
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::custom_test
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -1038,7 +1017,6 @@ def cli_should_run(): pass
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::cli_should_run
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -1071,7 +1049,6 @@ def test_example(): pass
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_example
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -1107,7 +1084,6 @@ def test_with_print():
         Starting 1 test across 1 worker
     This should be visible with -s flag
             PASS [TIME] test::test_with_print
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -1145,7 +1121,6 @@ def test_main(): pass
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -1234,7 +1209,6 @@ def test_from_cli(): pass
     success: true
     exit_code: 0
     ----- stdout -----
-
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -1296,7 +1270,6 @@ def config_should_not_run(): pass
         Starting 1 test across 1 worker
     CLI output visible
             PASS [TIME] custom_dir.ignored::custom_test
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -1348,7 +1321,6 @@ def cli_should_run():
         Starting 1 test across 1 worker
     Output from CLI override
             PASS [TIME] test::cli_should_run
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -1394,7 +1366,6 @@ def cli_should_run(): pass
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::cli_should_run
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -1428,7 +1399,6 @@ def test_should_not_run(): pass
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::check_from_config
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -1465,7 +1435,6 @@ def test_should_not_run(): pass
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::spec_example
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -1513,7 +1482,6 @@ def cli_should_run(): pass
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::cli_should_run
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -1552,7 +1520,6 @@ def test_should_not_run(): pass
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] tests.test_a::check_found
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 

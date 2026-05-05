@@ -23,7 +23,6 @@ async def test_async_with_given(x):
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_async_with_given
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -50,7 +49,6 @@ async def test_async_passes():
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_async_passes
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -125,7 +123,6 @@ async def test_with_async_fixture(async_value):
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_with_async_fixture(async_value=42)
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -169,7 +166,6 @@ def test_teardown_ran():
         Starting 2 tests across 1 worker
             PASS [TIME] test::test_async_gen_fixture(async_resource=resource)
             PASS [TIME] test::test_teardown_ran
-
     ────────────
          Summary [TIME] 2 tests run: 2 passed, 0 skipped
 
@@ -201,7 +197,6 @@ async def test_async_with_sync(sync_value):
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_async_with_sync(sync_value=10)
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
@@ -233,7 +228,6 @@ def test_sync_with_async(async_value):
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test::test_sync_with_async(async_value=99)
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
