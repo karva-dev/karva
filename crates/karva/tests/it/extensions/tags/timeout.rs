@@ -57,10 +57,8 @@ def test_slow():
     error[test-failure]: Test `test_slow` failed
      --> test.py:6:5
       |
-    5 | @pytest.mark.timeout(0.1)
     6 | def test_slow():
       |     ^^^^^^^^^
-    7 |     time.sleep(2)
       |
     info: Test exceeded timeout of 0.1 seconds
 
@@ -97,10 +95,8 @@ async def test_slow_async():
     error[test-failure]: Test `test_slow_async` failed
      --> test.py:6:11
       |
-    5 | @karva.tags.timeout(0.1)
     6 | async def test_slow_async():
       |           ^^^^^^^^^^^^^^^
-    7 |     await asyncio.sleep(2)
       |
     info: Test exceeded timeout of 0.1 seconds
 
@@ -209,11 +205,8 @@ def test_1(sleep_for):
     error[test-failure]: Test `test_1` failed
      --> test.py:7:5
       |
-    5 | @karva.tags.timeout(0.3)
-    6 | @karva.tags.parametrize('sleep_for', [0.0, 2.0, 0.0])
     7 | def test_1(sleep_for):
       |     ^^^^^^
-    8 |     time.sleep(sleep_for)
       |
     info: Test ran with arguments:
     info: `sleep_for`: `2.0`
@@ -281,10 +274,8 @@ def test_always_slow():
     error[test-failure]: Test `test_always_slow` failed
      --> test.py:6:5
       |
-    5 | @karva.tags.timeout(0.1)
     6 | def test_always_slow():
       |     ^^^^^^^^^^^^^^^^
-    7 |     time.sleep(2)
       |
     info: Test exceeded timeout of 0.1 seconds
 

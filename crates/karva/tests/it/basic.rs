@@ -204,12 +204,10 @@ fn test_one_test_fail() {
       |
     2 | def test_fail():
       |     ^^^^^^^^^
-    3 |     assert False
       |
     info: Test failed here
      --> test_fail.py:3:5
       |
-    2 | def test_fail():
     3 |     assert False
       |     ^^^^^^^^^^^^
       |
@@ -299,31 +297,23 @@ fn test_two_test_fails() {
       |
     2 | def test_fail():
       |     ^^^^^^^^^
-    3 |     assert False
       |
     info: Test failed here
      --> tests/test_fail.py:3:5
       |
-    2 | def test_fail():
     3 |     assert False
       |     ^^^^^^^^^^^^
-    4 |
-    5 | def test_fail2():
       |
 
     error[test-failure]: Test `test_fail2` failed
      --> tests/test_fail.py:5:5
       |
-    3 |     assert False
-    4 |
     5 | def test_fail2():
       |     ^^^^^^^^^^
-    6 |     assert False, 'Test failed'
       |
     info: Test failed here
      --> tests/test_fail.py:6:5
       |
-    5 | def test_fail2():
     6 |     assert False, 'Test failed'
       |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
       |
@@ -371,20 +361,14 @@ fn test_file_importing_another_file() {
     error[test-failure]: Test `test_with_helper` failed
      --> test_cross_file.py:4:5
       |
-    2 | from helper import validate_data
-    3 |
     4 | def test_with_helper():
       |     ^^^^^^^^^^^^^^^^
-    5 |     validate_data([])
       |
     info: Test failed here
      --> helper.py:4:9
       |
-    2 | def validate_data(data):
-    3 |     if not data:
     4 |         assert False, 'Data validation failed'
       |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    5 |     return True
       |
     info: Data validation failed
 
@@ -560,12 +544,10 @@ fn test_quiet_output_failing() {
       |
     2 | def test_quiet_output():
       |     ^^^^^^^^^^^^^^^^^
-    3 |     assert False
       |
     info: Test failed here
      --> test.py:3:5
       |
-    2 | def test_quiet_output():
     3 |     assert False
       |     ^^^^^^^^^^^^
       |
@@ -621,11 +603,8 @@ fn test_fixture_generator_two_yields_passing_test() {
     error[invalid-fixture-finalizer]: Discovered an invalid fixture finalizer `fixture_generator`
      --> test.py:5:5
       |
-    4 | @karva.fixture
     5 | def fixture_generator():
       |     ^^^^^^^^^^^^^^^^^
-    6 |     yield 1
-    7 |     yield 2
       |
     info: Fixture had more than one yield statement
 
@@ -665,29 +644,22 @@ fn test_fixture_generator_two_yields_failing_test() {
     error[invalid-fixture-finalizer]: Discovered an invalid fixture finalizer `fixture_generator`
      --> test.py:5:5
       |
-    4 | @karva.fixture
     5 | def fixture_generator():
       |     ^^^^^^^^^^^^^^^^^
-    6 |     yield 1
-    7 |     yield 2
       |
     info: Fixture had more than one yield statement
 
     error[test-failure]: Test `test_fixture_generator` failed
-      --> test.py:9:5
-       |
-     7 |     yield 2
-     8 |
-     9 | def test_fixture_generator(fixture_generator):
-       |     ^^^^^^^^^^^^^^^^^^^^^^
-    10 |     assert fixture_generator == 2
-       |
+     --> test.py:9:5
+      |
+    9 | def test_fixture_generator(fixture_generator):
+      |     ^^^^^^^^^^^^^^^^^^^^^^
+      |
     info: Test ran with arguments:
     info: `fixture_generator`: `1`
     info: Test failed here
       --> test.py:10:5
        |
-     9 | def test_fixture_generator(fixture_generator):
     10 |     assert fixture_generator == 2
        |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
        |
@@ -716,7 +688,7 @@ fn test_fixture_generator_fail_in_teardown() {
 "#,
     );
 
-    assert_cmd_snapshot!(context.command(), @r#"
+    assert_cmd_snapshot!(context.command(), @"
     success: false
     exit_code: 1
     ----- stdout -----
@@ -728,11 +700,8 @@ fn test_fixture_generator_fail_in_teardown() {
     error[invalid-fixture-finalizer]: Discovered an invalid fixture finalizer `fixture_generator`
      --> test.py:5:5
       |
-    4 | @karva.fixture
     5 | def fixture_generator():
       |     ^^^^^^^^^^^^^^^^^
-    6 |     yield 1
-    7 |     raise ValueError("fixture error")
       |
     info: Failed to reset fixture: fixture error
 
@@ -740,7 +709,7 @@ fn test_fixture_generator_fail_in_teardown() {
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 
     ----- stderr -----
-    "#);
+    ");
 }
 
 #[test]
@@ -759,7 +728,7 @@ fn test_invalid_fixture() {
 "#,
     );
 
-    assert_cmd_snapshot!(context.command(), @r#"
+    assert_cmd_snapshot!(context.command(), @"
     success: false
     exit_code: 1
     ----- stdout -----
@@ -771,21 +740,16 @@ fn test_invalid_fixture() {
     error[invalid-fixture]: Discovered an invalid fixture `fixture_generator`
      --> test.py:5:5
       |
-    4 | @karva.fixture(scope='ssession')
     5 | def fixture_generator():
       |     ^^^^^^^^^^^^^^^^^
-    6 |     raise ValueError("fixture-error")
       |
     info: Invalid fixture scope: ssession
 
     error[missing-fixtures]: Test `test_fixture_generator` has missing fixtures
      --> test.py:8:5
       |
-    6 |     raise ValueError("fixture-error")
-    7 |
     8 | def test_fixture_generator(fixture_generator):
       |     ^^^^^^^^^^^^^^^^^^^^^^
-    9 |     assert fixture_generator == 1
       |
     info: Missing fixtures: `fixture_generator`
 
@@ -793,7 +757,7 @@ fn test_invalid_fixture() {
          Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
-    "#);
+    ");
 }
 
 #[test]
@@ -823,16 +787,12 @@ fn test_failfast() {
       |
     2 | def test_first_fail():
       |     ^^^^^^^^^^^^^^^
-    3 |     assert False, 'First test fails'
       |
     info: Test failed here
      --> test_failfast.py:3:5
       |
-    2 | def test_first_fail():
     3 |     assert False, 'First test fails'
       |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    4 |
-    5 | def test_second():
       |
     info: First test fails
 
@@ -903,20 +863,14 @@ def test_9():
     error[test-failure]: Test `test_fail` failed
      --> test_a.py:4:5
       |
-    2 | import time
-    3 |
     4 | def test_fail():
       |     ^^^^^^^^^
-    5 |     assert False
       |
     info: Test failed here
      --> test_a.py:5:5
       |
-    4 | def test_fail():
     5 |     assert False
       |     ^^^^^^^^^^^^
-    6 |
-    7 | def test_1():
       |
 
     ────────────
@@ -1046,18 +1000,14 @@ def test_1(fixture_very_very_very_very_very_long_name):
     error[test-failure]: Test `test_1` failed
      --> test_file.py:8:5
       |
-    6 |     return 'fixture_very_very_very_very_very_long_name'
-    7 |
     8 | def test_1(fixture_very_very_very_very_very_long_name):
       |     ^^^^^^
-    9 |     assert False
       |
     info: Test ran with arguments:
     info: `fixture_very_very_very_very...`: `fixture_very_very_very_very...`
     info: Test failed here
      --> test_file.py:9:5
       |
-    8 | def test_1(fixture_very_very_very_very_very_long_name):
     9 |     assert False
       |     ^^^^^^^^^^^^
       |
@@ -1204,21 +1154,15 @@ def test_2(y): pass
     error[missing-fixtures]: Test `test_1` has missing fixtures
      --> test_file.py:3:5
       |
-    2 | from foo import x, y
     3 | def test_1(x): pass
       |     ^^^^^^
-    4 | def test_2(y): pass
       |
     info: Missing fixtures: `x`
     info: Fixture `x` failed here
      --> foo.py:6:5
       |
-    4 | @karva.fixture
-    5 | def x():
     6 |     raise ValueError('Invalid fixture')
       |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    7 |
-    8 | @karva.fixture()
       |
     info: Invalid fixture
 
@@ -1419,7 +1363,7 @@ def test_fourth_skipped():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--max-fail=2"), @r#"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--max-fail=2"), @"
     success: false
     exit_code: 1
     ----- stdout -----
@@ -1434,36 +1378,26 @@ def test_fourth_skipped():
       |
     2 | def test_first_fail():
       |     ^^^^^^^^^^^^^^^
-    3 |     assert False, 'boom 1'
       |
     info: Test failed here
      --> test_max_fail.py:3:5
       |
-    2 | def test_first_fail():
     3 |     assert False, 'boom 1'
       |     ^^^^^^^^^^^^^^^^^^^^^^
-    4 |
-    5 | def test_second_fail():
       |
     info: boom 1
 
     error[test-failure]: Test `test_second_fail` failed
      --> test_max_fail.py:5:5
       |
-    3 |     assert False, 'boom 1'
-    4 |
     5 | def test_second_fail():
       |     ^^^^^^^^^^^^^^^^
-    6 |     assert False, 'boom 2'
       |
     info: Test failed here
      --> test_max_fail.py:6:5
       |
-    5 | def test_second_fail():
     6 |     assert False, 'boom 2'
       |     ^^^^^^^^^^^^^^^^^^^^^^
-    7 |
-    8 | def test_third_fail():
       |
     info: boom 2
 
@@ -1471,7 +1405,7 @@ def test_fourth_skipped():
          Summary [TIME] 2 tests run: 0 passed, 2 failed, 0 skipped
 
     ----- stderr -----
-    "#);
+    ");
 }
 
 /// `--no-fail-fast` disables the limit, so every test runs even when some fail.
@@ -1491,7 +1425,7 @@ def test_c():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--no-fail-fast"), @r#"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--no-fail-fast"), @"
     success: false
     exit_code: 1
     ----- stdout -----
@@ -1507,36 +1441,26 @@ def test_c():
       |
     2 | def test_a():
       |     ^^^^^^
-    3 |     assert False, 'a boom'
       |
     info: Test failed here
      --> test_no_fail_fast.py:3:5
       |
-    2 | def test_a():
     3 |     assert False, 'a boom'
       |     ^^^^^^^^^^^^^^^^^^^^^^
-    4 |
-    5 | def test_b():
       |
     info: a boom
 
     error[test-failure]: Test `test_b` failed
      --> test_no_fail_fast.py:5:5
       |
-    3 |     assert False, 'a boom'
-    4 |
     5 | def test_b():
       |     ^^^^^^
-    6 |     assert False, 'b boom'
       |
     info: Test failed here
      --> test_no_fail_fast.py:6:5
       |
-    5 | def test_b():
     6 |     assert False, 'b boom'
       |     ^^^^^^^^^^^^^^^^^^^^^^
-    7 |
-    8 | def test_c():
       |
     info: b boom
 
@@ -1544,7 +1468,7 @@ def test_c():
          Summary [TIME] 3 tests run: 1 passed, 2 failed, 0 skipped
 
     ----- stderr -----
-    "#);
+    ");
 }
 
 /// `--max-fail=1` is the generalized form of `--fail-fast` and should stop
@@ -1565,7 +1489,7 @@ def test_third():
         ",
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel().arg("--max-fail=1"), @r#"
+    assert_cmd_snapshot!(context.command_no_parallel().arg("--max-fail=1"), @"
     success: false
     exit_code: 1
     ----- stdout -----
@@ -1578,20 +1502,14 @@ def test_third():
     error[test-failure]: Test `test_second` failed
      --> test_max_fail_one.py:5:5
       |
-    3 |     assert True
-    4 |
     5 | def test_second():
       |     ^^^^^^^^^^^
-    6 |     assert False, 'stop here'
       |
     info: Test failed here
      --> test_max_fail_one.py:6:5
       |
-    5 | def test_second():
     6 |     assert False, 'stop here'
       |     ^^^^^^^^^^^^^^^^^^^^^^^^^
-    7 |
-    8 | def test_third():
       |
     info: stop here
 
@@ -1599,7 +1517,7 @@ def test_third():
          Summary [TIME] 2 tests run: 1 passed, 1 failed, 0 skipped
 
     ----- stderr -----
-    "#);
+    ");
 }
 
 #[test]
@@ -1931,14 +1849,12 @@ def test_2(): assert False
     error[test-failure]: Test `test_2` failed
      --> test.py:3:5
       |
-    2 | def test_1(): pass
     3 | def test_2(): assert False
       |     ^^^^^^
       |
     info: Test failed here
      --> test.py:3:1
       |
-    2 | def test_1(): pass
     3 | def test_2(): assert False
       | ^^^^^^^^^^^^^^^^^^^^^^^^^^
       |
@@ -2200,7 +2116,7 @@ def test_always_fails(): assert False
         context
             .command_no_parallel()
             .args(["--retry=2", "--status-level=retry", "--no-fail-fast"]),
-        @r"
+        @"
     success: false
     exit_code: 1
     ----- stdout -----
@@ -2216,16 +2132,12 @@ def test_always_fails(): assert False
     error[test-failure]: Test `test_always_fails` failed
       --> test.py:11:5
        |
-     9 |     assert counter >= 2
-    10 |
     11 | def test_always_fails(): assert False
        |     ^^^^^^^^^^^^^^^^^
        |
     info: Test failed here
       --> test.py:11:1
        |
-     9 |     assert counter >= 2
-    10 |
     11 | def test_always_fails(): assert False
        | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
        |
@@ -2620,33 +2532,25 @@ def test_3(): pass
       |
     2 | def test_1(): assert False
       |     ^^^^^^
-    3 | def test_2(): assert False
-    4 | def test_3(): pass
       |
     info: Test failed here
      --> test.py:2:1
       |
     2 | def test_1(): assert False
       | ^^^^^^^^^^^^^^^^^^^^^^^^^^
-    3 | def test_2(): assert False
-    4 | def test_3(): pass
       |
 
     error[test-failure]: Test `test_2` failed
      --> test.py:3:5
       |
-    2 | def test_1(): assert False
     3 | def test_2(): assert False
       |     ^^^^^^
-    4 | def test_3(): pass
       |
     info: Test failed here
      --> test.py:3:1
       |
-    2 | def test_1(): assert False
     3 | def test_2(): assert False
       | ^^^^^^^^^^^^^^^^^^^^^^^^^^
-    4 | def test_3(): pass
       |
 
     ────────────
@@ -2684,16 +2588,12 @@ def test_3(): pass
       |
     2 | def test_1(): assert False
       |     ^^^^^^
-    3 | def test_2(): assert False
-    4 | def test_3(): pass
       |
     info: Test failed here
      --> test.py:2:1
       |
     2 | def test_1(): assert False
       | ^^^^^^^^^^^^^^^^^^^^^^^^^^
-    3 | def test_2(): assert False
-    4 | def test_3(): pass
       |
 
     ────────────
@@ -2732,33 +2632,25 @@ def test_3(): assert False
       |
     2 | def test_1(): assert False
       |     ^^^^^^
-    3 | def test_2(): assert False
-    4 | def test_3(): assert False
       |
     info: Test failed here
      --> test.py:2:1
       |
     2 | def test_1(): assert False
       | ^^^^^^^^^^^^^^^^^^^^^^^^^^
-    3 | def test_2(): assert False
-    4 | def test_3(): assert False
       |
 
     error[test-failure]: Test `test_2` failed
      --> test.py:3:5
       |
-    2 | def test_1(): assert False
     3 | def test_2(): assert False
       |     ^^^^^^
-    4 | def test_3(): assert False
       |
     info: Test failed here
      --> test.py:3:1
       |
-    2 | def test_1(): assert False
     3 | def test_2(): assert False
       | ^^^^^^^^^^^^^^^^^^^^^^^^^^
-    4 | def test_3(): assert False
       |
 
     ────────────

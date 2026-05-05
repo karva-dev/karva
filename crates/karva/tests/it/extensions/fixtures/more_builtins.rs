@@ -899,7 +899,7 @@ def test_no_such_fixture(not_a_real_fixture):
 
     // Intentionally use the full (non-quiet) output so that the missing-fixture
     // diagnostic is captured in the snapshot — `-q` elides per-test diagnostics.
-    assert_cmd_snapshot!(context.command_no_parallel(), @r"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: false
     exit_code: 1
     ----- stdout -----
@@ -913,7 +913,6 @@ def test_no_such_fixture(not_a_real_fixture):
       |
     2 | def test_no_such_fixture(not_a_real_fixture):
       |     ^^^^^^^^^^^^^^^^^^^^
-    3 |     pass
       |
     info: Missing fixtures: `not_a_real_fixture`
 

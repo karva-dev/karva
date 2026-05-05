@@ -68,18 +68,12 @@ def test_echo():
     error[test-failure]: Test `test_echo` failed
      --> test.py:5:5
       |
-    3 | import sys
-    4 |
     5 | def test_echo():
       |     ^^^^^^^^^
-    6 |     cmd = karva.Command(sys.executable).args(['-c', 'print(42)'])
-    7 |     karva.assert_cmd_snapshot(cmd)
       |
     info: Test failed here
      --> test.py:7:5
       |
-    5 | def test_echo():
-    6 |     cmd = karva.Command(sys.executable).args(['-c', 'print(42)'])
     7 |     karva.assert_cmd_snapshot(cmd)
       |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
       |
@@ -514,18 +508,12 @@ def test_inline_wrong():
     error[test-failure]: Test `test_inline_wrong` failed
      --> test.py:5:5
       |
-    3 | import sys
-    4 |
     5 | def test_inline_wrong():
       |     ^^^^^^^^^^^^^^^^^
-    6 |     cmd = karva.Command(sys.executable).args(["-c", "print('actual')"])
-    7 |     karva.assert_cmd_snapshot(cmd, inline="wrong value")
       |
     info: Test failed here
      --> test.py:7:5
       |
-    5 | def test_inline_wrong():
-    6 |     cmd = karva.Command(sys.executable).args(["-c", "print('actual')"])
     7 |     karva.assert_cmd_snapshot(cmd, inline="wrong value")
       |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
       |
@@ -589,7 +577,7 @@ def test_change():
         "#,
     );
 
-    assert_cmd_snapshot!(context.command_no_parallel(), @r#"
+    assert_cmd_snapshot!(context.command_no_parallel(), @"
     success: false
     exit_code: 1
     ----- stdout -----
@@ -601,18 +589,12 @@ def test_change():
     error[test-failure]: Test `test_change` failed
      --> test.py:5:5
       |
-    3 | import sys
-    4 |
     5 | def test_change():
       |     ^^^^^^^^^^^
-    6 |     cmd = karva.Command(sys.executable).args(["-c", "print('second')"])
-    7 |     karva.assert_cmd_snapshot(cmd)
       |
     info: Test failed here
      --> test.py:7:5
       |
-    5 | def test_change():
-    6 |     cmd = karva.Command(sys.executable).args(["-c", "print('second')"])
     7 |     karva.assert_cmd_snapshot(cmd)
       |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
       |
@@ -631,7 +613,7 @@ def test_change():
          Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
 
     ----- stderr -----
-    "#);
+    ");
 }
 
 #[test]
@@ -659,18 +641,12 @@ def test_bad_cmd():
     error[test-failure]: Test `test_bad_cmd` failed
      --> test.py:4:5
       |
-    2 | import karva
-    3 |
     4 | def test_bad_cmd():
       |     ^^^^^^^^^^^^
-    5 |     cmd = karva.Command('nonexistent_program_xyz_12345')
-    6 |     karva.assert_cmd_snapshot(cmd)
       |
     info: Test failed here
      --> test.py:6:5
       |
-    4 | def test_bad_cmd():
-    5 |     cmd = karva.Command('nonexistent_program_xyz_12345')
     6 |     karva.assert_cmd_snapshot(cmd)
       |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
       |
@@ -1048,18 +1024,12 @@ def test_both_args():
     error[test-failure]: Test `test_both_args` failed
      --> test.py:5:5
       |
-    3 | import sys
-    4 |
     5 | def test_both_args():
       |     ^^^^^^^^^^^^^^
-    6 |     cmd = karva.Command(sys.executable).args(["-c", "print('x')"])
-    7 |     karva.assert_cmd_snapshot(cmd, inline="x", name="y")
       |
     info: Test failed here
      --> test.py:7:5
       |
-    5 | def test_both_args():
-    6 |     cmd = karva.Command(sys.executable).args(["-c", "print('x')"])
     7 |     karva.assert_cmd_snapshot(cmd, inline="x", name="y")
       |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
       |

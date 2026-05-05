@@ -195,11 +195,8 @@ def test_fixtures_given_by_decorator(a, b):
     error[missing-fixtures]: Test `test_fixtures_given_by_decorator` has missing fixtures
       --> test.py:13:5
        |
-    12 | @given(a=1)
     13 | def test_fixtures_given_by_decorator(a, b):
        |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    14 |     assert a == 1
-    15 |     assert b == 1
        |
     info: Missing fixtures: `b`
 

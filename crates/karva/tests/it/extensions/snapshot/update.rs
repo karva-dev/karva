@@ -68,16 +68,12 @@ def test_hello():
     error[test-failure]: Test `test_hello` failed
      --> test.py:4:5
       |
-    2 | import karva
-    3 |
     4 | def test_hello():
       |     ^^^^^^^^^^
-    5 |     karva.assert_snapshot('goodbye world')
       |
     info: Test failed here
      --> test.py:5:5
       |
-    4 | def test_hello():
     5 |     karva.assert_snapshot('goodbye world')
       |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
       |
@@ -155,18 +151,12 @@ def test_user_data():
     error[test-failure]: Test `test_user_data` failed
      --> test.py:7:5
       |
-    5 |     return {"id": 1, "name": "Alice", "roles": ["admin", "user", "hr"]}
-    6 |
     7 | def test_user_data():
       |     ^^^^^^^^^^^^^^
-    8 |     result = get_user_data()
-    9 |     karva.assert_json_snapshot(result)
       |
     info: Test failed here
      --> test.py:9:5
       |
-    7 | def test_user_data():
-    8 |     result = get_user_data()
     9 |     karva.assert_json_snapshot(result)
       |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
       |
@@ -348,16 +338,12 @@ def test_second():
     error[test-failure]: Test `test_second` failed
      --> test.py:7:5
       |
-    5 |     karva.assert_json_snapshot({"value": 1})
-    6 |
     7 | def test_second():
       |     ^^^^^^^^^^^
-    8 |     karva.assert_json_snapshot({"value": 99})
       |
     info: Test failed here
      --> test.py:8:5
       |
-    7 | def test_second():
     8 |     karva.assert_json_snapshot({"value": 99})
       |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
       |

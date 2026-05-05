@@ -185,7 +185,8 @@ fn run(f: impl FnOnce(Vec<OsString>) -> Vec<OsString>) -> anyhow::Result<ExitSta
 
     let config = DisplayDiagnosticConfig::new("karva")
         .format(diagnostic_format)
-        .color(colored::control::SHOULD_COLORIZE.should_colorize());
+        .color(colored::control::SHOULD_COLORIZE.should_colorize())
+        .context(0);
 
     let diagnostic_resolver = DiagnosticFileResolver::new(&cwd);
 

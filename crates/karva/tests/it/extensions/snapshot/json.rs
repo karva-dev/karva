@@ -324,16 +324,12 @@ def test_not_json():
     error[test-failure]: Test `test_not_json` failed
      --> test.py:4:5
       |
-    2 | import karva
-    3 |
     4 | def test_not_json():
       |     ^^^^^^^^^^^^^
-    5 |     karva.assert_json_snapshot(object())
       |
     info: Test failed here
      --> test.py:5:5
       |
-    4 | def test_not_json():
     5 |     karva.assert_json_snapshot(object())
       |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
       |
@@ -385,16 +381,12 @@ def test_json():
     error[test-failure]: Test `test_json` failed
      --> test.py:4:5
       |
-    2 | import karva
-    3 |
     4 | def test_json():
       |     ^^^^^^^^^
-    5 |     karva.assert_json_snapshot({"key": "changed"})
       |
     info: Test failed here
      --> test.py:5:5
       |
-    4 | def test_json():
     5 |     karva.assert_json_snapshot({"key": "changed"})
       |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
       |

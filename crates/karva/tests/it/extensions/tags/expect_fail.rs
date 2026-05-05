@@ -70,10 +70,8 @@ def test_1():
         error[test-pass-on-expect-failure]: Test `test_1` passes when expected to fail
          --> test.py:5:5
           |
-        4 | @karva.tags.expect_fail(reason='Expected to fail but passes')
         5 | def test_1():
           |     ^^^^^^
-        6 |     assert True
           |
         info: Reason: Expected to fail but passes
 
@@ -111,10 +109,8 @@ def test_1():
         error[test-pass-on-expect-failure]: Test `test_1` passes when expected to fail
          --> test.py:5:5
           |
-        4 | @pytest.mark.xfail(reason='Expected to fail but passes')
         5 | def test_1():
           |     ^^^^^^
-        6 |     assert True
           |
         info: Reason: Expected to fail but passes
 
@@ -440,10 +436,8 @@ def test_expected_fail_passes():
         error[test-pass-on-expect-failure]: Test `test_expected_fail_passes` passes when expected to fail
           --> test.py:12:5
            |
-        11 | @karva.tags.expect_fail()
         12 | def test_expected_fail_passes():
            |     ^^^^^^^^^^^^^^^^^^^^^^^^^
-        13 |     assert True
            |
 
         ────────────
@@ -489,10 +483,8 @@ def test_expected_fail_passes():
         error[test-pass-on-expect-failure]: Test `test_expected_fail_passes` passes when expected to fail
           --> test.py:12:5
            |
-        11 | @pytest.mark.xfail
         12 | def test_expected_fail_passes():
            |     ^^^^^^^^^^^^^^^^^^^^^^^^^
-        13 |     assert True
            |
 
         ────────────
@@ -610,10 +602,8 @@ def test_should_fail():
     error[test-pass-on-expect-failure]: Test `test_should_fail` passes when expected to fail
      --> test.py:5:5
       |
-    4 | @karva.tags.expect_fail(reason='This should fail but passes')
     5 | def test_should_fail():
       |     ^^^^^^^^^^^^^^^^
-    6 |     assert 1 + 1 == 2
       |
     info: Reason: This should fail but passes
 

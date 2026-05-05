@@ -83,18 +83,12 @@ async def test_async_fails():
     error[test-failure]: Test `test_async_fails` failed
      --> test.py:4:11
       |
-    2 | import asyncio
-    3 |
     4 | async def test_async_fails():
       |           ^^^^^^^^^^^^^^^^
-    5 |     await asyncio.sleep(0)
-    6 |     assert False, 'async test failed'
       |
     info: Test failed here
      --> test.py:6:5
       |
-    4 | async def test_async_fails():
-    5 |     await asyncio.sleep(0)
     6 |     assert False, 'async test failed'
       |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
       |

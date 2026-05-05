@@ -106,16 +106,12 @@ def test_hello():
     error[test-failure]: Test `test_hello` failed
      --> test.py:4:5
       |
-    2 | import karva
-    3 |
     4 | def test_hello():
       |     ^^^^^^^^^^
-    5 |     karva.assert_snapshot('goodbye world', name='greeting')
       |
     info: Test failed here
      --> test.py:5:5
       |
-    4 | def test_hello():
     5 |     karva.assert_snapshot('goodbye world', name='greeting')
       |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
       |
@@ -243,16 +239,12 @@ def test_both():
     error[test-failure]: Test `test_both` failed
      --> test.py:4:5
       |
-    2 | import karva
-    3 |
     4 | def test_both():
       |     ^^^^^^^^^
-    5 |     karva.assert_snapshot('value', name='foo', inline='bar')
       |
     info: Test failed here
      --> test.py:5:5
       |
-    4 | def test_both():
     5 |     karva.assert_snapshot('value', name='foo', inline='bar')
       |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
       |

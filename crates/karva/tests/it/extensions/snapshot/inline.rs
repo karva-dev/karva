@@ -89,16 +89,12 @@ def test_hello():
     error[test-failure]: Test `test_hello` failed
      --> test.py:4:5
       |
-    2 | import karva
-    3 |
     4 | def test_hello():
       |     ^^^^^^^^^^
-    5 |     karva.assert_snapshot("goodbye", inline="hello")
       |
     info: Test failed here
      --> test.py:5:5
       |
-    4 | def test_hello():
     5 |     karva.assert_snapshot("goodbye", inline="hello")
       |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
       |

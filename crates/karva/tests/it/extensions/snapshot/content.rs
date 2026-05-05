@@ -231,16 +231,12 @@ def test_poem():
     error[test-failure]: Test `test_poem` failed
      --> test.py:4:5
       |
-    2 | import karva
-    3 |
     4 | def test_poem():
       |     ^^^^^^^^^
-    5 |     karva.assert_snapshot('roses are red/nviolets are purple/nsugar is sweet')
       |
     info: Test failed here
      --> test.py:5:5
       |
-    4 | def test_poem():
     5 |     karva.assert_snapshot('roses are red/nviolets are purple/nsugar is sweet')
       |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
       |

@@ -33,39 +33,27 @@ fn runignored_runs_only_skipped_tests() {
     error[test-failure]: Test `test_skipped` failed
      --> test.py:5:5
       |
-    4 | @karva.tags.skip
     5 | def test_skipped():
       |     ^^^^^^^^^^^^
-    6 |     assert False
       |
     info: Test failed here
      --> test.py:6:5
       |
-    4 | @karva.tags.skip
-    5 | def test_skipped():
     6 |     assert False
       |     ^^^^^^^^^^^^
-    7 |
-    8 | @karva.tags.skip('reason here')
       |
 
     error[test-failure]: Test `test_skipped_with_reason` failed
-      --> test.py:9:5
-       |
-     8 | @karva.tags.skip('reason here')
-     9 | def test_skipped_with_reason():
-       |     ^^^^^^^^^^^^^^^^^^^^^^^^
-    10 |     assert False
-       |
+     --> test.py:9:5
+      |
+    9 | def test_skipped_with_reason():
+      |     ^^^^^^^^^^^^^^^^^^^^^^^^
+      |
     info: Test failed here
       --> test.py:10:5
        |
-     8 | @karva.tags.skip('reason here')
-     9 | def test_skipped_with_reason():
     10 |     assert False
        |     ^^^^^^^^^^^^
-    11 |
-    12 | def test_normal():
        |
 
     ────────────
@@ -92,39 +80,27 @@ fn runignored_all_runs_skipped_alongside_normal() {
     error[test-failure]: Test `test_skipped` failed
      --> test.py:5:5
       |
-    4 | @karva.tags.skip
     5 | def test_skipped():
       |     ^^^^^^^^^^^^
-    6 |     assert False
       |
     info: Test failed here
      --> test.py:6:5
       |
-    4 | @karva.tags.skip
-    5 | def test_skipped():
     6 |     assert False
       |     ^^^^^^^^^^^^
-    7 |
-    8 | @karva.tags.skip('reason here')
       |
 
     error[test-failure]: Test `test_skipped_with_reason` failed
-      --> test.py:9:5
-       |
-     8 | @karva.tags.skip('reason here')
-     9 | def test_skipped_with_reason():
-       |     ^^^^^^^^^^^^^^^^^^^^^^^^
-    10 |     assert False
-       |
+     --> test.py:9:5
+      |
+    9 | def test_skipped_with_reason():
+      |     ^^^^^^^^^^^^^^^^^^^^^^^^
+      |
     info: Test failed here
       --> test.py:10:5
        |
-     8 | @karva.tags.skip('reason here')
-     9 | def test_skipped_with_reason():
     10 |     assert False
        |     ^^^^^^^^^^^^
-    11 |
-    12 | def test_normal():
        |
 
     ────────────
