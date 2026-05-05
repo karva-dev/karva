@@ -174,7 +174,7 @@ jobs:
           path: target/wheels/*.whl
 
   cargo-test-windows:
-    name: "cargo test (windows ${{ matrix.partition }}/3)"
+    name: "cargo test (windows ${{ matrix.partition }}/5)"
 
     needs: build-windows-tests
 
@@ -184,7 +184,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        partition: [1, 2, 3]
+        partition: [1, 2, 3, 4, 5]
 
     steps:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
@@ -222,7 +222,7 @@ jobs:
           PYO3_PYTHON: ${{ steps.setup-python.outputs.python-path }}
           KARVA_MAX_PARALLELISM: 2
         run: |
-          cargo nextest run --archive-file nextest-archive.tar.zst --partition hash:${{ matrix.partition }}/3
+          cargo nextest run --archive-file nextest-archive.tar.zst --partition hash:${{ matrix.partition }}/5
 
   build-docs:
     name: "Build docs"
