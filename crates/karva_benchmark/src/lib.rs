@@ -35,8 +35,11 @@ pub fn setup_project() -> Project {
 
 /// Run karva tests against the prepared project once.
 pub fn run_karva(project: &Project) {
+    // Single worker keeps the benchmark deterministic across iterations: no
+    // inter-process scheduling jitter, no shared-cache contention, no variance
+    // from how the OS balances two worker processes.
     let config = karva_runner::ParallelTestConfig {
-        num_workers: 2,
+        num_workers: 1,
         no_cache: false,
         create_ctrlc_handler: false,
         last_failed: false,
