@@ -415,7 +415,6 @@ fn test_stdout() {
     ----- stdout -----
         Starting 1 test across 1 worker
             PASS [TIME] test_std_out_redirected::test_std_out_redirected
-
     ────────────
          Summary [TIME] 1 test run: 1 passed, 0 skipped
 

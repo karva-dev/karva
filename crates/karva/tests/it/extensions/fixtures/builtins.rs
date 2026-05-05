@@ -919,7 +919,6 @@ fn test_mock_env() {
         success: true
         exit_code: 0
         ----- stdout -----
-
         ────────────
              Summary [TIME] 16 tests run: 16 passed, 0 skipped
 
