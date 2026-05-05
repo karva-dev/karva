@@ -11,9 +11,12 @@ use insta::Settings;
 use insta::internals::SettingsBindDropGuard;
 use tempfile::TempDir;
 
-/// Lazily initialized shared venv path for test reuse (within single process).
-/// On Unix, the shared venv is symlinked into each test directory.
-/// On Windows, its files are hardlinked (since venv scripts have hardcoded paths).
+/// Lazily initialized shared venv path for test reuse (within a single test process).
+///
+/// All tests use one venv: the karva and karva-worker binaries live there, and
+/// each command we spawn sets `VIRTUAL_ENV` to point at it so karva can locate
+/// the worker. No per-test `.venv` is created in the project temp dir, which
+/// matters on Windows where copying a venv tree per test is expensive.
 static SHARED_VENV: OnceLock<Utf8PathBuf> = OnceLock::new();
 
 pub struct TestContext {
@@ -51,10 +54,8 @@ impl TestContext {
             .expect("Could not find karva wheel. Run `maturin build` before running tests.")
             .to_string();
 
-        // Platform-specific venv setup:
-        // - Unix: Use shared venv with symlinks for speed
-        // - Windows: Use shared venv hardlinked into each test directory
-        let venv_path = setup_venv(&cache_dir, &project_path, &python_version, &karva_wheel);
+        let venv_path =
+            get_or_create_shared_venv(&cache_dir, &python_version, &karva_wheel).clone();
 
         let mut settings = Settings::clone_current();
 
@@ -136,7 +137,9 @@ impl TestContext {
     }
 
     fn karva_command(&self) -> Command {
-        Command::new(self.venv_binary("karva"))
+        let mut command = Command::new(self.venv_binary("karva"));
+        command.env("VIRTUAL_ENV", self.venv_path.as_str());
+        command
     }
 
     pub fn command(&self) -> Command {
@@ -149,13 +152,9 @@ impl TestContext {
     ///
     /// Useful when the test needs to invoke karva from a subdirectory of the
     /// project root (e.g., to test project-discovery boundary behaviour).
-    /// `VIRTUAL_ENV` is always set so the worker binary can be located even
-    /// when the project `.venv` is not under `dir`.
     pub fn karva_command_in(&self, dir: impl AsRef<Utf8Path>) -> Command {
         let mut command = self.karva_command();
-        command
-            .current_dir(dir.as_ref())
-            .env("VIRTUAL_ENV", self.venv_path.as_str());
+        command.current_dir(dir.as_ref());
         command
     }
 
@@ -206,63 +205,6 @@ pub fn get_test_cache_dir() -> Utf8PathBuf {
     let cache_dir = proj_dirs.cache_dir();
     let test_cache = cache_dir.join("test-cache");
     Utf8PathBuf::from_path_buf(test_cache).expect("Path is not valid UTF-8")
-}
-
-/// Sets up the venv for tests.
-///
-/// On Unix: Creates a shared venv once and symlinks it into each test directory.
-/// On Windows: Creates a fresh venv in each test directory (symlinks don't work with venvs).
-#[cfg(unix)]
-fn setup_venv(
-    cache_dir: &Utf8Path,
-    project_path: &Utf8Path,
-    python_version: &str,
-    karva_wheel_path: &str,
-) -> Utf8PathBuf {
-    let shared_venv = get_or_create_shared_venv(cache_dir, python_version, karva_wheel_path);
-    let venv_link = project_path.join(".venv");
-
-    std::os::unix::fs::symlink(shared_venv.as_std_path(), venv_link.as_std_path())
-        .expect("Failed to symlink shared venv");
-
-    shared_venv.clone()
-}
-
-/// Sets up the venv for tests.
-///
-/// On Windows: Creates a shared venv once and hardlinks its files into each test directory.
-/// Hardlinks are instant (no data copying) and avoid the hardcoded-path issues that
-/// prevent symlinks from working with Windows venvs. Both directories are on the same
-/// filesystem (the cache dir), which is required for hardlinks.
-#[cfg(windows)]
-fn setup_venv(
-    cache_dir: &Utf8Path,
-    project_path: &Utf8Path,
-    python_version: &str,
-    karva_wheel_path: &str,
-) -> Utf8PathBuf {
-    let shared_venv = get_or_create_shared_venv(cache_dir, python_version, karva_wheel_path);
-    let venv_path = project_path.join(".venv");
-    hardlink_dir(shared_venv.as_std_path(), venv_path.as_std_path())
-        .expect("Failed to hardlink shared venv");
-    venv_path
-}
-
-/// Recursively recreates the directory structure from `src` at `dst`, hardlinking all files.
-#[cfg(windows)]
-fn hardlink_dir(src: &std::path::Path, dst: &std::path::Path) -> std::io::Result<()> {
-    std::fs::create_dir_all(dst)?;
-    for entry in std::fs::read_dir(src)? {
-        let entry = entry?;
-        let file_type = entry.file_type()?;
-        let dst_path = dst.join(entry.file_name());
-        if file_type.is_dir() {
-            hardlink_dir(&entry.path(), &dst_path)?;
-        } else {
-            std::fs::hard_link(entry.path(), &dst_path)?;
-        }
-    }
-    Ok(())
 }
 
 /// Returns a reference to the shared venv path, creating it if necessary.
