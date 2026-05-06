@@ -341,9 +341,10 @@ mod tests {
         let cache_dir = Utf8PathBuf::try_from(tmp.path().to_path_buf()).unwrap();
 
         let run_hash = RunHash::from_existing("run-500");
+        let run_name = run_hash.dir_name();
 
-        create_cache_with_stats(tmp.path(), "run-500", 0, r#"{"passed": 3, "failed": 1}"#);
-        create_cache_with_stats(tmp.path(), "run-500", 1, r#"{"passed": 2, "skipped": 1}"#);
+        create_cache_with_stats(tmp.path(), &run_name, 0, r#"{"passed": 3, "failed": 1}"#);
+        create_cache_with_stats(tmp.path(), &run_name, 1, r#"{"passed": 2, "skipped": 1}"#);
 
         let cache = RunCache::new(&cache_dir, &run_hash);
         let results = cache.aggregate_results().unwrap();

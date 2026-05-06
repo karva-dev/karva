@@ -2233,7 +2233,7 @@ def test_static_env():
     assert os.environ["KARVA"] == "1"
     assert os.environ["KARVA_WORKER_ID"] == "0"
     assert re.fullmatch(
-        r"[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}",
+        r"\d+-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}",
         os.environ["KARVA_RUN_ID"],
     ), os.environ["KARVA_RUN_ID"]
     assert os.environ["KARVA_WORKSPACE_ROOT"] == os.getcwd()

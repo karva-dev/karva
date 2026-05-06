@@ -19,7 +19,6 @@ pub struct WorkerSpawn<'a> {
     pub args: &'a SubTestCommand,
     pub num_workers: usize,
     pub profile: &'a str,
-    pub run_id: &'a str,
     pub worker_binary: &'a Utf8PathBuf,
     pub coverage_enabled: bool,
 }
@@ -29,7 +28,7 @@ pub fn worker_command(spawn: &WorkerSpawn, worker_id: usize, partition: &Partiti
     let mut cmd = Command::new(spawn.worker_binary);
     cmd.arg("--cache-dir")
         .arg(spawn.cache_dir)
-        .arg("--run-hash")
+        .arg("--run-id")
         .arg(spawn.run_hash.inner())
         .arg("--worker-id")
         .arg(worker_id.to_string())
@@ -38,7 +37,7 @@ pub fn worker_command(spawn: &WorkerSpawn, worker_id: usize, partition: &Partiti
         .env("PYTHONUNBUFFERED", "1")
         .env(WorkerEnvVars::KARVA, "1")
         .env(WorkerEnvVars::KARVA_WORKER_ID, worker_id.to_string())
-        .env(WorkerEnvVars::KARVA_RUN_ID, spawn.run_id)
+        .env(WorkerEnvVars::KARVA_RUN_ID, spawn.run_hash.inner())
         .env(
             WorkerEnvVars::KARVA_WORKSPACE_ROOT,
             spawn.project.cwd().as_str(),
