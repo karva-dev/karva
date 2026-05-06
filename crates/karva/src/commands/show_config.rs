@@ -35,9 +35,9 @@ pub fn show_config(args: ShowConfigCommand) -> Result<ExitStatus> {
         .map_err(|err| anyhow::anyhow!("{err}"))?;
 
     let project = Project::from_metadata(project_metadata);
-    let resolved = project.settings().to_options();
 
-    let serialized = toml::to_string(&resolved).context("failed to serialize configuration")?;
+    let serialized =
+        toml::to_string(project.settings()).context("failed to serialize configuration")?;
 
     let mut stdout = Printer::default().stream_for_message().lock();
     write!(stdout, "{serialized}")?;
