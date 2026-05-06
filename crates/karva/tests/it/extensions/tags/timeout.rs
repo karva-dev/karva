@@ -282,3 +282,137 @@ def test_always_slow():
     ----- stderr -----
     ");
 }
+
+/// `--timeout` applies to every test that does not already carry an
+/// `@karva.tags.timeout` decorator.
+#[test]
+fn test_cli_timeout_kills_slow_test() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+import time
+
+def test_slow():
+    time.sleep(2)
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command().arg("--timeout=0.1"), @"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+        Starting 1 test across 1 worker
+            FAIL [TIME] test::test_slow
+
+    diagnostics:
+
+    error[test-failure]: Test `test_slow` failed
+     --> test.py:4:5
+      |
+    4 | def test_slow():
+      |     ^^^^^^^^^
+      |
+    info: Test exceeded timeout of 0.1 seconds
+
+    ────────────
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_cli_timeout_does_not_flag_fast_tests() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+def test_fast():
+    assert True
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command().arg("--timeout=60"), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_fast
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+/// A test-level `@karva.tags.timeout` overrides the configured default.
+#[test]
+fn test_cli_timeout_tag_overrides_default() {
+    let context = TestContext::with_file(
+        "test.py",
+        r"
+import time
+import karva
+
+@karva.tags.timeout(2.0)
+def test_under_tag_limit():
+    time.sleep(0.3)
+        ",
+    );
+
+    assert_cmd_snapshot!(context.command().arg("--timeout=0.1"), @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+        Starting 1 test across 1 worker
+            PASS [TIME] test::test_under_tag_limit
+    ────────────
+         Summary [TIME] 1 test run: 1 passed, 0 skipped
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
+fn test_config_timeout_kills_slow_test() {
+    let context = TestContext::with_files([
+        (
+            "pyproject.toml",
+            r"
+[tool.karva.profile.default.test]
+timeout = 0.1
+            ",
+        ),
+        (
+            "test.py",
+            r"
+import time
+
+def test_slow():
+    time.sleep(2)
+            ",
+        ),
+    ]);
+
+    assert_cmd_snapshot!(context.command(), @"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+        Starting 1 test across 1 worker
+            FAIL [TIME] test::test_slow
+
+    diagnostics:
+
+    error[test-failure]: Test `test_slow` failed
+     --> test.py:4:5
+      |
+    4 | def test_slow():
+      |     ^^^^^^^^^
+      |
+    info: Test exceeded timeout of 0.1 seconds
+
+    ────────────
+         Summary [TIME] 1 test run: 0 passed, 1 failed, 0 skipped
+
+    ----- stderr -----
+    ");
+}

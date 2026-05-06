@@ -14,7 +14,7 @@ use crate::filter::FiltersetSet;
 use crate::max_fail::MaxFail;
 use crate::settings::{
     CovFailUnder, CoverageSettings, NoTestsMode, ProjectSettings, RunIgnoredMode, SlowTimeoutSecs,
-    SrcSettings, TerminalSettings, TestSettings,
+    SrcSettings, TerminalSettings, TestSettings, TestTimeoutSecs,
 };
 
 #[derive(
@@ -277,6 +277,25 @@ pub struct TestOptions {
         "#
     )]
     pub slow_timeout: Option<SlowTimeoutSecs>,
+
+    /// Hard per-test timeout (in seconds).
+    ///
+    /// When set, every test that runs longer than this duration is killed
+    /// and reported as a failure. Tests can override the limit individually
+    /// with [`@karva.tags.timeout`](https://docs.karva.dev/usage/tags/timeout/),
+    /// which takes precedence over the configured default.
+    ///
+    /// Defaults to unset, which disables hard timeouts unless a tag is
+    /// applied to the test.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[option(
+        default = r#"null"#,
+        value_type = "float (seconds)",
+        example = r#"
+            timeout = 120.0
+        "#
+    )]
+    pub timeout: Option<TestTimeoutSecs>,
 }
 
 impl TestOptions {
@@ -298,6 +317,7 @@ impl TestOptions {
             run_ignored: RunIgnoredMode::default(),
             no_tests: self.no_tests.unwrap_or_default(),
             slow_timeout: self.slow_timeout.and_then(SlowTimeoutSecs::as_duration),
+            timeout: self.timeout.and_then(TestTimeoutSecs::as_duration),
         }
     }
 }
@@ -513,7 +533,7 @@ nonsense = 42
           |
         4 | nonsense = 42
           | ^^^^^^^^
-        unknown field `nonsense`, expected one of `test-function-prefix`, `fail-fast`, `max-fail`, `try-import-fixtures`, `retry`, `no-tests`, `slow-timeout`
+        unknown field `nonsense`, expected one of `test-function-prefix`, `fail-fast`, `max-fail`, `try-import-fixtures`, `retry`, `no-tests`, `slow-timeout`, `timeout`
         "
         );
     }
@@ -611,6 +631,7 @@ max-fail = 0
             ),
             no_tests: None,
             slow_timeout: None,
+            timeout: None,
         }
         "#);
     }
@@ -639,6 +660,7 @@ max-fail = 0
             ),
             no_tests: None,
             slow_timeout: None,
+            timeout: None,
         }
         "#);
     }
@@ -700,6 +722,7 @@ retry = 2
                 ),
                 no_tests: None,
                 slow_timeout: None,
+                timeout: None,
             },
         )
         "#);
@@ -755,6 +778,7 @@ retry = 5
                 ),
                 no_tests: None,
                 slow_timeout: None,
+                timeout: None,
             },
         )
         "#);

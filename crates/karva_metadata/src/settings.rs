@@ -68,6 +68,37 @@ impl Combine for SlowTimeoutSecs {
     }
 }
 
+/// A per-test timeout expressed in seconds.
+///
+/// Wraps `f64` for the same reason as [`SlowTimeoutSecs`]. Tests exceeding
+/// this duration are killed and reported as failures (see
+/// [`crate::settings::TestSettings::timeout`]).
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[serde(transparent)]
+pub struct TestTimeoutSecs(pub f64);
+
+impl Eq for TestTimeoutSecs {}
+
+impl TestTimeoutSecs {
+    pub fn as_duration(self) -> Option<Duration> {
+        if self.0.is_finite() && self.0 > 0.0 {
+            Some(Duration::from_secs_f64(self.0))
+        } else {
+            None
+        }
+    }
+}
+
+impl Combine for TestTimeoutSecs {
+    #[inline(always)]
+    fn combine_with(&mut self, _other: Self) {}
+
+    #[inline]
+    fn combine(self, _other: Self) -> Self {
+        self
+    }
+}
+
 /// A coverage threshold expressed as a percentage (`0..=100`).
 ///
 /// Wraps `f64` for the same reason as [`SlowTimeoutSecs`]: keeps the
@@ -164,4 +195,8 @@ pub struct TestSettings {
     /// Threshold after which a test is flagged as slow. `None` disables
     /// slow-test detection entirely.
     pub slow_timeout: Option<Duration>,
+    /// Hard per-test timeout. Tests that run longer than this duration are
+    /// killed and reported as failures. `None` disables the hard timeout
+    /// (tests may still set their own limit via `@karva.tags.timeout`).
+    pub timeout: Option<Duration>,
 }

@@ -331,6 +331,31 @@ test-function-prefix = "test"
 
 ---
 
+### `timeout`
+
+Hard per-test timeout (in seconds).
+
+When set, every test that runs longer than this duration is killed
+and reported as a failure. Tests can override the limit individually
+with [`@karva.tags.timeout`](https://docs.karva.dev/usage/tags/timeout/),
+which takes precedence over the configured default.
+
+Defaults to unset, which disables hard timeouts unless a tag is
+applied to the test.
+
+**Default value**: `null`
+
+**Type**: `float (seconds)`
+
+**Example usage** (`pyproject.toml`):
+
+```toml
+[tool.karva.profile.default.test]
+timeout = 120.0
+```
+
+---
+
 ### `try-import-fixtures`
 
 When set, we will try to import functions in each test file as well as parsing the ast to find them.
