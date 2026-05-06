@@ -360,7 +360,7 @@ mod tests {
         let cache_dir = Utf8PathBuf::try_from(tmp.path().to_path_buf()).unwrap();
 
         let run_hash = RunHash::from_existing("run-600");
-        let run_dir = tmp.path().join("run-600");
+        let run_dir = tmp.path().join(run_hash.dir_name());
         fs::create_dir_all(&run_dir).unwrap();
 
         let cache = RunCache::new(&cache_dir, &run_hash);
@@ -525,7 +525,7 @@ mod tests {
         let cache_dir = Utf8PathBuf::try_from(tmp.path().to_path_buf()).unwrap();
         let run_hash = RunHash::from_existing("run-700");
 
-        let run_dir = tmp.path().join("run-700");
+        let run_dir = tmp.path().join(run_hash.dir_name());
         let worker0 = run_dir.join("worker-0");
         let worker1 = run_dir.join("worker-1");
         fs::create_dir_all(&worker0).unwrap();

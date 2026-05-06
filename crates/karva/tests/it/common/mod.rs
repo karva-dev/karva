@@ -65,7 +65,10 @@ impl TestContext {
         settings.add_filter(r"\[\s*\d+\.\d+s\]", "[TIME]");
         settings.add_filter(r"(\s|\()(\d+m )?(\d+\.)?\d+(ms|s)", "$1[TIME]");
         settings.add_filter(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}", "[DATETIME]");
-        settings.add_filter(r"run-\d+", "run-[TIMESTAMP]");
+        settings.add_filter(
+            r"run-\d+(-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})?",
+            "run-[TIMESTAMP]",
+        );
         settings.add_filter(r"[-─]{30,}", "[LONG-LINE]");
         settings.add_filter(r"karva \d+\.\d+\.\d+[a-zA-Z0-9._-]*", "karva [VERSION]");
         settings.add_filter(r"karva\.exe", "karva");
