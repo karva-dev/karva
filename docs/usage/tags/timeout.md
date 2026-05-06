@@ -13,6 +13,21 @@ def test_function():
 
 The threshold accepts fractional seconds (`@karva.tags.timeout(0.5)`).
 
+## Configuring a default timeout
+
+Use the `timeout` setting (or `--timeout=SECONDS` on the CLI) to apply the same hard limit to every test in the project:
+
+```bash
+karva test --timeout=120
+```
+
+```toml
+[tool.karva.profile.default.test]
+timeout = 120
+```
+
+A test-level `@karva.tags.timeout` always wins over the configured default, so individual tests can opt into a longer or shorter window.
+
 ## Sync vs async tests
 
 Sync tests are submitted to a single-worker `concurrent.futures.ThreadPoolExecutor`. When the limit elapses, a `TimeoutError` is raised against the test and the worker thread is abandoned — Python has no safe way to interrupt arbitrary code, so any side effects already started will continue. If a test repeatedly times out and leaks resources, fix the test rather than the timeout.

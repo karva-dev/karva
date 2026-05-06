@@ -5,7 +5,7 @@ use clap::Parser;
 use karva_logging::{FinalStatusLevel, StatusLevel, TerminalColor};
 use karva_metadata::{
     CovFailUnder, CoverageOptions, MaxFail, Options, SlowTimeoutSecs, SrcOptions, TerminalOptions,
-    TestOptions,
+    TestOptions, TestTimeoutSecs,
 };
 
 use crate::enums::{CovReport, NoTests, OutputFormat, RunIgnored};
@@ -113,6 +113,16 @@ pub struct SubTestCommand {
     /// `--slow-timeout=60` or `--slow-timeout=0.5`.
     #[clap(long, value_name = "SECONDS", help_heading = "Runner options")]
     pub slow_timeout: Option<f64>,
+
+    /// Hard per-test timeout, in seconds.
+    ///
+    /// Tests that run longer than this duration are killed and reported
+    /// as failures. A test-level [`@karva.tags.timeout`] decorator
+    /// overrides the default for that specific test.
+    ///
+    /// Accepts fractional seconds such as `--timeout=120` or `--timeout=0.5`.
+    #[clap(long, value_name = "SECONDS", help_heading = "Runner options")]
+    pub timeout: Option<f64>,
 
     /// Update snapshots directly instead of creating pending `.snap.new` files.
     ///
@@ -321,6 +331,7 @@ impl SubTestCommand {
                 retry: self.retry,
                 no_tests: self.no_tests.map(Into::into),
                 slow_timeout: self.slow_timeout.map(SlowTimeoutSecs),
+                timeout: self.timeout.map(TestTimeoutSecs),
             }),
             coverage: Some(CoverageOptions {
                 sources: (!self.cov.is_empty()).then(|| self.cov.clone()),

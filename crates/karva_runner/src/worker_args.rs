@@ -114,6 +114,11 @@ fn inner_cli_args(settings: &ProjectSettings, args: &SubTestCommand) -> Vec<Stri
         cli_args.push(format!("{}", threshold.as_secs_f64()));
     }
 
+    if let Some(timeout) = settings.test().timeout {
+        cli_args.push("--timeout".to_string());
+        cli_args.push(format!("{}", timeout.as_secs_f64()));
+    }
+
     for expr in &args.filter_expressions {
         cli_args.push("--filter".to_string());
         cli_args.push(expr.clone());

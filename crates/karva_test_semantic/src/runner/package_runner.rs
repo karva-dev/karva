@@ -517,7 +517,13 @@ impl<'ctx, 'a> PackageRunner<'ctx, 'a> {
 
         let is_async = stmt_function_def.is_async
             && !crate::utils::patch_async_test_function(py, &function).unwrap_or(false);
-        let timeout_seconds = tags.timeout_tag().map(TimeoutTag::seconds);
+        let timeout_seconds = tags.timeout_tag().map(TimeoutTag::seconds).or_else(|| {
+            self.context
+                .settings()
+                .test()
+                .timeout
+                .map(|d| d.as_secs_f64())
+        });
         let run_test = || {
             if let Some(seconds) = timeout_seconds {
                 return run_test_with_timeout(
