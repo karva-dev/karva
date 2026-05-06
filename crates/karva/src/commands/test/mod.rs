@@ -46,6 +46,7 @@ pub fn test(args: TestCommand) -> Result<ExitStatus> {
     let watch = args.watch;
     let durations = args.durations;
     let last_failed = args.last_failed;
+    let partition = args.partition;
     let no_cache = args.no_cache.unwrap_or(false);
     let num_workers = if args.no_parallel.unwrap_or(false) || args.no_capture {
         1
@@ -76,6 +77,7 @@ pub fn test(args: TestCommand) -> Result<ExitStatus> {
         create_ctrlc_handler: true,
         last_failed,
         profile,
+        partition,
     };
 
     if watch {

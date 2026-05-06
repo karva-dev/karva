@@ -13,7 +13,7 @@ use karva_cache::{
     AggregatedResults, CACHE_DIR, RunCache, RunHash, read_last_failed, read_recent_durations,
     write_last_failed,
 };
-use karva_cli::SubTestCommand;
+use karva_cli::{PartitionSelection, SubTestCommand};
 use karva_collector::{CollectedPackage, CollectionSettings};
 use karva_logging::Printer;
 use karva_logging::time::format_duration;
@@ -154,6 +154,8 @@ pub struct ParallelTestConfig {
     /// Active configuration profile name. Propagated to workers as
     /// `KARVA_PROFILE`; falls back to `"default"` when `None`.
     pub profile: Option<String>,
+    /// When set, restrict the run to the selected slice of collected tests.
+    pub partition: Option<PartitionSelection>,
 }
 
 /// Spawn worker processes for each partition
@@ -303,6 +305,7 @@ pub fn run_parallel_tests(
         num_workers,
         &previous_durations,
         &last_failed_set,
+        config.partition,
     );
 
     let run_hash = RunHash::current_time();

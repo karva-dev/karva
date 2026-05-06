@@ -42,3 +42,15 @@ karva test --no-capture
 ```
 
 Reach for `--no-capture` when debugging with `print` statements or attaching `pdb`. For ad-hoc inspection without giving up parallelism, prefer `-s` / `--show-output`, which keeps capture on but prints the captured output for every test.
+
+## Splitting a run across CI jobs
+
+`--partition slice:M/N` runs only slice `M` of `N` total slices. Tests are sorted by qualified name and distributed round-robin: test 1 to slice 1, test 2 to slice 2, ..., test `N+1` to slice 1, and so on. Running every `slice:1/N` through `slice:N/N` together covers every collected test exactly once.
+
+```bash
+karva test --partition slice:1/3
+karva test --partition slice:2/3
+karva test --partition slice:3/3
+```
+
+Slices are computed deterministically from the current test set, so the same revision splits the same way on every machine. Adding or removing tests can shift which slice a given test falls into, so this is less stable per-test than a hash-based scheme but does not need any historical data.
