@@ -276,19 +276,21 @@ pub enum ProjectMetadataError {
     #[error("project path '{0}' is not a directory")]
     NotADirectory(Utf8PathBuf),
 
-    #[error("{path} is not a valid `pyproject.toml`: {source}")]
+    #[error("{path} is not a valid `pyproject.toml`")]
     InvalidPyProject {
+        #[source]
         source: Box<PyProjectError>,
         path: Utf8PathBuf,
     },
 
-    #[error("{path} is not a valid `karva.toml`: {source}")]
+    #[error("{path} is not a valid `karva.toml`")]
     InvalidKarvaToml {
+        #[source]
         source: Box<KarvaTomlError>,
         path: Utf8PathBuf,
     },
 
-    #[error("{path}: {source}")]
+    #[error("{path}")]
     IncompatibleVersion {
         path: Utf8PathBuf,
         #[source]

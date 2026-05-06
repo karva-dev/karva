@@ -3,7 +3,7 @@
 use std::fmt::Write;
 
 use itertools::Itertools;
-use karva_metadata::Options;
+use karva_metadata::{Config, Options};
 use ruff_options_metadata::{OptionField, OptionSet, OptionsMetadata, Visit};
 
 use crate::{Mode, apply_mode};
@@ -24,7 +24,7 @@ pub(crate) fn main(args: &Args) -> anyhow::Result<()> {
 
     generate_set(
         &mut output,
-        Set::Toplevel(Options::metadata()),
+        Set::Toplevel(Config::metadata()),
         &mut Vec::new(),
     );
 
@@ -44,7 +44,6 @@ fn generate_set(output: &mut String, set: Set, parents: &mut Vec<Set>) {
                 "The reference below documents every field supported inside a profile. Examples \
                  target the implicit `default` profile.\n\n",
             );
-            emit_required_version_section(output);
         }
         Set::Named { name, .. } => {
             let title = parents
@@ -56,7 +55,11 @@ fn generate_set(output: &mut String, set: Set, parents: &mut Vec<Set>) {
         }
     }
 
-    if let Some(documentation) = set.metadata().documentation() {
+    // Toplevel uses the hand-written intro paragraph above; skip the
+    // doc-comment from `Config` to avoid restating the same thing.
+    if !matches!(set, Set::Toplevel(_))
+        && let Some(documentation) = set.metadata().documentation()
+    {
         output.push_str(documentation);
         output.push('\n');
         output.push('\n');
@@ -64,6 +67,14 @@ fn generate_set(output: &mut String, set: Set, parents: &mut Vec<Set>) {
 
     let mut visitor = CollectOptionsVisitor::default();
     set.metadata().record(&mut visitor);
+
+    // The profile map in `Config` is keyed by profile name, not a single
+    // group, so the metadata derive cannot recurse into it. Splice the
+    // per-profile option groups (`src`, `terminal`, ...) in alongside the
+    // top-level fields we collected from `Config` itself.
+    if matches!(set, Set::Toplevel(_)) {
+        Options::metadata().record(&mut visitor);
+    }
 
     let (mut fields, mut sets) = (visitor.fields, visitor.groups);
 
@@ -113,28 +124,6 @@ impl Set {
             Self::Named { set, .. } => set,
         }
     }
-}
-
-/// `required-version` lives at the root of `Config`, not inside any profile,
-/// so the metadata-driven walker does not pick it up. Emit a hand-rolled
-/// section for it just below the intro paragraph instead.
-fn emit_required_version_section(output: &mut String) {
-    output.push_str("## `required-version`\n\n");
-    output.push_str(
-        "A SemVer requirement that the running karva binary must satisfy.\n\n\
-         If the installed karva version does not match the requirement, karva exits with a \
-         clear error before running any tests. This prevents confusing failures when CI or \
-         other contributors run with an older version that does not support features used \
-         elsewhere in the configuration.\n\n\
-         `required-version` is a top-level field, not part of any profile.\n\n",
-    );
-    output.push_str("**Default value**: `null`\n\n");
-    output.push_str("**Type**: SemVer requirement (`string`)\n\n");
-    output.push_str("**Example usage** (`karva.toml`):\n\n");
-    output.push_str("```toml\nrequired-version = \">=0.5.0\"\n```\n\n");
-    output.push_str("The same field in `pyproject.toml` lives under `[tool.karva]`:\n\n");
-    output.push_str("```toml\n[tool.karva]\nrequired-version = \">=0.5.0\"\n```\n\n");
-    output.push_str("---\n\n");
 }
 
 fn emit_field(output: &mut String, name: &str, field: &OptionField, parents: &[Set]) {
@@ -197,14 +186,20 @@ fn format_header(
     parents: &[Set],
     configuration: ConfigurationFile,
 ) -> String {
-    // All option groups live under `[profile.<name>]` (nextest-style). The
-    // generated examples target the implicit `default` profile.
-    let parent_path = match configuration {
-        ConfigurationFile::PyprojectToml => "tool.karva.profile.default",
-        ConfigurationFile::KarvaToml => "profile.default",
+    // Per-profile option groups live under `[profile.<name>]` (nextest-style)
+    // and target the implicit `default` profile in generated examples.
+    // Top-level fields on `Config` (no named parent set) live directly under
+    // the karva root instead.
+    let in_profile = parents.iter().any(|p| matches!(p, Set::Named { .. }));
+    let parent_path = match (configuration, in_profile) {
+        (ConfigurationFile::PyprojectToml, true) => "tool.karva.profile.default",
+        (ConfigurationFile::PyprojectToml, false) => "tool.karva",
+        (ConfigurationFile::KarvaToml, true) => "profile.default",
+        (ConfigurationFile::KarvaToml, false) => "",
     };
 
     let header = std::iter::once(parent_path)
+        .filter(|s| !s.is_empty())
         .chain(parents.iter().filter_map(|parent| parent.name()))
         .chain(scope)
         .join(".");

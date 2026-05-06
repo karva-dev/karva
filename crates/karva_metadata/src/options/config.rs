@@ -2,6 +2,7 @@ use std::collections::BTreeMap;
 
 use camino::{Utf8Path, Utf8PathBuf};
 use karva_combine::Combine;
+use karva_macros::OptionsMetadata;
 use semver::{Version, VersionReq};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -16,16 +17,31 @@ pub const DEFAULT_PROFILE: &str = "default";
 /// Mirrors nextest: every option group lives inside `[profile.<name>]`. The
 /// implicit `default` profile is always available; other profiles inherit
 /// from it (and can override individual fields).
-#[derive(Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize, OptionsMetadata)]
 #[serde(rename_all = "kebab-case", deny_unknown_fields)]
 pub struct Config {
-    /// `SemVer` requirement that the running karva binary must satisfy.
+    /// A [SemVer requirement](https://docs.rs/semver/1/semver/struct.VersionReq.html)
+    /// that the running karva binary must satisfy.
     ///
     /// When set, karva refuses to run if the installed version does not
     /// match the requirement. This is useful in CI and for shared
     /// repositories where every developer should be on a known-good
     /// version.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    ///
+    /// `required-version` is a top-level field and is not part of any
+    /// profile.
+    #[option(
+        default = r#"null"#,
+        value_type = r#"string"#,
+        example = r#"
+            required-version = ">=0.5.0"
+        "#
+    )]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "deserialize_required_version"
+    )]
     pub required_version: Option<VersionReq>,
 
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
@@ -122,6 +138,24 @@ impl Config {
         }
         Ok(effective)
     }
+}
+
+/// Parse `required-version` as a [`VersionReq`] inside the toml
+/// deserializer so that toml's location-aware error wrapper points at the
+/// offending value (with the source-line snippet) and the inner message
+/// names the field instead of the generic semver parser failure.
+fn deserialize_required_version<'de, D>(deserializer: D) -> Result<Option<VersionReq>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::de::Error;
+
+    let Some(raw) = Option::<String>::deserialize(deserializer)? else {
+        return Ok(None);
+    };
+    VersionReq::parse(&raw)
+        .map(Some)
+        .map_err(|err| Error::custom(format!("invalid `required-version` value `{raw}`: {err}")))
 }
 
 fn validate_profile_names(profiles: &BTreeMap<String, Options>) -> Result<(), KarvaTomlError> {
@@ -223,7 +257,7 @@ mod tests {
     }
 
     #[test]
-    fn invalid_required_version_is_a_parse_error() {
+    fn invalid_required_version_points_at_the_offending_value() {
         let err =
             Config::from_toml_str(r#"required-version = "not a version""#).expect_err("invalid");
         assert_snapshot!(err, @r#"
@@ -231,7 +265,7 @@ mod tests {
           |
         1 | required-version = "not a version"
           |                    ^^^^^^^^^^^^^^^
-        unexpected character 'n' while parsing major version number
+        invalid `required-version` value `not a version`: unexpected character 'n' while parsing major version number
 
         "#);
     }

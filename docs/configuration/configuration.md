@@ -8,23 +8,22 @@ The reference below documents every field supported inside a profile. Examples t
 
 ## `required-version`
 
-A SemVer requirement that the running karva binary must satisfy.
+A [SemVer requirement](https://docs.rs/semver/1/semver/struct.VersionReq.html)
+that the running karva binary must satisfy.
 
-If the installed karva version does not match the requirement, karva exits with a clear error before running any tests. This prevents confusing failures when CI or other contributors run with an older version that does not support features used elsewhere in the configuration.
+When set, karva refuses to run if the installed version does not
+match the requirement. This is useful in CI and for shared
+repositories where every developer should be on a known-good
+version.
 
-`required-version` is a top-level field, not part of any profile.
+`required-version` is a top-level field and is not part of any
+profile.
 
 **Default value**: `null`
 
-**Type**: SemVer requirement (`string`)
+**Type**: `string`
 
-**Example usage** (`karva.toml`):
-
-```toml
-required-version = ">=0.5.0"
-```
-
-The same field in `pyproject.toml` lives under `[tool.karva]`:
+**Example usage** (`pyproject.toml`):
 
 ```toml
 [tool.karva]

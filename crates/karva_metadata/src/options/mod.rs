@@ -578,7 +578,7 @@ test-function-prefix = "test"
 
     #[test]
     fn from_toml_str_empty_is_default() {
-        assert_debug_snapshot!(Config::from_toml_str("").expect("parse"), @"
+        assert_debug_snapshot!(Config::from_toml_str("").expect("parse"), @r"
         Config {
             required_version: None,
             profile: {},
