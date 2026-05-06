@@ -11,8 +11,9 @@ mod settings;
 
 pub use max_fail::MaxFail;
 pub use options::{
-    Config, CovReport, CoverageOptions, DEFAULT_PROFILE, Options, OutputFormat,
-    ProjectOptionsOverrides, SrcOptions, TerminalOptions, TestOptions, UnknownProfile,
+    Config, CovReport, CoverageOptions, DEFAULT_PROFILE, IncompatibleVersionError, Options,
+    OutputFormat, ProjectOptionsOverrides, SrcOptions, TerminalOptions, TestOptions,
+    UnknownProfile,
 };
 pub use pyproject::{PyProject, PyProjectError};
 pub use settings::{
@@ -50,18 +51,20 @@ impl ProjectMetadata {
     }
 
     pub fn from_config_file(
-        path: Utf8PathBuf,
+        path: &Utf8Path,
         cwd: &Utf8Path,
         python_version: PythonVersion,
     ) -> Result<Self, ProjectMetadataError> {
         tracing::debug!("Using overridden configuration file at '{path}'");
 
-        let config = Config::from_karva_configuration_file(&path).map_err(|error| {
+        let config = Config::from_karva_configuration_file(path).map_err(|error| {
             ProjectMetadataError::InvalidKarvaToml {
                 source: Box::new(error),
-                path,
+                path: path.to_path_buf(),
             }
         })?;
+
+        check_required_version(&config, path)?;
 
         Ok(Self {
             root: cwd.to_path_buf(),
@@ -134,6 +137,8 @@ impl ProjectMetadata {
                     );
                 }
 
+                check_required_version(&config, &project_root.join("karva.toml"))?;
+
                 tracing::debug!("Found project at '{}'", project_root);
                 return Ok(Self::from_config(
                     config,
@@ -144,6 +149,9 @@ impl ProjectMetadata {
 
             if let Some(pyproject) = pyproject {
                 let has_karva = pyproject.karva().is_some();
+                if let Some(config) = pyproject.karva() {
+                    check_required_version(config, &project_root.join("pyproject.toml"))?;
+                }
                 let metadata =
                     Self::from_pyproject(pyproject, project_root.to_path_buf(), python_version);
 
@@ -254,6 +262,15 @@ fn has_karva_section(pyproject: Option<&PyProject>) -> bool {
     pyproject.is_some_and(|project| project.karva().is_some())
 }
 
+fn check_required_version(config: &Config, path: &Utf8Path) -> Result<(), ProjectMetadataError> {
+    config
+        .check_required_version(karva_version::version())
+        .map_err(|source| ProjectMetadataError::IncompatibleVersion {
+            path: path.to_path_buf(),
+            source,
+        })
+}
+
 #[derive(Debug, Error)]
 pub enum ProjectMetadataError {
     #[error("project path '{0}' is not a directory")]
@@ -269,5 +286,12 @@ pub enum ProjectMetadataError {
     InvalidKarvaToml {
         source: Box<KarvaTomlError>,
         path: Utf8PathBuf,
+    },
+
+    #[error("{path}: {source}")]
+    IncompatibleVersion {
+        path: Utf8PathBuf,
+        #[source]
+        source: IncompatibleVersionError,
     },
 }

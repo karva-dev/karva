@@ -37,7 +37,7 @@ pub fn test(args: TestCommand) -> Result<ExitStatus> {
     let config_file = args.config_file.as_ref().map(|path| absolute(path, &cwd));
 
     let mut project_metadata = if let Some(config_file) = &config_file {
-        ProjectMetadata::from_config_file(config_file.clone(), &cwd, python_version)?
+        ProjectMetadata::from_config_file(config_file, &cwd, python_version)?
     } else {
         ProjectMetadata::discover(&cwd, python_version)?
     };

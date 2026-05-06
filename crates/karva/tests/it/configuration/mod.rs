@@ -1,4 +1,5 @@
 mod profile;
+mod required_version;
 
 use insta_cmd::assert_cmd_snapshot;
 

@@ -7,7 +7,9 @@ use karva_macros::{Combine, OptionsMetadata};
 use ruff_db::diagnostic::DiagnosticFormat;
 use serde::{Deserialize, Serialize};
 
-pub use config::{Config, DEFAULT_PROFILE, KarvaTomlError, UnknownProfile};
+pub use config::{
+    Config, DEFAULT_PROFILE, IncompatibleVersionError, KarvaTomlError, UnknownProfile,
+};
 pub use overrides::ProjectOptionsOverrides;
 
 use crate::filter::FiltersetSet;
@@ -551,7 +553,7 @@ foo = 1
           |
         2 | [bogus]
           |  ^^^^^
-        unknown field `bogus`, expected `profile`
+        unknown field `bogus`, expected `required-version` or `profile`
         "
         );
     }
@@ -569,7 +571,7 @@ test-function-prefix = "test"
           |
         2 | [test]
           |  ^^^^
-        unknown field `test`, expected `profile`
+        unknown field `test`, expected `required-version` or `profile`
         "
         );
     }
@@ -578,6 +580,7 @@ test-function-prefix = "test"
     fn from_toml_str_empty_is_default() {
         assert_debug_snapshot!(Config::from_toml_str("").expect("parse"), @"
         Config {
+            required_version: None,
             profile: {},
         }
         ");

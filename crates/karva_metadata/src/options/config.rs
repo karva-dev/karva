@@ -1,7 +1,8 @@
 use std::collections::BTreeMap;
 
-use camino::Utf8PathBuf;
+use camino::{Utf8Path, Utf8PathBuf};
 use karva_combine::Combine;
+use semver::{Version, VersionReq};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -18,6 +19,15 @@ pub const DEFAULT_PROFILE: &str = "default";
 #[derive(Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case", deny_unknown_fields)]
 pub struct Config {
+    /// `SemVer` requirement that the running karva binary must satisfy.
+    ///
+    /// When set, karva refuses to run if the installed version does not
+    /// match the requirement. This is useful in CI and for shared
+    /// repositories where every developer should be on a known-good
+    /// version.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub required_version: Option<VersionReq>,
+
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub profile: BTreeMap<String, Options>,
 }
@@ -29,13 +39,38 @@ impl Config {
         Ok(config)
     }
 
-    pub(crate) fn from_karva_configuration_file(
-        path: &Utf8PathBuf,
-    ) -> Result<Self, KarvaTomlError> {
+    /// Verify that the running karva version satisfies `required-version`.
+    ///
+    /// `current` is parsed once with [`semver::Version::parse`]; karva's
+    /// own version is well-formed semver, so a parse failure here is an
+    /// internal error rather than a configuration problem.
+    pub fn check_required_version(&self, current: &str) -> Result<(), IncompatibleVersionError> {
+        let Some(required) = &self.required_version else {
+            return Ok(());
+        };
+
+        let installed = Version::parse(current).map_err(|source| {
+            IncompatibleVersionError::InvalidInstalledVersion {
+                version: current.to_string(),
+                source,
+            }
+        })?;
+
+        if required.matches(&installed) {
+            Ok(())
+        } else {
+            Err(IncompatibleVersionError::Mismatch {
+                required: required.clone(),
+                installed,
+            })
+        }
+    }
+
+    pub(crate) fn from_karva_configuration_file(path: &Utf8Path) -> Result<Self, KarvaTomlError> {
         let karva_toml_str =
             std::fs::read_to_string(path).map_err(|source| KarvaTomlError::FileReadError {
                 source,
-                path: path.clone(),
+                path: path.to_path_buf(),
             })?;
 
         Self::from_toml_str(&karva_toml_str)
@@ -126,6 +161,21 @@ pub struct UnknownProfile {
     pub available: Vec<String>,
 }
 
+#[derive(Debug, Error)]
+pub enum IncompatibleVersionError {
+    #[error("the installed karva {installed} does not satisfy `required-version = \"{required}\"`")]
+    Mismatch {
+        required: VersionReq,
+        installed: Version,
+    },
+    #[error("internal error: failed to parse installed karva {version}: {source}")]
+    InvalidInstalledVersion {
+        version: String,
+        #[source]
+        source: semver::Error,
+    },
+}
+
 #[derive(Error, Debug)]
 pub enum KarvaTomlError {
     #[error(transparent)]
@@ -138,4 +188,51 @@ pub enum KarvaTomlError {
     },
     #[error("invalid profile name `{name}`: {reason}")]
     InvalidProfileName { name: String, reason: &'static str },
+}
+
+#[cfg(test)]
+mod tests {
+    use insta::assert_snapshot;
+
+    use super::*;
+
+    #[test]
+    fn required_version_satisfied() {
+        let config =
+            Config::from_toml_str(r#"required-version = ">=0.0.1-alpha.1""#).expect("parse");
+        config.check_required_version("0.0.1-alpha.5").expect("ok");
+    }
+
+    #[test]
+    fn required_version_unsatisfied_reports_both_versions() {
+        let config = Config::from_toml_str(r#"required-version = ">=1.0.0""#).expect("parse");
+        let err = config
+            .check_required_version("0.5.2")
+            .expect_err("mismatch");
+        assert_snapshot!(
+            err,
+            @r#"the installed karva 0.5.2 does not satisfy `required-version = ">=1.0.0"`"#
+        );
+    }
+
+    #[test]
+    fn required_version_absent_is_noop() {
+        Config::default()
+            .check_required_version("0.0.0")
+            .expect("ok");
+    }
+
+    #[test]
+    fn invalid_required_version_is_a_parse_error() {
+        let err =
+            Config::from_toml_str(r#"required-version = "not a version""#).expect_err("invalid");
+        assert_snapshot!(err, @r#"
+        TOML parse error at line 1, column 20
+          |
+        1 | required-version = "not a version"
+          |                    ^^^^^^^^^^^^^^^
+        unexpected character 'n' while parsing major version number
+
+        "#);
+    }
 }
