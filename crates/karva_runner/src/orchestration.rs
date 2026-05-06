@@ -22,6 +22,7 @@ use karva_project::Project;
 use crate::binary::find_karva_worker_binary;
 use crate::collection::ParallelCollector;
 use crate::partition::{Partition, partition_collected_tests};
+use crate::progress::ProgressDisplay;
 use crate::worker_args::{WorkerSpawn, worker_command};
 
 #[derive(Debug)]
@@ -336,8 +337,18 @@ pub fn run_parallel_tests(
 
     let max_fail_cache = project.settings().max_fail().has_limit().then_some(&cache);
 
+    let progress = ProgressDisplay::start(
+        project.settings().terminal().show_progress,
+        total_tests as u64,
+        cache.clone(),
+    );
+
     worker_manager.wait_for_completion(shutdown_rx, max_fail_cache);
     worker_manager.kill_remaining();
+
+    if let Some(progress) = progress {
+        progress.finish();
+    }
 
     let results = cache.aggregate_results()?;
 
