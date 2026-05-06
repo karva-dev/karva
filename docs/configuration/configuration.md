@@ -6,6 +6,33 @@ Karva is configured through `karva.toml` (or the `[tool.karva]` table in `pyproj
 
 The reference below documents every field supported inside a profile. Examples target the implicit `default` profile.
 
+## `required-version`
+
+A SemVer requirement that the running karva binary must satisfy.
+
+If the installed karva version does not match the requirement, karva exits with a clear error before running any tests. This prevents confusing failures when CI or other contributors run with an older version that does not support features used elsewhere in the configuration.
+
+`required-version` is a top-level field, not part of any profile.
+
+**Default value**: `null`
+
+**Type**: SemVer requirement (`string`)
+
+**Example usage** (`karva.toml`):
+
+```toml
+required-version = ">=0.5.0"
+```
+
+The same field in `pyproject.toml` lives under `[tool.karva]`:
+
+```toml
+[tool.karva]
+required-version = ">=0.5.0"
+```
+
+---
+
 ## `coverage`
 
 ### `fail-under`

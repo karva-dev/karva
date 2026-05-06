@@ -16,6 +16,7 @@ ignored = ["ruff_options_metadata"]
 karva_combine = { workspace = true }
 karva_logging = { workspace = true }
 karva_macros = { workspace = true }
+karva_version = { workspace = true }
 
 camino = { workspace = true }
 globset = { workspace = true }
@@ -23,6 +24,7 @@ regex = { workspace = true }
 ruff_db = { workspace = true }
 ruff_options_metadata = { workspace = true }
 ruff_python_ast = { workspace = true }
+semver = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }
 toml = { workspace = true }

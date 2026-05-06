@@ -44,6 +44,7 @@ fn generate_set(output: &mut String, set: Set, parents: &mut Vec<Set>) {
                 "The reference below documents every field supported inside a profile. Examples \
                  target the implicit `default` profile.\n\n",
             );
+            emit_required_version_section(output);
         }
         Set::Named { name, .. } => {
             let title = parents
@@ -112,6 +113,28 @@ impl Set {
             Self::Named { set, .. } => set,
         }
     }
+}
+
+/// `required-version` lives at the root of `Config`, not inside any profile,
+/// so the metadata-driven walker does not pick it up. Emit a hand-rolled
+/// section for it just below the intro paragraph instead.
+fn emit_required_version_section(output: &mut String) {
+    output.push_str("## `required-version`\n\n");
+    output.push_str(
+        "A SemVer requirement that the running karva binary must satisfy.\n\n\
+         If the installed karva version does not match the requirement, karva exits with a \
+         clear error before running any tests. This prevents confusing failures when CI or \
+         other contributors run with an older version that does not support features used \
+         elsewhere in the configuration.\n\n\
+         `required-version` is a top-level field, not part of any profile.\n\n",
+    );
+    output.push_str("**Default value**: `null`\n\n");
+    output.push_str("**Type**: SemVer requirement (`string`)\n\n");
+    output.push_str("**Example usage** (`karva.toml`):\n\n");
+    output.push_str("```toml\nrequired-version = \">=0.5.0\"\n```\n\n");
+    output.push_str("The same field in `pyproject.toml` lives under `[tool.karva]`:\n\n");
+    output.push_str("```toml\n[tool.karva]\nrequired-version = \">=0.5.0\"\n```\n\n");
+    output.push_str("---\n\n");
 }
 
 fn emit_field(output: &mut String, name: &str, field: &OptionField, parents: &[Set]) {
