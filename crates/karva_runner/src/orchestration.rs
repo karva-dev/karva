@@ -322,7 +322,6 @@ pub fn run_parallel_tests(
         args,
         num_workers,
         profile: config.profile.as_deref().unwrap_or("default"),
-        run_id: &uuid::Uuid::new_v4().to_string(),
         worker_binary: &worker_binary,
         coverage_enabled: !project.settings().coverage().sources.is_empty(),
     };

@@ -43,9 +43,13 @@ parallel workers without coordination.
 
 ### `KARVA_RUN_ID`
 
-Unique identifier (UUID) for a single `karva test` invocation,
-shared by every worker. Useful for correlating logs and external
-artifacts produced across multiple worker processes.
+Unique identifier for a single `karva test` invocation, shared by
+every worker. Encodes `<ms>-<uuid>`: a millisecond Unix timestamp
+followed by a UUID v4. The timestamp prefix sorts chronologically
+across runs; the UUID makes the id unique even when multiple jobs
+start in the same millisecond. The same value names the run's
+cache directory under `.karva_cache/run-<ms>-<uuid>`, which makes
+correlating logs to cached artifacts straightforward.
 
 ### `KARVA_WORKSPACE_ROOT`
 

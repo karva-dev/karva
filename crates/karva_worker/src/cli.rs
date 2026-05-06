@@ -31,8 +31,9 @@ struct Args {
     cache_dir: Utf8PathBuf,
 
     /// Unique identifier for this test run, used for cache coordination.
+    /// Encodes `<ms>-<uuid>`; the cache directory adds the `run-` prefix.
     #[arg(long)]
-    run_hash: String,
+    run_id: String,
 
     /// Numeric identifier for this worker in a parallel test run.
     #[arg(long)]
@@ -162,7 +163,7 @@ fn run(f: impl FnOnce(Vec<OsString>) -> Vec<OsString>) -> anyhow::Result<ExitSta
     settings.set_filter(filter);
     settings.set_run_ignored(run_ignored);
 
-    let run_hash = RunHash::from_existing(&args.run_hash);
+    let run_hash = RunHash::from_existing(&args.run_id);
 
     let cache = RunCache::new(&args.cache_dir, &run_hash);
 
