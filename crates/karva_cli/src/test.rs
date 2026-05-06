@@ -9,6 +9,7 @@ use karva_metadata::{
 };
 
 use crate::enums::{CovReport, NoTests, OutputFormat, RunIgnored};
+use crate::partition::PartitionSelection;
 use crate::verbosity::Verbosity;
 
 /// Shared test execution options that can be used by both main CLI and worker processes
@@ -218,6 +219,21 @@ pub struct TestCommand {
     /// Re-run only the tests that failed in the previous run.
     #[clap(long, alias = "lf", help_heading = "Filter options")]
     pub last_failed: bool,
+
+    /// Run only a slice of the collected tests, distributed round-robin.
+    ///
+    /// Accepts `slice:M/N` where this run executes slice `M` of `N` total
+    /// slices (1-indexed). Tests are sorted by qualified name and then
+    /// distributed by cycling through slices: test 1 to slice 1, test 2 to
+    /// slice 2, ..., test N+1 to slice 1, and so on. Running every
+    /// `slice:1/N` through `slice:N/N` together covers every collected test
+    /// exactly once.
+    ///
+    /// Useful for splitting a test run across CI jobs. Slice membership
+    /// shifts when tests are added or removed, so it gives less stable
+    /// per-test placement than a hash-based scheme.
+    #[clap(long, value_name = "STRATEGY:M/N", help_heading = "Filter options")]
+    pub partition: Option<PartitionSelection>,
 
     /// Number of parallel workers (default: number of CPU cores)
     #[clap(short = 'n', long, help_heading = "Runner options")]

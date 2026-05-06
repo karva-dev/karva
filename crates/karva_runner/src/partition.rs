@@ -1,6 +1,8 @@
 use std::collections::{HashMap, HashSet};
 use std::time::Duration;
 
+use karva_cli::PartitionSelection;
+
 /// Test metadata used for partitioning decisions
 #[derive(Debug, Clone)]
 struct TestInfo {
@@ -104,12 +106,26 @@ pub fn partition_collected_tests(
     num_workers: usize,
     previous_durations: &HashMap<String, Duration>,
     last_failed: &HashSet<String>,
+    partition_selection: Option<PartitionSelection>,
 ) -> Vec<Partition> {
     let mut test_infos = Vec::new();
     collect_test_paths_recursive(package, &mut test_infos, previous_durations);
 
     if !last_failed.is_empty() {
         test_infos.retain(|info| last_failed.contains(&info.qualified_name));
+    }
+
+    // Slice partitioning runs on a deterministic ordering of the post-filter
+    // test set so that `slice:M/N` is stable across runs and machines (modulo
+    // changes to the test set itself).
+    if let Some(selection) = partition_selection {
+        test_infos.sort_by(|a, b| a.qualified_name.cmp(&b.qualified_name));
+        let mut position = 0usize;
+        test_infos.retain(|_| {
+            let keep = selection.contains(position);
+            position += 1;
+            keep
+        });
     }
 
     // Shuffle tests without durations so they distribute randomly across partitions

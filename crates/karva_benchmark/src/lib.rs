@@ -58,6 +58,7 @@ pub fn run_karva(project: &Project) {
         create_ctrlc_handler: false,
         last_failed: false,
         profile: None,
+        partition: None,
     };
 
     let args = SubTestCommand {

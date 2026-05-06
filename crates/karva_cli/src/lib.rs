@@ -4,12 +4,14 @@ use clap::builder::styling::{AnsiColor, Effects};
 
 mod cache;
 mod enums;
+mod partition;
 mod snapshot;
 mod test;
 mod verbosity;
 
 pub use cache::{CacheAction, CacheCommand};
 pub use enums::{CovReport, NoTests, OutputFormat, RunIgnored};
+pub use partition::PartitionSelection;
 pub use snapshot::{
     SnapshotAction, SnapshotCommand, SnapshotDeleteArgs, SnapshotFilterArgs, SnapshotPruneArgs,
 };
