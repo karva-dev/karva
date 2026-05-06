@@ -1,7 +1,7 @@
-use std::fmt::Write;
-use std::fs::OpenOptions;
-use std::io::Write as _;
-use std::path::PathBuf;
+use std::fs::{File, OpenOptions};
+use std::io::Write;
+use std::path::{Path, PathBuf};
+use std::sync::Mutex;
 use std::time::Duration;
 
 use colored::Colorize;
@@ -87,14 +87,69 @@ impl Reporter for DummyReporter {
     }
 }
 
-/// A reporter that outputs test results to stdout as they complete.
+/// Sink for preformatted reporter result lines.
+///
+/// Each `write_line` call must emit exactly one line (a `\n` is appended by
+/// the implementation). Lines from one sink are serialized; the orchestrator
+/// merges across sinks. Used to keep worker output from interleaving on
+/// stdout — workers write to a [`FileLineSink`] backed by a per-worker file
+/// and the orchestrator drains those files line by line.
+pub trait LineSink: Send + Sync {
+    fn write_line(&self, line: &str);
+}
+
+/// Writes lines straight to the process stdout (locked per call).
+///
+/// Suitable when the reporter runs in the same process that owns stdout.
+/// Cross-process workers should use [`FileLineSink`] instead — multiple
+/// processes locking stdout independently does not actually serialize their
+/// writes.
+pub struct StdoutLineSink;
+
+impl LineSink for StdoutLineSink {
+    fn write_line(&self, line: &str) {
+        let mut out = std::io::stdout().lock();
+        let _ = writeln!(out, "{line}");
+    }
+}
+
+/// Appends lines to a file opened with `O_APPEND`.
+///
+/// A `Mutex` guards against intra-process races (the reporter is shared
+/// across worker threads). Each `write_line` issues a single `writeln!` so
+/// the orchestrator's drain — which reads from the file and splits on `\n` —
+/// either sees a complete line or buffers a trailing partial line for the
+/// next read.
+pub struct FileLineSink {
+    file: Mutex<File>,
+}
+
+impl FileLineSink {
+    pub fn open(path: &Path) -> std::io::Result<Self> {
+        let file = OpenOptions::new().create(true).append(true).open(path)?;
+        Ok(Self {
+            file: Mutex::new(file),
+        })
+    }
+}
+
+impl LineSink for FileLineSink {
+    fn write_line(&self, line: &str) {
+        if let Ok(mut file) = self.file.lock() {
+            let _ = writeln!(file, "{line}");
+        }
+    }
+}
+
+/// A reporter that emits one line per result to a [`LineSink`].
 pub struct TestCaseReporter {
     printer: Printer,
+    sink: Box<dyn LineSink>,
 }
 
 impl TestCaseReporter {
-    pub fn new(printer: Printer) -> Self {
-        Self { printer }
+    pub fn new(printer: Printer, sink: Box<dyn LineSink>) -> Self {
+        Self { printer, sink }
     }
 }
 
@@ -122,12 +177,9 @@ impl Reporter for TestCaseReporter {
             _ => String::new(),
         };
 
-        let mut stdout = self.printer.stream_for_test_result().lock();
-        writeln!(
-            stdout,
+        self.sink.write_line(&format!(
             "{padding}{colored_label} {duration_str} {test_path}{suffix}"
-        )
-        .ok();
+        ));
     }
 
     fn report_test_slow(&self, test_name: &QualifiedTestName, duration: Duration) {
@@ -141,12 +193,9 @@ impl Reporter for TestCaseReporter {
         let duration_str = format_duration_bracketed(duration);
         let test_path = format_test_path(test_name);
 
-        let mut stdout = self.printer.stream_for_test_result().lock();
-        writeln!(
-            stdout,
+        self.sink.write_line(&format!(
             "{padding}{colored_label} {duration_str} {test_path}"
-        )
-        .ok();
+        ));
     }
 
     fn report_test_attempt(
@@ -169,12 +218,9 @@ impl Reporter for TestCaseReporter {
         let duration_str = format_duration_bracketed(duration);
         let test_path = format_test_path(test_name);
 
-        let mut stdout = self.printer.stream_for_test_result().lock();
-        writeln!(
-            stdout,
+        self.sink.write_line(&format!(
             "{padding}TRY {attempt} {colored_status} {duration_str} {test_path}"
-        )
-        .ok();
+        ));
     }
 }
 
