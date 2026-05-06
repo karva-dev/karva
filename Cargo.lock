@@ -1115,6 +1115,7 @@ dependencies = [
  "karva_metadata",
  "karva_version",
  "ruff_db",
+ "serde_json",
 ]
 
 [[package]]
@@ -1286,6 +1287,7 @@ dependencies = [
  "karva_project",
  "karva_static",
  "karva_version",
+ "serde_json",
  "tracing",
  "uuid",
  "which",
